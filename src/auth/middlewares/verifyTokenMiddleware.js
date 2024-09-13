@@ -9,6 +9,7 @@ export const verifyTokenMiddleware = async (to, from, next) => {
 
     const token = TokenService.get();
 
+    //Si no esta logueado redirige a login
     if (!token) {
         next({ name: 'login' });
     }
