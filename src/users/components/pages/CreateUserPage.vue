@@ -33,9 +33,14 @@
                     <input class="field__input" v-model="documento" type="text" placeholder="Documento" />
                 </div>
 
-                <div class="">
-                    <v-checkbox v-model="isAdmin" label="Administrador"class="mt-4"/>
+                <div>
+                    <v-checkbox
+                        v-model="isAdmin"
+                        label="Administrador"
+                        class="mt-4"
+                    />
                 </div>
+
 
                 <!-- Botón de Enviar -->
                 <v-btn rounded type="submit" color="primary">

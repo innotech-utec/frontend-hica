@@ -29,9 +29,15 @@
 
                 <!-- Checkbox Administrador -->
 
-                <div class="">
-                    <v-checkbox v-model="user.isAdmin" label="Administrador"class="mt-4"/>
+                <div>
+                    <v-checkbox
+                        v-model="user.isAdmin"
+                        label="Administrador"
+                        class="mt-4"
+                    />
                 </div>
+
+                
 
                 <!-- Botón para guardar -->
                 <v-btn rounded type="submit" color="primary">
