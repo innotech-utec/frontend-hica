@@ -6,14 +6,17 @@ const backend = axios.create({
     baseURL: API_BASE_URL
 });
 
+// Interceptor para añadir el token en las cabeceras de cada solicitud
 backend.interceptors.request.use((config) => {
-    const token = TokenService.get();
+    const token = TokenService.get();  // Obtener el token
 
     if (token) {
-        config.headers.Authorization = token;
+        // Añadir el token a la cabecera de autorización con "Bearer"
+        config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
 });
 
 export default backend;
+

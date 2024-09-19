@@ -19,7 +19,7 @@
                     <v-alert variant="tonal" class="mb-3" v-if="error" type="error" title="Credenciales incorrectas"
                         text="Posiblemente colocó de forma incorrecta el correo electrónico o la contraseña. Por favor, vuelva a intentarlo"></v-alert>
 
-                    <v-btn color="success" rounded v-on:click="onLogin()" class="w-100">Iniciar sesión</v-btn>
+                    <v-btn color="success" rounded v-on:click="onLogin" class="w-100">Iniciar sesión</v-btn>
                 </v-container>
             </div>
         </v-col>
@@ -27,14 +27,12 @@
             style="padding: 0px; position: relative; background-image: url('./facultad.jpg'); background-size: cover; background-position: center">
             <div
                 style="display: flex; align-items:center; justify-content: center; position: absolute; width: 100%; height: 100%; background-color: hsla(221, 86%, 88%, 80%)">
-                <div>
-                    
-                </div>
+                <div></div>
             </div>
         </v-col>
-
     </v-row>
 </template>
+
 <script>
 
 import { AuthService } from "@/auth/services/AuthService.js";
@@ -51,32 +49,20 @@ export default {
 
     methods: {
         async onLogin() {
-
-            let response = null
-
             try {
-                response = await AuthService.login(this.email, this.password);
-            } catch (error) {
-
-                if (error.response.status == 401) {
-                    return this.error = "Credenciales inválidas"
+                const response = await AuthService.login(this.email, this.password);
+                if (response.token) {
+                    this.$router.push({ name: 'users.index' });
                 }
-            }
-
-
-            if (response.token) {
-                this.$router.push({ name: 'users.index' });
+            } catch (error) {
+                if (error.response && error.response.status === 401) {
+                    this.error = "Credenciales inválidas";
+                } else {
+                    this.error = "Error en el servidor. Inténtalo más tarde.";
+                }
             }
         }
     }
-
 };
 </script>
 
-<style>
-.v-label {
-    margin-right: 10px;
-    /* Puedes ajustar el valor según tus necesidades */
-}
-
-</style>
