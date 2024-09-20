@@ -25,3 +25,4 @@ pnpm-debug.log*
 #Archivos de configuracion
 
 /src/config.js
+.env
