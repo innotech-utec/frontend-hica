@@ -1,27 +1,30 @@
 <template>
   <v-container>
+    <!-- Botón de Volver (Home) -->
+    <BackButton />
 
+    <!-- Título de la página -->
     <v-row>
-        <v-col cols="12" class="text-center">
-          <h2 class="form-title">Usuarios</h2>
-        </v-col>
-      </v-row>
-    <!-- Botón de volver -->
-    <v-btn icon @click="$router.push({ name: 'home' })" class="back-btn">
-  <v-icon>mdi-arrow-left</v-icon>
-</v-btn>
+      <v-col cols="12" class="text-center">
+        <h2 class="form-title">Usuarios</h2>
+      </v-col>
+    </v-row>
 
     <!-- Botón de Añadir Usuario -->
-    <v-btn color="primary" class="add-user-btn" @click="$router.push({ name: 'users.create' })">
-      <v-icon>mdi-plus</v-icon>
-      Añadir Usuario
-    </v-btn>
+    <v-row>
+      <v-col cols="auto">
+        <v-btn color="primary" class="add-user-btn" @click="$router.push({ name: 'users.create' })">
+          <v-icon>mdi-plus</v-icon>
+          Añadir Usuario
+        </v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Lista de usuarios -->
     <div class="user-list">
       <v-row>
         <v-col v-for="(user, index) in users" :key="index" cols="12" md="6" lg="4">
-          <v-card class="mx-auto user-card" max-width="400">
+          <v-card class="mx-auto user-card">
             <v-card-title class="user-card-title">
               <v-icon left :color="user.isAdmin ? '#014582' : '#008575'">
                 <template v-if="user.isAdmin">mdi-shield-account</template>
@@ -42,33 +45,52 @@
           </v-card>
         </v-col>
       </v-row>
-
-      <!-- Paginación correctamente ajustada -->
-      <v-row class="mt-4">
-        <v-col cols="12" class="text-center pagination-controls">
-          <v-btn icon @click="fetchUsers(currentPage - 1)" :disabled="currentPage === 1" class="pagination-button">
-            <v-icon>mdi-chevron-left</v-icon>
-          </v-btn>
-          <span class="pagination-text" style="margin: 0 15px;">Página {{ currentPage }} de {{ totalPages }}</span>
-          <v-btn icon @click="fetchUsers(currentPage + 1)" :disabled="currentPage === totalPages" class="pagination-button">
-            <v-icon>mdi-chevron-right</v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
     </div>
+
+    <!-- Paginador centrado al final -->
+    <div class="pagination-container">
+      <PaginatorComponent
+        :length="totalPages"
+        :currentPage="currentPage"
+        @pageChange="handlePageChange"
+      />
+    </div>
+
+    <!-- Modal para Crear Usuario -->
+    <v-dialog v-model="showCreateUserModal" max-width="600px">
+      <CreateUserPage @close="showCreateUserModal = false" />
+    </v-dialog>
+
+    <!-- Modal para Editar Usuario -->
+    <v-dialog v-model="showEditUserModal" max-width="600px">
+      <EditUserPage :user="selectedUser" @close="showEditUserModal = false" />
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
 import backend from '@/backend';
 import Swal from 'sweetalert2';
+import BackButton from '@/shared/components/BackButton.vue';
+import CreateUserPage from '@/users/components/pages/CreateUserPage.vue';
+import EditUserPage from '@/users/components/pages/EditUserPage.vue';
+import PaginatorComponent from '@/shared/components/PaginatorComponent.vue';
 
 export default {
+  components: {
+    BackButton,
+    CreateUserPage,
+    EditUserPage,
+    PaginatorComponent,
+  },
   data() {
     return {
       currentPage: 1,
       totalPages: 1,
-      users: []
+      users: [],
+      showCreateUserModal: false,
+      showEditUserModal: false,
+      selectedUser: null,
     };
   },
   methods: {
@@ -83,7 +105,9 @@ export default {
       }
     },
     editUser(id) {
-      this.$router.push({ name: 'users.edit', params: { id } });
+      const user = this.users.find(user => user.id === id);
+      this.selectedUser = user;
+      this.showEditUserModal = true;
     },
     async confirmDeleteUser(id) {
       const result = await Swal.fire({
@@ -94,7 +118,7 @@ export default {
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Sí, eliminarlo',
-        cancelButtonText: 'Cancelar'
+        cancelButtonText: 'Cancelar',
       });
 
       if (result.isConfirmed) {
@@ -110,52 +134,36 @@ export default {
         console.error('Error al eliminar usuario:', error);
         Swal.fire('Error', 'No se pudo eliminar el usuario', 'error');
       }
-    }
+    },
+    handlePageChange(newPage) {
+      this.fetchUsers(newPage);
+    },
   },
   created() {
     this.fetchUsers();
-  }
+  },
 };
 </script>
 
 <style scoped>
-.back-btn {
-  position: absolute;
-  top: 100px;
-  left: 20px;
-  z-index: 1000;
+.add-user-btn {  
+    margin-bottom: 20px;
 }
 
-.add-user-btn {
-  margin-bottom: 20px;
-}
-
-.user-list {
+.pagination-container {
   margin-top: 20px;
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
 }
 
 .user-card {
   margin-bottom: 20px;
 }
 
-.user-card-title {
-  display: flex;
-  align-items: center;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pagination-button {
-  margin-left: 10px;
-  margin-right: 10px;
-}
 .form-title {
-  font-size: 35px; /* Aumenta el tamaño */
-  color: #014582; /* Azul oscuro que estás usando */
+  font-size: 2.5rem;
+  color: #014582;
   font-weight: bold;
   margin-bottom: 10px;
 }

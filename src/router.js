@@ -8,6 +8,11 @@ import UnauthorizedPage from '@/auth/components/pages/UnauthorizedPage.vue';
 import HomePage from '@/home/components/pages/HomePage.vue';
 import AuthLayout from '@/auth/components/layouts/AuthLayout.vue';
 
+// Nuevas importaciones de las páginas de responsables
+import ResponsablePage from '@/responsables/components/pages/IndexResponsablePage.vue';
+import CreateResponsablePage from '@/responsables/components/pages/CreateResponsablePage.vue';
+
+
 const routes = [
     {
         path: '/',
@@ -54,7 +59,25 @@ const routes = [
                 meta: {
                     requiresAuth: true
                 }
-            }
+            },
+            // Rutas para responsables
+            {
+                path: '/responsables',
+                name: 'responsables.index',
+                component: ResponsablePage,
+                meta: {
+                    requiresAuth: true
+                }
+            },
+            {
+                path: '/responsables/crear',
+                name: 'responsables.create',
+                component: CreateResponsablePage,
+                meta: {
+                    requiresAuth: true
+                }
+            },
+         
         ]
     },
     {

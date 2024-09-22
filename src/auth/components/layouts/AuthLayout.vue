@@ -1,7 +1,7 @@
 <template>
     <div class="auth-layout">
       <nav class="layout-nav">
-        <!-- Logo de HICA a la izquierda -->
+       
         <v-img
           src="@/assets/img/logo_hica.png"
           alt="Logo HICA"
@@ -31,7 +31,7 @@
   
   <style scoped>
   .auth-layout {
-    padding: 5px;  /* Reducir el padding para acercar más al top */
+    padding: 5px;  
     margin-top: 0;
   }
   
