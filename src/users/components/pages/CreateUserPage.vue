@@ -1,8 +1,14 @@
 <template>
     <v-card class="card">
       <v-container>
+
+        <v-row>
+        <v-col cols="12" class="text-center">
+          <h2 class="form-title">Registro de Usuarios</h2>
+        </v-col>
+      </v-row>
         <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
-  
+          
           <!-- Correo electrónico -->
           <v-text-field v-model="user.email" :rules="emailRules" label="Correo Electrónico" required></v-text-field>
   
@@ -125,6 +131,7 @@
   
       // Método para resetear el formulario
       resetForm() {
+        this.$refs.form.reset();
         this.user = {
           email: '',
           nombre: '',

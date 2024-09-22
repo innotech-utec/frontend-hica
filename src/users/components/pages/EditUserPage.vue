@@ -1,6 +1,12 @@
 <template>
     <v-card class="card">
       <v-container>
+
+        <v-row>
+        <v-col cols="12" class="text-center">
+          <h2 class="form-title">Editar Usuario</h2>
+        </v-col>
+      </v-row>
         <v-form @submit.prevent="onSubmit">
           <!-- Campos del formulario de edición -->
           <!-- ... (los campos siguen iguales) -->
