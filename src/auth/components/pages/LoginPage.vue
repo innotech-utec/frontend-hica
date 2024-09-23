@@ -2,7 +2,8 @@
     <v-row class="h-100">
         <v-col cols="12" md="6" style=" display: flex; align-items: center; justify-content: center">
             <div style="width: 500px">
-                <h1 style="margin: 0; text-align: center"><b>Iniciar sesión</b></h1>
+              
+            <h1 style="margin: 0; text-align: center"><b>HICA</b></h1>
                 <p style="text-align: center">Bienvenidos a Historia Clinica Animal</p>
                 <v-container style="display:flex; align-items:center; flex-direction: column">
 
@@ -38,7 +39,6 @@
 import { AuthService } from "@/auth/services/AuthService.js";
 
 export default {
-
     data() {
         return {
             email: '',
@@ -52,7 +52,8 @@ export default {
             try {
                 const response = await AuthService.login(this.email, this.password);
                 if (response.token) {
-                    this.$router.push({ name: 'users.index' });
+                    // Redirigir al home después de login
+                    this.$router.push({ name: 'home' });
                 }
             } catch (error) {
                 if (error.response && error.response.status === 401) {
