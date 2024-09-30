@@ -7,11 +7,10 @@ import LoginPage from '@/auth/components/pages/LoginPage.vue';
 import UnauthorizedPage from '@/auth/components/pages/UnauthorizedPage.vue';
 import HomePage from '@/home/components/pages/HomePage.vue';
 import AuthLayout from '@/auth/components/layouts/AuthLayout.vue';
-
-// Nuevas importaciones de las páginas de responsables
 import ResponsablePage from '@/responsables/components/pages/IndexResponsablePage.vue';
 import CreateResponsablePage from '@/responsables/components/pages/CreateResponsablePage.vue';
-
+import CreateAnimalPage from '@/animales/components/pages/CreateAnimalPage.vue';
+import IndexAnimalPage from '@/animales/components/pages/IndexAnimalPage.vue';
 
 const routes = [
     {
@@ -77,7 +76,25 @@ const routes = [
                     requiresAuth: true
                 }
             },
-         
+            {
+            path: '/animales/crear',
+            name: 'animales.create',
+            component: CreateAnimalPage,
+            meta: {
+            requiresAuth: true
+        }
+    },
+
+        {
+            path: '/animales',
+            name: 'animales.index',
+            component: IndexAnimalPage,
+            meta: {
+              requiresAuth: true
+            }
+        }
+       
+
         ]
     },
     {

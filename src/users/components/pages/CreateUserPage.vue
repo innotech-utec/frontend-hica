@@ -3,10 +3,10 @@
     <v-container>
 
       <v-row>
-      <v-col cols="12" class="text-center">
-        <h2 class="form-title">Registro de Usuarios</h2>
-      </v-col>
-    </v-row>
+        <v-col cols="12" class="text-center">
+          <h2 class="form-title">Registro de Usuarios</h2>
+        </v-col>
+      </v-row>
       <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
         
         <!-- Correo electrónico -->
@@ -82,12 +82,16 @@ export default {
       passwordRules: [
         v => !!v || 'La contraseña es requerida',
         v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
-      ],
-      repeatPasswordRule: [
-        v => !!v || 'Por favor, repita la contraseña',
-        v => v === this.user.password || 'Las contraseñas no coinciden',
       ]
     };
+  },
+  computed: {
+    repeatPasswordRule() {
+      return [
+        v => !!v || 'Por favor, repita la contraseña',
+        v => v === this.user.password || 'Las contraseñas no coinciden',
+      ];
+    }
   },
   methods: {
     // Método para registrar un usuario
@@ -131,7 +135,6 @@ export default {
 
     // Método para resetear el formulario
     resetForm() {
-      this.$refs.form.reset();
       this.user = {
         email: '',
         nombre: '',
@@ -141,7 +144,7 @@ export default {
         repeatedPassword: '',
         isAdmin: false
       };
-      this.$refs.form.reset();  // Esto asegura que el formulario se reinicia
+      this.$refs.form.reset();  // Resetea el formulario
     },
 
     // Método para confirmar la cancelación
@@ -157,7 +160,7 @@ export default {
 
       if (result.isConfirmed) {
         this.resetForm();
-        this.$router.push("/usuarios");  // Redirige a la lista de usuarios o a donde sea necesario
+        this.$router.push("/usuarios");  // Redirige a la lista de usuarios
       }
     }
   }
