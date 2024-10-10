@@ -28,6 +28,25 @@
         required
       ></v-text-field>
 
+      <!-- Sexo del Animal -->
+      <v-select
+        v-model="animal.sexo"
+        :items="['HEMBRA', 'MACHO']"
+        label="Sexo"
+        :rules="requiredRule"
+        required
+      ></v-select>
+
+      <!-- Peso del Animal -->
+      <v-text-field
+        v-model="animal.peso"
+        label="Peso (kg)"
+        type="number"
+        step="0.01"
+        :rules="[...requiredRule, v => v > 0 || 'El peso debe ser mayor que 0']"
+        required
+      ></v-text-field>
+
       <!-- Responsable (Propietario) no editable -->
       <v-text-field
         v-model="responsableNombre" 
@@ -58,10 +77,12 @@ export default {
         nombre: '',
         especie: '',
         raza: '',
-        edad: '', 
-        responsableId: null, 
+        edad: '',
+        sexo: '',     
+        peso: '',     
+        responsableId: null,
       },
-      responsableNombre: '', // Aquí almacenamos el nombre del responsable
+      responsableNombre: '', // Nombre del responsable
       requiredRule: [v => !!v || 'Este campo es requerido'],
     };
   },
@@ -69,18 +90,19 @@ export default {
     BackButton,
   },
   methods: {
-
     async onSubmit() {
-        if (!this.$refs.form.validate()) return;
-  
-        try {
-          await backend.post('animales', {
-            nombre: this.animal.nombre,
-            especie: this.animal.especie,
-            raza: this.animal.raza,
-            edad: this.animal.edad,
-            responsableId: this.animal.responsableId
-          });
+      if (!this.$refs.form.validate()) return;
+
+      try {
+        await backend.post('animales', {
+          nombre: this.animal.nombre,
+          especie: this.animal.especie,
+          raza: this.animal.raza,
+          edad: this.animal.edad,
+          sexo: this.animal.sexo,   
+          peso: this.animal.peso,   
+          responsableId: this.animal.responsableId
+        });
 
         Swal.fire({
           title: "Animal creado",
@@ -88,10 +110,9 @@ export default {
           icon: "success",
         });
 
-        // Redirigir a la lista de responsables
         this.$router.push("/responsables");
       } catch (error) {
-        console.error('Error al crear el animal:', error.response || error.message); // Mostrar el error en consola
+        console.error('Error al crear el animal:', error.response || error.message);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -103,8 +124,6 @@ export default {
     // Método para cargar el responsable seleccionado
     async fetchResponsable() {
       const responsableId = this.$route.query.responsableId;
-      console.log('Responsable ID recibido en la URL:', responsableId);
-
       if (!responsableId) {
         Swal.fire({
           icon: "error",
@@ -116,9 +135,7 @@ export default {
 
       try {
         const response = await backend.get(`/responsables/${responsableId}`);
-        console.log('Respuesta del backend para el responsable:', response.data);
-
-        this.animal.responsableId = responsableId; // Asignar responsableId al campo animal.responsableId
+        this.animal.responsableId = responsableId;
         this.responsableNombre = `${response.data.nombre} ${response.data.apellido}`;
       } catch (error) {
         console.error('Error al cargar el responsable:', error.response || error.message);
@@ -147,7 +164,7 @@ export default {
   },
 
   created() {
-    this.fetchResponsable(); // Cargar el responsable cuando se monta el componente
+    this.fetchResponsable();
   }
 };
 </script>

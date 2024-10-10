@@ -15,7 +15,7 @@
       Añadir Usuario
     </v-btn>
 
-    <!-- Tabla de usuarios -->
+    <!-- Tabla de usuarios y veterinarios -->
     <v-row>
       <v-col cols="12">
         <div class="table-responsive">
@@ -26,32 +26,34 @@
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Rol</th>
-                 <th>Acciones</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
+              <!-- Renderizar filas de usuarios y veterinarios -->
               <tr v-for="user in users" :key="user.id">
-  <td>{{ user.documento }}</td>
-  <td>{{ user.nombre }}</td>
-  <td>{{ user.apellido }}</td>
-  <td>
-    <v-icon :color="user.isAdmin ? '#014582' : '#008575'">
-      {{ user.isAdmin ? 'mdi-shield-account' : 'mdi-stethoscope' }}
-    </v-icon>
-  </td>
-  <td>
-    <!-- Editar usuario -->
-    <v-btn icon @click="$router.push({ name: 'users.edit', params: { id: user.id } })">
-      <v-icon>mdi-pencil</v-icon>
-    </v-btn>
+                <td>{{ user.documento }}</td>
+                <td>{{ user.nombre }}</td>
+                <td>{{ user.apellido }}</td>
+                <td>
+                  <!-- Mostrar el ícono y el rol del usuario -->
+                  <v-icon :color="getIconColor(user)">
+                    {{ getIcon(user) }}
+                  </v-icon>
+                  {{ determineRole(user) }}
+                </td>
+                <td>
+                  <!-- Editar usuario -->
+                  <v-btn icon @click="$router.push({ name: 'users.edit', params: { id: user.id } })">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
 
-    <!-- Eliminar usuario -->
-    <v-btn icon @click="confirmDeleteUser(user.id)">
-      <v-icon>mdi-delete</v-icon>
-    </v-btn>
-  </td>
-</tr>
-
+                  <!-- Eliminar usuario -->
+                  <v-btn icon @click="confirmDeleteUser(user.id)">
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -79,37 +81,60 @@ export default {
     PaginatorComponent
   },
   data() {
-      return {
-      users: [], 
-      currentPage: 1, 
+    return {
+      users: [], // Lista combinada de usuarios
+      currentPage: 1,
       totalPages: 1,
-      loading: false
+      loading: false,
     };
   },
-
-
-
   methods: {
-   
-    
-      async fetchUsers(page = 1) {
+    // Método para obtener la lista de usuarios (NO MODIFICADO)
+    async fetchUsers(page = 1) {
+      this.loading = true;
       try {
-        const response = await backend.get(`/usuarios?page=${page}`);
+        const response = await backend.get(`/usuarios?page=${page}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        // Asumimos que `esVeterinario` ya viene del backend correctamente asignado
         this.users = response.data.data;
-        this.currentPage = response.data.meta.current;
-        this.totalPages = response.data.meta.last;
-       
+
+        // Paginación
+        this.currentPage = response.data.meta.current || 1;
+        this.totalPages = response.data.meta.last || 1;
+
+        console.log('Lista de usuarios:', this.users);
       } catch (error) {
-        console.error('Error al obtener usuarios:', error); 
+        console.error('Error al obtener usuarios:', error);
+        Swal.fire('Error', 'No se pudo obtener la lista de usuarios', 'error');
       } finally {
-        this.loading = false;  
+        this.loading = false;
       }
     },
 
-    // Método para editar usuario
-    editUser(id) {
-      console.log("ID del usuario a editar:", id);  // Verifica el ID del usuario
-      this.$router.push({ name: 'users.edit', params: { id } });
+    // Determina el rol del usuario para mostrar en la tabla
+    determineRole(user) {
+      if (user.isAdmin && user.esVeterinario) return 'Administrador, Veterinario';
+      if (user.isAdmin) return 'Administrador';
+      if (user.esVeterinario) return 'Veterinario';
+      return 'Usuario';
+    },
+
+    // Devuelve el ícono correspondiente al usuario según su rol
+    getIcon(user) {
+      if (user.isAdmin && user.esVeterinario) return 'mdi-shield-account';
+      if (user.isAdmin) return 'mdi-shield-account';
+      if (user.esVeterinario) return 'mdi-stethoscope'; // Ícono específico para veterinarios
+      return 'mdi-account';
+    },
+
+    // Devuelve el color del ícono según el rol del usuario
+    getIconColor(user) {
+      if (user.isAdmin && user.esVeterinario) return '#014582';  // Azul para Admin + Veterinario
+      if (user.isAdmin) return '#014582';  // Azul para Admin
+      if (user.esVeterinario) return '#008575';  // Verde para Veterinario
+      return '#A9A9A9';  // Gris para Usuario
     },
 
     // Confirmar eliminación de usuario
@@ -129,23 +154,25 @@ export default {
         this.deleteUser(id);
       }
     },
-    handlePageChange(newPage) {
-      this.fetchUsers(newPage);
-    },
+
     // Método para eliminar usuario
     async deleteUser(id) {
       try {
         await backend.delete(`/usuarios/${id}`);
-        this.fetchUsers(); // Refresca la lista después de eliminar un usuario
+        this.fetchUsers(); // Refresca la lista después de eliminar
         Swal.fire('¡Eliminado!', 'El usuario ha sido eliminado.', 'success');
       } catch (error) {
         console.error('Error al eliminar usuario:', error);
         Swal.fire('Error', 'No se pudo eliminar el usuario', 'error');
       }
     },
-  },
 
+    handlePageChange(newPage) {
+      this.fetchUsers(newPage);
+    },
+  },
   created() {
+    // Llamar al método fetchUsers al crearse el componente
     this.fetchUsers();
   },
 };
@@ -184,6 +211,11 @@ export default {
   vertical-align: middle;
 }
 
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
 
 @media (max-width: 768px) {
   .page-title {
@@ -193,7 +225,6 @@ export default {
   .add-user-btn {
     width: 100%;
     margin-bottom: 10px;
-    margin-bottom: 20px;
   }
 
   .table {
@@ -210,5 +241,3 @@ export default {
   }
 }
 </style>
-
-

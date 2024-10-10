@@ -2,8 +2,8 @@
   <v-container>
     <!-- Botón de regreso -->
     <BackButton />
-    
-    <!-- Título de la página -->
+
+    <!-- Título del formulario -->
     <v-row>
       <v-col cols="12" class="text-center">
         <h2 class="page-title">Listado de Animales</h2>
@@ -19,27 +19,45 @@
               <tr>
                 <th>Nombre</th>
                 <th>Especie</th>
+                <th>Raza</th>
                 <th>Edad</th>
+                <th>Sexo</th>
+                <th>Peso (kg)</th>
                 <th>Responsable</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Mostrar mensaje si no hay animales -->
-              <tr v-if="animales.length === 0">
-                <td colspan="5" class="text-center">No hay animales registrados.</td>
+              <tr v-if="animales.length === 0 && !loading">
+                <td colspan="8" class="text-center">No hay animales registrados.</td>
               </tr>
-
-              <!-- Mostrar cada animal -->
               <tr v-for="animal in animales" :key="animal.id">
                 <td>{{ animal.nombre }}</td>
                 <td>{{ animal.especie }}</td>
+                <td>{{ animal.raza }}</td>
                 <td>{{ animal.edad }}</td>
+                <td>{{ animal.sexo }}</td>
+                <td>{{ animal.peso }}</td>
                 <td>{{ animal.responsable ? `${animal.responsable.nombre} ${animal.responsable.apellido}` : 'Sin responsable' }}</td>
                 <td>
                   <!-- Botón para editar animal -->
-                  <v-btn icon @click="editAnimal(animal.id)">
+                  <v-btn icon @click="editAnimal(animal.id)" title="Editar animal">
                     <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+
+                  <!-- Botón para registrar ficha clínica -->
+                  <v-btn icon color="success" @click="checkOpenFichas(animal.id)" title="Crear ficha clínica">
+                    <v-icon>mdi-plus-circle</v-icon>
+                  </v-btn>
+
+                  <!-- Botón para visualizar fichas clínicas abiertas -->
+                  <v-btn icon color="warning" @click="viewOpenFichas(animal.id)" title="Ver fichas clínicas abiertas">
+                    <v-icon>mdi-file-document</v-icon>
+                  </v-btn>
+
+                  <!-- Botón para visualizar historia clínica -->
+                  <v-btn icon color="info" @click="viewHistoriaClinica(animal.id)" title="Ver historia clínica">
+                    <v-icon>mdi-file-document</v-icon>
                   </v-btn>
                 </td>
               </tr>
@@ -48,6 +66,7 @@
         </div>
       </v-col>
     </v-row>
+
     <div class="pagination-container">
       <PaginatorComponent
         :length="totalPages"
@@ -80,28 +99,27 @@ export default {
   },
 
   methods: {
-    // Método para obtener la lista de animales
     async fetchAnimales() {
-      console.log("Obteniendo lista de animales..."); 
       this.loading = true;
 
       try {
-        // Hacer la solicitud al backend para obtener los animales
         const response = await backend.get('/animales', {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`, // Asegúrate de que el token esté presente
+            Authorization: `Bearer ${localStorage.getItem('token')}`, 
           }
         });
 
-        // Asignar la lista de animales a la variable `animales`
-        console.log('Respuesta de /animales:', response.data);
         if (Array.isArray(response.data)) {
           this.animales = response.data;
+          this.totalPages = Math.ceil(response.data.length / 10);
         } else {
-          console.warn('Los datos de animales no tienen la estructura esperada:', response.data);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Advertencia',
+            text: 'Los datos de animales no se encuentran en la estructura esperada.',
+          });
         }
       } catch (error) {
-        console.error('Error al obtener la lista de animales:', error);
         Swal.fire({
           icon: 'error',
           title: 'Error',
@@ -112,12 +130,71 @@ export default {
       }
     },
 
+    async checkOpenFichas(animalId) {
+      try {
+        const response = await backend.get(`/fichasClinicas/abiertas/${animalId}`);
+        const fichasAbiertas = response.data;
+
+        if (fichasAbiertas.length > 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Ficha Clínica Abierta',
+            text: 'Este animal ya tiene una ficha clínica abierta. No se puede crear una nueva.',
+          });
+        } else {
+          this.registerFichaClinica(animalId);
+        }
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.response?.data?.message || 'No se pudo obtener las fichas clínicas.',
+        });
+      }
+    },
+
+    registerFichaClinica(animalId) {
+      this.$router.push({ name: 'fichaClinica.create', query: { animalId: animalId } });
+    },
+
+    async viewOpenFichas(animalId) {
+   try {
+      const response = await backend.get(`/fichasClinicas/abiertas/${animalId}`);
+      const fichasAbiertas = response.data;
+
+      if (fichasAbiertas.length > 0) {
+         // Aquí te aseguras de que se está pasando correctamente el ID de la ficha clínica
+         this.$router.push({ name: 'fichaClinica.view', query: { fichaClinicaId: fichasAbiertas[0].id, animalId: animalId } });
+      } else {
+         Swal.fire({
+            icon: 'info',
+            title: 'Sin Fichas Clínicas Abiertas',
+            text: 'Este animal no tiene fichas clínicas abiertas.',
+         });
+      }
+   } catch (error) {
+      Swal.fire({
+         icon: 'error',
+         title: 'Error',
+         text: error.response?.data?.message || 'No se pudo obtener las fichas clínicas.',
+      });
+   }
+},
+
+
+    viewHistoriaClinica(animalId) {
+      this.$router.push({ name: 'historiaClinica.view', params: { id: animalId } });
+    },
 
     editAnimal(id) {
       this.$router.push({ name: 'animales.edit', params: { id } });
+    },
+
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchAnimales();
     }
   },
-
 
   created() {
     this.fetchAnimales();
@@ -161,15 +238,15 @@ export default {
 @media (max-width: 768px) {
   .page-title {
     font-size: 24px;
-}
+  }
 
-.table {
-  font-size: 12px;
-}
+  .table {
+    font-size: 12px;
+  }
 
-.table th,
-.table td {
-  padding: 8px;
-}
+  .table th,
+  .table td {
+    padding: 8px;
+  }
 }
 </style>
