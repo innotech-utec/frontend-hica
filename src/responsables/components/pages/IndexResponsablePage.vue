@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <BackButton />
+
     <!-- Título de la página -->
     <v-row>
       <v-col cols="12" class="text-center">
@@ -25,7 +26,7 @@
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Domicilio</th>
-                <th>Animales Registrados</th> <!-- Nueva columna para contar animales -->
+                <th>Animales Registrados</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -64,41 +65,80 @@
         </div>
       </v-col>
     </v-row>
+    <div class="pagination-container">
+      <PaginatorComponent
+        :length="totalPages"
+        :currentPage="currentPage"
+        @pageChange="handlePageChange"
+      />
+    </div>
   </v-container>
 </template>
 
 <script>
-import backend from '@/backend';
+import backend from '@/backend'; // Asegúrate de que esta ruta esté bien definida
 import Swal from 'sweetalert2';
 import BackButton from '@/shared/components/BackButton.vue';
+import PaginatorComponent from "@/shared/components/PaginatorComponent.vue";
 
 export default {
   data() {
     return {
-      responsables: [], // Lista de responsables, incluye la relación con animales
-      loading: false,
+      responsables: [], // Array para almacenar los responsables
+      currentPage: 1, // Página actual
+      totalPages: 1,  // Total de páginas
     };
   },
 
   components: {
     BackButton,
+    PaginatorComponent
   },
+
   methods: {
-    // Método para obtener responsables junto con la cantidad de animales
-    async fetchResponsables() {
+    
+    async fetchResponsables(page = 1) {
+      console.log("Obteniendo lista de responsables para la página:", page); // Mostrar la página solicitada
       this.loading = true;
+
       try {
-        const response = await backend.get('/responsables'); // Asegúrate de incluir la relación animales en la consulta
-        this.responsables = response.data;
+        // Hacer la solicitud al backend para obtener los responsables
+        const response = await backend.get(`/responsables`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // Asegúrate de que el token esté presente
+          },
+          params: {
+            page, // Pasar el parámetro de la página como query param
+          },
+        });
+
+        // Verificar que los datos existen en response.data
+        console.log('Respuesta de /responsables:', response.data);
+
+        if (response.data) {
+          this.responsables = response.data; // Asignar los datos al array responsables
+          this.currentPage = page; // Asignar la página actual
+        } else {
+          console.error('La respuesta no contiene los datos esperados.');
+        }
       } catch (error) {
         console.error('Error al obtener responsables:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.response?.data?.message || 'No se pudo obtener la lista de responsables.',
+        });
       } finally {
-        this.loading = false;
+        this.loading = false; // Desactivar el loading después de obtener los datos
       }
     },
+
+    // Método para redirigir a la página de editar responsable
     editResponsable(id) {
       this.$router.push({ name: 'responsables.edit', params: { id } });
     },
+
+    // Método para confirmar la eliminación de un responsable
     async confirmDeleteResponsable(id) {
       const result = await Swal.fire({
         title: '¿Estás seguro?',
@@ -115,23 +155,40 @@ export default {
         this.deleteResponsable(id);
       }
     },
+
+    // Método para eliminar un responsable
     async deleteResponsable(id) {
       try {
-        await backend.delete(`/responsables/${id}`);
-        this.fetchResponsables();
+        await backend.delete(`/responsables/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // Asegúrate de que el token esté presente
+          },
+        });
+
+        // Refresca la lista después de eliminar un responsable
+        this.fetchResponsables(this.currentPage);
         Swal.fire('¡Eliminado!', 'El responsable ha sido eliminado.', 'success');
       } catch (error) {
         console.error('Error al eliminar responsable:', error);
         Swal.fire('Error', 'No se pudo eliminar el responsable', 'error');
       }
     },
+
+    // Método para redirigir a la página de añadir un nuevo animal para un responsable
     addAnimalToResponsable(id) {
-      this.$router.push({ name: 'animales.create', params: { responsableId: id } });
+      this.$router.push({ name: 'animales.create', query: { responsableId: id } });
+    },
+
+    // Método para manejar el cambio de página
+    handlePageChange(newPage) {
+      this.fetchResponsables(newPage);
     },
   },
+
+  // Cargar la lista de responsables cuando se monta el componente
   created() {
     this.fetchResponsables();
-  },
+  }
 };
 </script>
 
@@ -167,7 +224,6 @@ export default {
   text-align: left;
   vertical-align: middle;
 }
-
 
 @media (max-width: 768px) {
   .page-title {

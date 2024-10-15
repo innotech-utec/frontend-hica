@@ -1,18 +1,19 @@
 <template>
   <v-card class="card">
     <v-container>
-      <!-- Título estilizado -->
+
       <v-row>
         <v-col cols="12" class="text-center">
-          <h2 class="form-title">Editar Usuario</h2>
+          <h2 class="form-title">Editar de Usuarios</h2>
         </v-col>
       </v-row>
-
-      <v-form @submit.prevent="onSubmit">
+     
+          
+        <v-form @submit.prevent="onSubmit">
         <!-- Correo electrónico -->
         <div class="field">
           <v-icon class="field__icon">mdi-email</v-icon>
-          <input class="field__input" v-model="user.email" type="email" placeholder="Correo electrónico" />
+          <input class="field__input" v-model="user.email" type="email" placeholder="Correo electrónico" readonly/>
         </div>
 
         <!-- Nombre -->
@@ -48,7 +49,9 @@
       </v-form>
     </v-container>
   </v-card>
+
 </template>
+
 
 <script>
 import backend from "@/backend.js";
@@ -124,6 +127,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 .card {
   max-width: 600px;
@@ -131,52 +135,35 @@ export default {
   padding: 20px;
 }
 
+.v-btn {
+  margin-top: 20px;
+}
+
+.v-btn.rounded {
+  background-color: #014582;
+  color: white;
+}
+
+.v-btn.rounded:hover {
+  background-color: #013262;
+}
+
+.v-btn.secondary {
+  background-color: #008575;
+}
+
+.v-btn.secondary:hover {
+  background-color: #007460;
+}
+
 .form-title {
-  font-size: 2.5rem;
+  font-size: 28px;
   color: #014582;
   font-weight: bold;
   margin-bottom: 20px;
 }
 
-/* Campos del formulario */
-.field {
-  display: flex;
-  align-items: center;
+.v-text-field {
   margin-bottom: 20px;
-}
-
-.field__icon {
-  margin-right: 10px;
-}
-
-.field__input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Botones */
-.v-btn {
-  background-color: #014582;
-  color: white;
-  margin-right: 10px;
-}
-
-.v-btn:hover {
-  background-color: #013262;
-}
-
-/* Media Queries para Responsividad */
-@media (max-width: 768px) {
-  .form-title {
-    font-size: 2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .form-title {
-    font-size: 1.8rem;
-  }
 }
 </style>
