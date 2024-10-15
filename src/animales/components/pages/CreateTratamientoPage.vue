@@ -3,30 +3,60 @@
     <v-card>
       <v-card-title>Registrar Nuevo Tratamiento</v-card-title>
       <v-card-text>
-        <v-form ref="form" v-model="valid" lazy-validation>
-          <!-- Campos del formulario -->
-          <v-text-field v-model="tratamiento.fecha" label="Fecha" type="date" :rules="[v => !!v || 'La fecha es requerida']" required></v-text-field>
-          <v-text-field v-model="tratamiento.hora" label="Hora" type="time" :rules="[v => !!v || 'La hora es requerida']" required></v-text-field>
-          <v-text-field v-model="tratamiento.medicacion" label="Medicación" :rules="[v => !!v || 'La medicación es requerida']" required></v-text-field>
-          <v-textarea v-model="tratamiento.observaciones" label="Observaciones" :rules="[v => !!v || 'Las observaciones son requeridas']" required></v-textarea>
-
+        <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="onSubmit">
+          <v-text-field
+            v-model="tratamiento.fecha"
+            label="Fecha"
+            type="date"
+            :rules="[v => !!v || 'La fecha es requerida']"
+            required
+          ></v-text-field>
+          <v-text-field
+            v-model="tratamiento.hora"
+            label="Hora"
+            type="time"
+            :rules="[v => !!v || 'La hora es requerida']"
+            required
+          ></v-text-field>
+          <v-text-field
+            v-model="tratamiento.medicacion"
+            label="Medicación"
+            :rules="[v => !!v || 'La medicación es requerida']"
+            required
+          ></v-text-field>
+          <v-textarea
+            v-model="tratamiento.observaciones"
+            label="Observaciones"
+            :rules="[v => !!v || 'Las observaciones son requeridas']"
+            required
+          ></v-textarea>
           
           <v-select
-  v-if="veterinariosNombres.length > 0"
-  v-model="tratamiento.veterinarioId" 
-  :items="veterinariosNombres" 
-  item-text="nombreCompleto"  
-  item-value="id"             
-  label="Veterinario"
-  :rules="[v => !!v || 'El veterinario es requerido']"
-  required
-></v-select>
-<span v-else>No se encontraron veterinarios disponibles.</span>
-         
+            v-if="!loadingVeterinarios"
+            v-model="tratamiento.veterinarioId"
+            :items="veterinariosSimplificados"
+            item-title="nombre"
+            item-value="id"
+            label="Veterinario"
+            :rules="[v => !!v || 'El veterinario es requerido']"
+            required
+          >
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="item.raw.nombre"
+              ></v-list-item>
+            </template>
+          </v-select>
+          <v-progress-circular
+            v-else
+            indeterminate
+            color="primary"
+          ></v-progress-circular>
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn color="primary" @click="onSubmit">Guardar</v-btn>
+        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Guardar</v-btn>
         <v-btn color="secondary" @click="closeModal">Cancelar</v-btn>
       </v-card-actions>
     </v-card>
@@ -34,91 +64,102 @@
 </template>
 
 <script>
+import { ref, reactive, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import backend from "@/backend";
-import Swal from "sweetalert2";
+import Swal from 'sweetalert2';
 
 export default {
-  data() {
-    return {
-      valid: false,
-      tratamiento: {
-        fecha: '',
-        hora: '',
-        medicacion: '',
-        observaciones: '',
-        estadoAutorizacion: 'PENDIENTE',
-        veterinarioId: null,
-      },
-      veterinariosNombres: [],  
-      veterinarioIds: [],  
-      selectedVeterinario: '', 
-      createModal: true,
+  name: 'TratamientoForm',
+  setup(props, { emit }) {
+    const route = useRoute();
+    const fichaClinicaId = route.query.fichaClinicaId;
+    const animalId = route.query.animalId;
+
+    const form = ref(null);
+    const valid = ref(false);
+    const createModal = ref(true);
+    const loading = ref(false);
+    const loadingVeterinarios = ref(true);
+
+    const tratamiento = reactive({
+      fecha: '',
+      hora: '',
+      medicacion: '',
+      observaciones: '',
+      estadoAutorizacion: 'PENDIENTE',
+      veterinarioId: null,
+      fichaClinicaId: fichaClinicaId,
+      animalId: animalId
+    });
+
+    const veterinariosSimplificados = ref([]);
+
+    const fetchVeterinarios = async () => {
+      loadingVeterinarios.value = true;
+      try {
+        const response = await backend.get('/veterinarios');
+        console.log('Respuesta completa:', response);
+
+        if (Array.isArray(response.data)) {
+          veterinariosSimplificados.value = response.data.map(vet => ({
+            id: vet.id,
+            nombre: `${vet.user.nombre} ${vet.user.apellido}`
+          }));
+        } else {
+          throw new Error('Formato de respuesta inválido');
+        }
+
+        console.log('veterinariosSimplificados:', veterinariosSimplificados.value);
+      } catch (error) {
+        console.error('Error al obtener veterinarios:', error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los veterinarios.",
+        });
+      } finally {
+        loadingVeterinarios.value = false;
+      }
     };
-  },
-  methods: {
-    async fetchVeterinarios() {
-  try {
-    const response = await backend.get('/veterinarios', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
 
-    if (response.data) {
-      // Mapear los nombres completos y IDs para utilizar en el selector
-      const veterinariosList = response.data.map(vet => ({
-        id: vet.id,
-        nombreCompleto: `${vet.user.nombre} ${vet.user.apellido}` // Combinar nombre y apellido
-      }));
-
-      // Asignar a veterinariosNombres para que contenga tanto el nombre como el ID del veterinario
-      this.veterinariosNombres = veterinariosList;
-      console.log('Veterinarios obtenidos:', this.veterinariosNombres);
-    }
-  } catch (error) {
-    console.error('Error al obtener veterinarios:', error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: error.response?.data?.message || "No se pudo obtener la lista de veterinarios.",
-    });
-  }
-},
-
-   
-onSubmit() {
-  if (this.$refs.form.validate()) {
-    if (!this.tratamiento.veterinarioId) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error de selección",
-        text: "Debe seleccionar un veterinario.",
-      });
-      return;
-    }
-    console.log('Tratamiento a enviar:', this.tratamiento);
-    this.crearTratamiento();
-  } else {
-    Swal.fire({
-      icon: "warning",
-      title: "Formulario Incompleto",
-      text: "Por favor completa todos los campos requeridos.",
-    });
-  }
-},
-
-
- 
-    async crearTratamiento() {
-      if (!this.tratamiento.veterinarioId) {
+    const onSubmit = async () => {
+      if (!form.value) return;
+      
+      const isValid = await form.value.validate();
+      if (isValid) {
+        if (!tratamiento.veterinarioId) {
+          Swal.fire({
+            icon: "warning",
+            title: "Error de selección",
+            text: "Debe seleccionar un veterinario.",
+          });
+          return;
+        }
+        crearTratamiento();
+      } else {
         Swal.fire({
           icon: "warning",
-          title: "Sin Veterinario Seleccionado",
-          text: "Por favor, seleccione un veterinario antes de guardar el tratamiento.",
+          title: "Formulario Incompleto",
+          text: "Por favor completa todos los campos requeridos.",
         });
-        return;
       }
+    };
 
+    const crearTratamiento = async () => {
+      loading.value = true;
       try {
-        await backend.post('/tratamientos', this.tratamiento, {
+        if (!fichaClinicaId || !animalId) {
+          throw new Error('Falta el ID de la ficha clínica o del animal');
+        }
+
+        const tratamientoData = {
+          ...tratamiento,
+          fichaClinicaId: fichaClinicaId,
+          animalId: animalId
+        };
+
+        await backend.post('/tratamientos', tratamientoData, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
 
@@ -128,26 +169,50 @@ onSubmit() {
           icon: "success",
         });
 
-        this.closeModal();
-        this.$emit('tratamientoRegistrado');
+        closeModal();
+        emit('tratamientoRegistrado');
       } catch (error) {
+        console.error('Error al crear tratamiento:', error);
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: error.response?.data?.message || "No se pudo registrar el tratamiento.",
+          text: error.message || error.response?.data?.message || "No se pudo registrar el tratamiento.",
         });
+      } finally {
+        loading.value = false;
       }
-    },
+    };
 
-    closeModal() {
-      this.createModal = false;
-      this.$emit('cerrarModal');
-    },
-  },
+    const closeModal = () => {
+      createModal.value = false;
+      emit('cerrarModal');
+    };
 
-  mounted() {
-    this.fetchVeterinarios();
-  },
+    onMounted(() => {
+      if (!fichaClinicaId || !animalId) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo obtener la información necesaria de la URL.",
+        });
+        closeModal();
+      } else {
+        fetchVeterinarios();
+      }
+    });
+
+    return {
+      form,
+      valid,
+      createModal,
+      tratamiento,
+      veterinariosSimplificados,
+      loading,
+      loadingVeterinarios,
+      onSubmit,
+      closeModal,
+    };
+  }
 };
 </script>
 

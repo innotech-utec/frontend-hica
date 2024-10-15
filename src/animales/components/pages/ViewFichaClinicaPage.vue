@@ -73,6 +73,7 @@ import ViewExamenObjetivoPage from "@/animales/components/pages/ViewExamenObjeti
 import ViewTratamientoPage from "@/animales/components/pages/ViewTratamientoPage.vue";
 import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistroParametrosPage.vue";
 
+
 export default {
   components: {
     BackButton,
@@ -102,6 +103,7 @@ export default {
       try {
         const response = await backend.get(`/animales/${animalId}`);
         this.animal = response.data;
+        console.log('Animal:', this.animal);
       } catch (error) {
         console.error("Error al obtener los detalles del animal:", error);
         Swal.fire({

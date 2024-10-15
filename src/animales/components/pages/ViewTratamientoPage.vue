@@ -18,14 +18,14 @@
           </tr>
         </template>
       </v-data-table>
-
+      
       <!-- Mostrar mensaje si no hay tratamientos registrados -->
       <p v-else>No hay tratamientos registrados.</p>
-
+      
       <!-- Botón para registrar nuevos tratamientos -->
       <v-btn color="primary" @click="openCreateModal">Registrar Tratamiento</v-btn>
     </v-card-text>
-
+    
     <!-- Componente para registrar tratamiento -->
     <create-tratamiento
       v-if="showCreateModal"
@@ -38,41 +38,42 @@
 </template>
 
 <script>
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import backend from "@/backend";
 import Swal from "sweetalert2";
-import CreateTratamiento from '@/animales/components/pages/CreateTratamientoPage.vue'; // Importar el componente de creación
+import CreateTratamiento from '@/animales/components/pages/CreateTratamientoPage.vue';
 
 export default {
   components: {
     CreateTratamiento,
   },
-  props: ['animalId', 'fichaClinicaId'], // Se recibe el ID del animal para obtener los tratamientos
-  data() {
-    return {
-      tratamientos: [],
-      headers: [
-        { text: 'Fecha', value: 'fecha' },
-        { text: 'Hora', value: 'hora' },
-        { text: 'Medicación', value: 'medicacion' },
-        { text: 'Observaciones', value: 'observaciones' },
-        { text: 'Estado de Autorización', value: 'estadoAutorizacion' },
-      ],
-      showCreateModal: false, // Controla la visualización del modal
-    };
-  },
-  methods: {
-    async fetchTratamientos() {
-      if (!this.animalId) return;
+ 
+  setup() {
+    const route = useRoute();
+    const fichaClinicaId = ref(route.query.fichaClinicaId);
+    const tratamientos = ref([]);
+    const showCreateModal = ref(false);
+
+    const headers = [
+      { text: 'Fecha', value: 'fecha' },
+      { text: 'Hora', value: 'hora' },
+      { text: 'Medicación', value: 'medicacion' },
+      { text: 'Observaciones', value: 'observaciones' },
+      { text: 'Estado de Autorización', value: 'estadoAutorizacion' },
+    ];
+
+    const fetchTratamientos = async () => {
+      if (!fichaClinicaId.value) return;
 
       try {
-        // Ruta correcta para obtener los tratamientos por animal ID
-        const response = await backend.get(`/tratamientos/${this.animalId}`, {
+        const response = await backend.get(`/tratamientos/${fichaClinicaId.value}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
 
-        this.tratamientos = response.data;
+        tratamientos.value = response.data;
       } catch (error) {
         console.error("Error al obtener los tratamientos:", error);
         Swal.fire({
@@ -81,18 +82,18 @@ export default {
           text: error.response?.data?.message || "No se pudo obtener los tratamientos registrados.",
         });
       }
-    },
+    };
 
-    openCreateModal() {
-      this.showCreateModal = true; // Abre el modal de creación de tratamiento
-    },
+    const openCreateModal = () => {
+      showCreateModal.value = true;
+    };
 
-    closeCreateModal() {
-      this.showCreateModal = false; // Cierra el modal de creación de tratamiento
-    },
+    const closeCreateModal = () => {
+      showCreateModal.value = false;
+    };
 
-    getEstadoColor(estado) {
-      switch (estado) {
+    const getEstadoColor = (estado) => {
+      switch (estado.toLowerCase()) {
         case 'aprobado':
           return 'green';
         case 'rechazado':
@@ -101,10 +102,22 @@ export default {
         default:
           return 'orange';
       }
-    },
-  },
-  created() {
-    this.fetchTratamientos();
+    };
+
+    onMounted(() => {
+      fetchTratamientos();
+    });
+
+    return {
+      fichaClinicaId,
+      tratamientos,
+      headers,
+      showCreateModal,
+      fetchTratamientos,
+      openCreateModal,
+      closeCreateModal,
+      getEstadoColor
+    };
   }
 };
 </script>
