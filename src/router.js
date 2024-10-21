@@ -36,9 +36,6 @@ import ViewRegistroParametrosPage from '@/animales/components/pages/ViewRegistro
 import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenObjetivoPage.vue';
 import ViewExamenObjetivoPage from '@/animales/components/pages/ViewExamenObjetivoPage.vue';
 
-// Páginas de Veterinarios
-import VeterinarioIndexPage from '@/veterinarios/components/pages/VeterinarioIndexPage.vue';
-import CreateEditVeterinarioPage from '@/veterinarios/components/pages/CreateEditVeterinarioPage.vue';
 
 const routes = [
   {
@@ -189,31 +186,7 @@ const routes = [
           requiresAuth: true,
         },
       },
-      // Rutas para Veterinarios
-      {
-        path: '/veterinarios',
-        name: 'veterinarios.index',
-        component: VeterinarioIndexPage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
-      {
-        path: '/veterinarios/crear',
-        name: 'veterinarios.create',
-        component: CreateEditVeterinarioPage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
-      {
-        path: '/veterinarios/:id/editar',
-        name: 'veterinarios.edit',
-        component: CreateEditVeterinarioPage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
+  
     ],
   },
   {

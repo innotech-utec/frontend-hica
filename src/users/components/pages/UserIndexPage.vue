@@ -97,8 +97,21 @@ export default {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
 
-        // Asumimos que `esVeterinario` ya viene del backend correctamente asignado
+        const responseVeterinarios = await backend.get(`/veterinarios`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        // Asumimos que `veterinario` ya viene del backend correctamente asignado
         this.users = response.data.data;
+        const veterinarios = responseVeterinarios.data;
+
+        // Agregar a cada usuario la información si es veterinario
+        this.users.forEach(user => {
+          const veterinarioAsociado = veterinarios.find(vet => vet.user.id === user.id);
+          if (veterinarioAsociado) {
+            user.veterinario = veterinarioAsociado; // Agrega el veterinario al usuario
+          }
+        });
 
         // Paginación
         this.currentPage = response.data.meta.current || 1;
@@ -115,25 +128,25 @@ export default {
 
     // Determina el rol del usuario para mostrar en la tabla
     determineRole(user) {
-      if (user.isAdmin && user.esVeterinario) return 'Administrador, Veterinario';
+      if (user.isAdmin && user.veterinario) return 'Administrador, Veterinario';
       if (user.isAdmin) return 'Administrador';
-      if (user.esVeterinario) return 'Veterinario';
+      if (user.veterinario) return 'Veterinario';
       return 'Usuario';
     },
 
     // Devuelve el ícono correspondiente al usuario según su rol
     getIcon(user) {
-      if (user.isAdmin && user.esVeterinario) return 'mdi-shield-account';
+      if (user.isAdmin && user.veterinario) return 'mdi-shield-account';
       if (user.isAdmin) return 'mdi-shield-account';
-      if (user.esVeterinario) return 'mdi-stethoscope'; // Ícono específico para veterinarios
+      if (user.veterinario) return 'mdi-stethoscope'; // Ícono específico para veterinarios
       return 'mdi-account';
     },
 
     // Devuelve el color del ícono según el rol del usuario
     getIconColor(user) {
-      if (user.isAdmin && user.esVeterinario) return '#014582';  // Azul para Admin + Veterinario
+      if (user.isAdmin && user.veterinario) return '#014582';  // Azul para Admin + Veterinario
       if (user.isAdmin) return '#014582';  // Azul para Admin
-      if (user.esVeterinario) return '#008575';  // Verde para Veterinario
+      if (user.veterinario) return '#008575';  // Verde para Veterinario
       return '#A9A9A9';  // Gris para Usuario
     },
 
@@ -146,7 +159,7 @@ export default {
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, eliminarlo',
+        confirmButtonText: 'Sí, inhabilitar',
         cancelButtonText: 'Cancelar',
       });
 
@@ -160,10 +173,10 @@ export default {
       try {
         await backend.delete(`/usuarios/${id}`);
         this.fetchUsers(); // Refresca la lista después de eliminar
-        Swal.fire('¡Eliminado!', 'El usuario ha sido eliminado.', 'success');
+        Swal.fire('Inhabilitado!', 'El usuario ha sido inhabilitado.', 'success');
       } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        Swal.fire('Error', 'No se pudo eliminar el usuario', 'error');
+        console.error('Error al inhabilitar usuario:', error);
+        Swal.fire('Error', 'No se pudo inhabilitar el usuario', 'error');
       }
     },
 
@@ -171,6 +184,7 @@ export default {
       this.fetchUsers(newPage);
     },
   },
+
   created() {
     // Llamar al método fetchUsers al crearse el componente
     this.fetchUsers();
