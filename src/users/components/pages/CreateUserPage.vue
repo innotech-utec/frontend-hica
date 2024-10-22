@@ -48,7 +48,7 @@
         <!-- Checkbox para definir si es veterinario -->
         <v-checkbox v-model="esVeterinario" label="Es Veterinario"></v-checkbox>
 
-        <!-- Campos adicionales para veterinario si se selecciona el checkbox -->
+        <!-- Si es veterinario, muestra los campos adicionales -->
         <v-row v-if="esVeterinario">
           <v-col cols="12">
             <v-text-field
@@ -65,6 +65,15 @@
               label="Dependencia"
               required
             ></v-text-field>
+          </v-col>
+          <v-col cols="12">
+            <!-- Campo para subir la imagen del veterinario -->
+            <v-file-input
+  v-model="veterinario.Foto"
+  accept="image/png, image/jpeg"
+  label="Subir Foto (JPG, PNG)"
+>
+</v-file-input>
           </v-col>
         </v-row>
 
@@ -100,6 +109,7 @@ export default {
       veterinario: {
         N_de_registro: '',
         Dependencia: '',
+        Foto: null, // Para la imagen del veterinario
       },
       emailRules: [
         v => !!v || 'El correo electrónico es requerido',
@@ -121,7 +131,6 @@ export default {
     }
   },
   methods: {
-    // Método para registrar un usuario y opcionalmente un veterinario
     async onSubmit() {
   if (!this.$refs.form.validate()) return;
 
@@ -134,7 +143,6 @@ export default {
   }
 
   try {
-    // Registrar el usuario
     const usuarioResponse = await backend.post('usuarios', {
       email: this.user.email,
       nombre: this.user.nombre,
@@ -144,41 +152,67 @@ export default {
       isAdmin: this.user.isAdmin,
     });
 
-    const userId = usuarioResponse.data.id; // ID del usuario creado
-    console.log("Usuario creado con ID:", userId); // Verificar si se está generando correctamente el ID
+    const userId = usuarioResponse.data.id;
 
-    // Si se marcó como veterinario, registrar el veterinario
     if (this.esVeterinario) {
-      const veterinarioData = {
-        N_de_registro: this.veterinario.N_de_registro,
-        Dependencia: this.veterinario.Dependencia,
-        userId: userId, // Asociar el veterinario al usuario recién creado
-      };
-      console.log("Datos del veterinario que se enviarán:", veterinarioData);
+      const formData = new FormData();
+      formData.append('N_de_registro', this.veterinario.N_de_registro);
+      formData.append('Dependencia', this.veterinario.Dependencia);
+      formData.append('userId', userId);
 
-      // Intentar registrar el veterinario
-      const veterinarioResponse = await backend.post('veterinarios', veterinarioData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      if (this.veterinario.Foto) {
+        // Convertir la imagen a base64
+        const file = this.veterinario.Foto;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          const base64String = reader.result.split(',')[1];  // Obtener solo el string base64
+          formData.append('Foto', base64String);
 
-      console.log("Veterinario creado con éxito:", veterinarioResponse); // Validar la respuesta del backend
-      Swal.fire({
-        title: "Veterinario registrado",
-        text: `El veterinario ha sido registrado con éxito`,
-        icon: "success",
-      });
-    } else {
-      Swal.fire({
-        title: "Usuario registrado",
-        text: `El usuario ha sido registrado con éxito`,
-        icon: "success",
-      });
+          // Enviar el veterinario con la imagen en formato base64
+          await backend.post('veterinarios', {
+            N_de_registro: this.veterinario.N_de_registro,
+            Dependencia: this.veterinario.Dependencia,
+            Foto: base64String,
+            userId: userId
+          }, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+          });
+
+          Swal.fire({
+            title: "Veterinario registrado",
+            text: `El veterinario ha sido registrado con éxito`,
+            icon: "success",
+          });
+
+          this.$router.push("/usuarios");
+        };
+      } else {
+        await backend.post('veterinarios', {
+          N_de_registro: this.veterinario.N_de_registro,
+          Dependencia: this.veterinario.Dependencia,
+          userId: userId
+        }, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+        });
+
+        
+
+        Swal.fire({
+          title: "Veterinario registrado",
+          text: `El veterinario ha sido registrado con éxito`,
+          icon: "success",
+        });
+
+        this.$router.push("/usuarios");
+      }
     }
-
-    // Redirigir al listado de usuarios
-    this.$router.push("/usuarios");
   } catch (error) {
     console.error("Error al registrar el usuario o veterinario:", error);
     Swal.fire({
@@ -188,7 +222,6 @@ export default {
     });
   }
 },
-
 
     // Método para resetear el formulario
     resetForm() {
@@ -204,6 +237,7 @@ export default {
       this.veterinario = {
         N_de_registro: '',
         Dependencia: '',
+        Foto: null,
       };
       this.esVeterinario = false;
       this.$refs.form.reset(); // Resetea el formulario
