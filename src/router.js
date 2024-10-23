@@ -15,6 +15,7 @@ import AuthLayout from '@/auth/components/layouts/AuthLayout.vue';
 // Páginas de Responsables
 import ResponsablePage from '@/responsables/components/pages/IndexResponsablePage.vue';
 import CreateResponsablePage from '@/responsables/components/pages/CreateResponsablePage.vue';
+import EditResponsablePage from './responsables/components/pages/EditResponsablePage.vue';
 
 // Páginas de Animales
 import CreateAnimalPage from '@/animales/components/pages/CreateAnimalPage.vue';
@@ -36,9 +37,6 @@ import ViewRegistroParametrosPage from '@/animales/components/pages/ViewRegistro
 import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenObjetivoPage.vue';
 import ViewExamenObjetivoPage from '@/animales/components/pages/ViewExamenObjetivoPage.vue';
 
-// Páginas de Veterinarios
-import VeterinarioIndexPage from '@/veterinarios/components/pages/VeterinarioIndexPage.vue';
-import CreateEditVeterinarioPage from '@/veterinarios/components/pages/CreateEditVeterinarioPage.vue';
 
 const routes = [
   {
@@ -100,6 +98,15 @@ const routes = [
         path: '/responsables/crear',
         name: 'responsables.create',
         component: CreateResponsablePage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
+
+      {
+        path: '/responsables/:id/editar',
+        name: 'responsables.edit',
+        component: EditResponsablePage,
         meta: {
           requiresAuth: true,
         },
@@ -189,31 +196,7 @@ const routes = [
           requiresAuth: true,
         },
       },
-      // Rutas para Veterinarios
-      {
-        path: '/veterinarios',
-        name: 'veterinarios.index',
-        component: VeterinarioIndexPage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
-      {
-        path: '/veterinarios/crear',
-        name: 'veterinarios.create',
-        component: CreateEditVeterinarioPage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
-      {
-        path: '/veterinarios/:id/editar',
-        name: 'veterinarios.edit',
-        component: CreateEditVeterinarioPage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
+  
     ],
   },
   {

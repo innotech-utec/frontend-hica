@@ -22,7 +22,7 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Documento</th>
+                <th>Documento de Identidad</th>
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Rol</th>
@@ -89,7 +89,7 @@ export default {
     };
   },
   methods: {
-    // Método para obtener la lista de usuarios (NO MODIFICADO)
+  
     async fetchUsers(page = 1) {
       this.loading = true;
       try {
@@ -97,8 +97,20 @@ export default {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
 
-        // Asumimos que `esVeterinario` ya viene del backend correctamente asignado
+        const responseVeterinarios = await backend.get(`/veterinarios`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+
         this.users = response.data.data;
+        const veterinarios = responseVeterinarios.data;
+
+        // Agregar a cada usuario la información si es veterinario
+        this.users.forEach(user => {
+          const veterinarioAsociado = veterinarios.find(vet => vet.user.id === user.id);
+          if (veterinarioAsociado) {
+            user.veterinario = veterinarioAsociado; // Agrega el veterinario al usuario
+          }
+        });
 
         // Paginación
         this.currentPage = response.data.meta.current || 1;
@@ -115,62 +127,96 @@ export default {
 
     // Determina el rol del usuario para mostrar en la tabla
     determineRole(user) {
-      if (user.isAdmin && user.esVeterinario) return 'Administrador, Veterinario';
+      if (user.isAdmin && user.veterinario) return 'Administrador, Veterinario';
       if (user.isAdmin) return 'Administrador';
-      if (user.esVeterinario) return 'Veterinario';
+      if (user.veterinario) return 'Veterinario';
       return 'Usuario';
     },
 
     // Devuelve el ícono correspondiente al usuario según su rol
     getIcon(user) {
-      if (user.isAdmin && user.esVeterinario) return 'mdi-shield-account';
+      if (user.isAdmin && user.veterinario) return 'mdi-shield-account';
       if (user.isAdmin) return 'mdi-shield-account';
-      if (user.esVeterinario) return 'mdi-stethoscope'; // Ícono específico para veterinarios
+      if (user.veterinario) return 'mdi-stethoscope'; // Ícono específico para veterinarios
       return 'mdi-account';
     },
 
     // Devuelve el color del ícono según el rol del usuario
     getIconColor(user) {
-      if (user.isAdmin && user.esVeterinario) return '#014582';  // Azul para Admin + Veterinario
+      if (user.isAdmin && user.veterinario) return '#014582';  // Azul para Admin + Veterinario
       if (user.isAdmin) return '#014582';  // Azul para Admin
-      if (user.esVeterinario) return '#008575';  // Verde para Veterinario
+      if (user.veterinario) return '#008575';  // Verde para Veterinario
       return '#A9A9A9';  // Gris para Usuario
     },
 
-    // Confirmar eliminación de usuario
-    async confirmDeleteUser(id) {
-      const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: '¡No podrás revertir esto!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, eliminarlo',
-        cancelButtonText: 'Cancelar',
-      });
+  // Confirmar eliminación de usuario
+// Confirmar eliminación de usuario
+async confirmDeleteUser(id, isVeterinario) {
+  const result = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: '¡No podrás revertir esto!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sí, inhabilitar',
+    cancelButtonText: 'Cancelar',
+  });
 
-      if (result.isConfirmed) {
-        this.deleteUser(id);
-      }
-    },
-
-    // Método para eliminar usuario
-    async deleteUser(id) {
+  if (result.isConfirmed) {
+    if (isVeterinario) {
       try {
-        await backend.delete(`/usuarios/${id}`);
-        this.fetchUsers(); // Refresca la lista después de eliminar
-        Swal.fire('¡Eliminado!', 'El usuario ha sido eliminado.', 'success');
+        // Verificar si el veterinario tiene tratamientos asignados
+        const tratamientosResponse = await backend.get(`/veterinarios/${id}/tratamientos`);
+
+        // Mostrar en consola la respuesta para verificar los datos recibidos
+        console.log('Tratamientos asignados:', tratamientosResponse.data);
+        
+        if (tratamientosResponse.data.length > 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Tratamientos asignados',
+            text: 'Este veterinario tiene tratamientos asignados. Debes reasignar los tratamientos antes de inhabilitar al veterinario.',
+          });
+          return; // Detener el proceso si hay tratamientos asignados
+        }
       } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        Swal.fire('Error', 'No se pudo eliminar el usuario', 'error');
+        console.error('Error al verificar tratamientos:', error);
+        Swal.fire('Error', 'No se pudo verificar los tratamientos del veterinario.', 'error');
+        return;
       }
-    },
+    }
+    
+    // Proceder con la eliminación si no es veterinario o no tiene tratamientos
+    this.deleteUser(id);
+  }
+},
+
+// Método para eliminar usuario
+async deleteUser(id) {
+  try {
+    await backend.delete(`/usuarios/${id}`);
+    this.fetchUsers(); // Refresca la lista después de eliminar
+    Swal.fire('Inhabilitado!', 'El usuario ha sido inhabilitado.', 'success');
+  } catch (error) {
+    if (error.response && error.response.status === 400) {
+      // Mostrar un mensaje específico si es un error 400 de tratamientos asignados
+      Swal.fire('Error', error.response.data.message || 'No se pudo inhabilitar el usuario', 'error');
+    } else {
+      // Mensaje genérico para otros errores
+      Swal.fire('Error', 'No se pudo inhabilitar el usuario', 'error');
+    }
+  }
+},
+
+
+
 
     handlePageChange(newPage) {
       this.fetchUsers(newPage);
     },
   },
+
   created() {
     // Llamar al método fetchUsers al crearse el componente
     this.fetchUsers();

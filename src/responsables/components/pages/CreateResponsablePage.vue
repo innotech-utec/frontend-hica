@@ -21,9 +21,6 @@
           <!-- Domicilio -->
           <v-text-field v-model="responsable.domicilio" :rules="requiredRule" label="Domicilio" required></v-text-field>
   
-          <!-- Checkbox Estado (Activo/Inactivo) -->
-          <v-checkbox v-model="responsable.estado" label="Activo"></v-checkbox>
-  
           <!-- Botón para guardar -->
           <v-btn rounded color="primary" type="submit">Crear Responsable</v-btn>
   
@@ -47,7 +44,7 @@
           nombre: '',
           apellido: '',
           domicilio: '',
-          estado: true // Valor predeterminado
+          
         },
         requiredRule: [v => !!v || 'Este campo es requerido']
       };
@@ -63,7 +60,7 @@
             nombre: this.responsable.nombre,
             apellido: this.responsable.apellido,
             domicilio: this.responsable.domicilio,
-            estado: this.responsable.estado
+           
           });
   
           Swal.fire({
