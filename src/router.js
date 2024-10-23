@@ -20,6 +20,7 @@ import EditResponsablePage from './responsables/components/pages/EditResponsable
 // Páginas de Animales
 import CreateAnimalPage from '@/animales/components/pages/CreateAnimalPage.vue';
 import IndexAnimalPage from '@/animales/components/pages/IndexAnimalPage.vue';
+import EditAnimalPage from './animales/components/pages/EditAnimalPage.vue';
 
 // Páginas de Ficha Clínica
 import CreateFichaClinicaPage from '@/animales/components/pages/CreateFichaClinicaPage.vue';
@@ -124,6 +125,14 @@ const routes = [
         path: '/animales',
         name: 'animales.index',
         component: IndexAnimalPage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
+        path: '/animales/:id/editar',
+        name: 'animales.edit',
+        component: EditAnimalPage,
         meta: {
           requiresAuth: true,
         },
