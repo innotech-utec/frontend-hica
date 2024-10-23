@@ -26,8 +26,6 @@
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Domicilio</th>
-                <th>Animales Registrados</th>
-                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -37,12 +35,6 @@
                 <td>{{ responsable.nombre }}</td>
                 <td>{{ responsable.apellido }}</td>
                 <td>{{ responsable.domicilio }}</td>
-                <td>{{ responsable.animales ? responsable.animales.length : 0 }}</td> <!-- Cantidad de animales -->
-                <td>
-                  <v-chip :color="responsable.estado ? 'green' : 'red'" dark>
-                    {{ responsable.estado ? 'Activo' : 'Inactivo' }}
-                  </v-chip>
-                </td>
                 <td>
                   <!-- Editar responsable -->
                   <v-btn icon @click="editResponsable(responsable.id)">
@@ -92,7 +84,7 @@ export default {
 
   components: {
     BackButton,
-    PaginatorComponent
+    PaginatorComponent,
   },
 
   methods: {
@@ -156,21 +148,36 @@ export default {
       }
     },
 
-    // Método para eliminar un responsable
     async deleteResponsable(id) {
       try {
-        await backend.delete(`/responsables/${id}`, {
+        const response = await backend.delete(`/responsables/${id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`, // Asegúrate de que el token esté presente
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
+        });
+
+        Swal.fire({
+          title: "Responsable eliminado",
+          text: response.data.message,
+          icon: "success",
         });
 
         // Refresca la lista después de eliminar un responsable
         this.fetchResponsables(this.currentPage);
-        Swal.fire('¡Eliminado!', 'El responsable ha sido eliminado.', 'success');
       } catch (error) {
-        console.error('Error al eliminar responsable:', error);
-        Swal.fire('Error', 'No se pudo eliminar el responsable', 'error');
+        if (error.response && error.response.status === 400) {
+          Swal.fire({
+            title: "Error",
+            text: error.response.data.message,
+            icon: "error",
+          });
+        } else {
+          Swal.fire({
+            title: "Error",
+            text: "No se pudo eliminar el responsable.",
+            icon: "error",
+          });
+        }
       }
     },
 
@@ -188,7 +195,7 @@ export default {
   // Cargar la lista de responsables cuando se monta el componente
   created() {
     this.fetchResponsables();
-  }
+  },
 };
 </script>
 

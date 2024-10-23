@@ -11,7 +11,7 @@
         <!-- Correo electrónico -->
         <div class="field">
           <v-icon class="field__icon">mdi-email</v-icon>
-          <input class="field__input" v-model="user.email" type="email" placeholder="Correo electrónico" readonly />
+          <input class="field__input" v-model="user.email" type="email" placeholder="Correo electrónico" disabled />
         </div>
 
         <!-- Nombre -->
@@ -20,22 +20,22 @@
           <input class="field__input" v-model="user.nombre" type="text" placeholder="Nombre" />
         </div>
 
-        <!-- Apellido -->
+     
         <div class="field">
           <v-icon class="field__icon">mdi-account-circle</v-icon>
           <input class="field__input" v-model="user.apellido" type="text" placeholder="Apellido" />
         </div>
 
-        <!-- Documento -->
+       
         <div class="field">
           <v-icon class="field__icon">mdi-file-document</v-icon>
-          <input class="field__input" v-model="user.documento" type="text" placeholder="Documento" />
+          <input class="field__input" v-model="user.documento" type="text" placeholder="Documento de identidad" />
         </div>
 
-        <!-- Checkbox Administrador -->
+        
         <v-checkbox v-model="user.isAdmin" label="Administrador" class="mt-4" />
 
-        <!-- Checkbox para definir si es veterinario, pero deshabilitado si ya es veterinario -->
+  
         <v-checkbox v-model="esVeterinario" label="Es Veterinario" class="mt-4" :disabled="esVeterinario" />
 
         <!-- Si es veterinario, muestra los campos adicionales -->

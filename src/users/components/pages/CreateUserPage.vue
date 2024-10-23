@@ -18,7 +18,7 @@
         <v-text-field v-model="user.apellido" :rules="requiredRule" label="Apellido" required></v-text-field>
 
         <!-- Documento -->
-        <v-text-field v-model="user.documento" :rules="requiredRule" label="Documento" required></v-text-field>
+        <v-text-field v-model="user.documento" :rules="requiredRule" label="Documento de Identidad" required></v-text-field>
 
         <!-- Contraseña -->
         <v-text-field
@@ -143,6 +143,7 @@ export default {
   }
 
   try {
+    // Crear el usuario
     const usuarioResponse = await backend.post('usuarios', {
       email: this.user.email,
       nombre: this.user.nombre,
@@ -154,6 +155,7 @@ export default {
 
     const userId = usuarioResponse.data.id;
 
+    // Si el usuario es veterinario, registrar también como veterinario
     if (this.esVeterinario) {
       const formData = new FormData();
       formData.append('N_de_registro', this.veterinario.N_de_registro);
@@ -161,12 +163,11 @@ export default {
       formData.append('userId', userId);
 
       if (this.veterinario.Foto) {
-        // Convertir la imagen a base64
         const file = this.veterinario.Foto;
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = async () => {
-          const base64String = reader.result.split(',')[1];  // Obtener solo el string base64
+          const base64String = reader.result.split(',')[1]; // Obtener solo el string base64
           formData.append('Foto', base64String);
 
           // Enviar el veterinario con la imagen en formato base64
@@ -182,12 +183,14 @@ export default {
             },
           });
 
+          // Mostrar mensaje de veterinario registrado
           Swal.fire({
             title: "Veterinario registrado",
-            text: `El veterinario ha sido registrado con éxito`,
+            text: "El veterinario ha sido registrado con éxito",
             icon: "success",
           });
 
+          // Redirigir a la lista de usuarios
           this.$router.push("/usuarios");
         };
       } else {
@@ -202,17 +205,28 @@ export default {
           },
         });
 
-        
-
+        // Mostrar mensaje de veterinario registrado
         Swal.fire({
           title: "Veterinario registrado",
-          text: `El veterinario ha sido registrado con éxito`,
+          text: "El veterinario ha sido registrado con éxito",
           icon: "success",
         });
 
+        // Redirigir a la lista de usuarios
         this.$router.push("/usuarios");
       }
+    } else {
+      // Si no es veterinario, mostrar mensaje de usuario registrado
+      Swal.fire({
+        title: "Usuario registrado",
+        text: "El usuario ha sido registrado con éxito",
+        icon: "success",
+      });
+
+      // Redirigir a la lista de usuarios
+      this.$router.push("/usuarios");
     }
+
   } catch (error) {
     console.error("Error al registrar el usuario o veterinario:", error);
     Swal.fire({

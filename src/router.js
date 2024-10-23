@@ -15,6 +15,7 @@ import AuthLayout from '@/auth/components/layouts/AuthLayout.vue';
 // Páginas de Responsables
 import ResponsablePage from '@/responsables/components/pages/IndexResponsablePage.vue';
 import CreateResponsablePage from '@/responsables/components/pages/CreateResponsablePage.vue';
+import EditResponsablePage from './responsables/components/pages/EditResponsablePage.vue';
 
 // Páginas de Animales
 import CreateAnimalPage from '@/animales/components/pages/CreateAnimalPage.vue';
@@ -97,6 +98,15 @@ const routes = [
         path: '/responsables/crear',
         name: 'responsables.create',
         component: CreateResponsablePage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
+
+      {
+        path: '/responsables/:id/editar',
+        name: 'responsables.edit',
+        component: EditResponsablePage,
         meta: {
           requiresAuth: true,
         },
