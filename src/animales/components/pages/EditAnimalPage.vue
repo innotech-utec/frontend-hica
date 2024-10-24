@@ -60,76 +60,91 @@
   import backend from "@/backend.js";
   import Swal from "sweetalert2";
   
-  
   export default {
-  data() {
-    return {
-      valid: false,
-      animal: {
-        nombre: '',
-        especie: '',
-        raza: '',
-        edad: '',
-        sexo: '',
-        peso: '',
-      },
-      requiredRule: [v => !!v || 'Este campo es requerido'],
-    };
-  },
-  methods: {
-    // Cargar los datos del animal a editar
-    async fetchAnimal() {
-      const animalId = this.$route.params.id;
-      try {
-        const response = await backend.get(`/animales/${animalId}`);
-        this.animal = response.data;
-      } catch (error) {
-        console.error('Error al cargar los datos del animal:', error.response || error.message);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response?.data?.message || "Error al cargar los datos del animal",
-        });
-      }
+    data() {
+      return {
+        valid: false,
+        animal: {
+          nombre: '',
+          especie: '',
+          raza: '',
+          edad: '',
+          sexo: '',
+          peso: '',
+        },
+        requiredRule: [v => !!v || 'Este campo es requerido'],
+      };
     },
-
-    async onSubmit() {
-      if (!this.$refs.form.validate()) return;
-
-      try {
+    methods: {
+      // Cargar los datos del animal a editar
+      async fetchAnimal() {
         const animalId = this.$route.params.id;
-        await backend.patch(`/animales/${animalId}`, {
-          nombre: this.animal.nombre,
-          especie: this.animal.especie,
-          raza: this.animal.raza,
-          edad: this.animal.edad,
-          sexo: this.animal.sexo,
-          peso: this.animal.peso,
-        });
+        try {
+          const response = await backend.get(`/animales/${animalId}`);
+          this.animal = response.data;
+        } catch (error) {
+          console.error('Error al cargar los datos del animal:', error.response || error.message);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.response?.data?.message || "Error al cargar los datos del animal",
+          });
+        }
+      },
+  
+      async onSubmit() {
+  if (!this.$refs.form.validate()) return;
 
-        Swal.fire({
-          title: "Animal actualizado",
-          text: `Los datos del animal han sido actualizados`,
-          icon: "success",
-        });
+  try {
+    const response = await backend.post('animales', {
+      nombre: this.animal.nombre,
+      especie: this.animal.especie,
+      raza: this.animal.raza,
+      edad: this.animal.edad,
+      sexo: this.animal.sexo,   
+      peso: this.animal.peso,   
+      responsableId: this.animal.responsableId
+    });
 
-        this.$router.push("/animales");
-      } catch (error) {
-        console.error('Error al actualizar el animal:', error.response || error.message);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response?.data?.message || "Error al actualizar el animal",
-        });
-      }
-    },
-  },
+    Swal.fire({
+      title: "Animal creado",
+      text: `Los datos del animal han sido guardados`,
+      icon: "success",
+    });
 
-  created() {
-    this.fetchAnimal();
+    // Redirige al formulario de creación de ficha clínica pasando el animalId
+    const animalId = response.data.id;  // Asegúrate de obtener el ID del animal recién creado
+    this.registerFichaClinica(animalId);  // Llama a la función que redirige a la creación de ficha clínica
+
+  } catch (error) {
+    console.error('Error al crear el animal:', error.response || error.message);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.response?.data?.message || "Error al crear el animal",
+    });
   }
-};
+},
 
+registerFichaClinica(animalId) {
+  // Redirige a la creación de ficha clínica usando el ID del animal recién creado
+  this.$router.push({ 
+    name: 'fichaClinica.create', 
+    query: { animalId: animalId } 
+  });
+},
+
+  
+      confirmCancel() {
+        // Redirige a la página anterior o la que prefieras
+        this.$router.back();
+      },
+    },
+  
+    created() {
+      this.fetchAnimal();
+    }
+  };
   </script>
   
   <style scoped>

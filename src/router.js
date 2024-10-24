@@ -25,6 +25,7 @@ import EditAnimalPage from './animales/components/pages/EditAnimalPage.vue';
 // Páginas de Ficha Clínica
 import CreateFichaClinicaPage from '@/animales/components/pages/CreateFichaClinicaPage.vue';
 import ViewFichaClinicaPage from '@/animales/components/pages/ViewFichaClinicaPage.vue';
+import EditFichaClinicaPage from './animales/components/pages/EditFichaClinicaPage.vue';
 
 // Páginas de Tratamientos
 import CreateTratamientoPage from '@/animales/components/pages/CreateTratamientoPage.vue';
@@ -154,6 +155,17 @@ const routes = [
           requiresAuth: true,
         },
       },
+
+      {
+        path: '/fichasClinicas/:fichaClinicaId/editar',
+        name: 'EditFichaClinica',
+        component: EditFichaClinicaPage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      
+      
       // Rutas para Tratamientos
       {
         path: '/animales/ficha-clinica/tratamiento/crear',
