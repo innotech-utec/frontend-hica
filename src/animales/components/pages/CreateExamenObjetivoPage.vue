@@ -72,7 +72,7 @@ export default {
       observaciones: '',
       fichaClinicaId: fichaClinicaId,  // Lo obtenemos de los props
 
-      // Otros campos adicionales
+      
       condicionCorporal: '',
       sensorio: '',
       fascies: '',

@@ -35,6 +35,7 @@ import EditTratamientoPage from '@/animales/components/pages/EditTratamientoPage
 // Páginas de Registro de Parámetros
 import CreateParametrosPage from '@/animales/components/pages/CreateParametrosPage.vue';
 import ViewRegistroParametrosPage from '@/animales/components/pages/ViewRegistroParametrosPage.vue';
+import EditParametrosPage from './animales/components/pages/EditParametrosPage.vue';
 
 // Páginas de Examen Objetivo
 import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenObjetivoPage.vue';
@@ -205,6 +206,14 @@ const routes = [
         name: 'parametros.view',
         component: ViewRegistroParametrosPage,
   
+      },
+      {
+        path: '/animales/ficha-clinica/parametro/editar/:parametroId',
+        name: 'parametro.edit',
+        component: EditParametrosPage,
+        meta: {
+          requiresAuth: true,
+        },
       },
 
 

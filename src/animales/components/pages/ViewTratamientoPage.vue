@@ -12,8 +12,8 @@
       >
         <template v-slot:item="{ item }">
           <tr>
-            <!-- Formateo de fecha -->
-            <td>{{ new Date(item.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC' }) }}</td>
+            <!-- Formateo de fecha sin desfase -->
+            <td>{{ formatFecha(item.fecha) }}</td>
             <td>{{ item.hora }}</td>
             <td>{{ item.medicacion }}</td>
             <td>{{ item.observaciones }}</td>
@@ -43,6 +43,7 @@
       </v-card-actions>
     </v-card-text>
 
+    <!-- Modales para crear y editar tratamientos -->
     <create-tratamiento
       v-if="showCreateModal"
       :animal-id="animalId"
@@ -61,7 +62,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import backend from "@/backend";
 import Swal from "sweetalert2";
 import CreateTratamiento from '@/animales/components/pages/CreateTratamientoPage.vue';
@@ -99,7 +100,6 @@ export default {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
-
         tratamientos.value = response.data;
       } catch (error) {
         console.error("Error al obtener los tratamientos:", error);
@@ -109,6 +109,11 @@ export default {
           text: error.response?.data?.message || "No se pudo obtener los tratamientos registrados.",
         });
       }
+    };
+
+    const formatFecha = (fecha) => {
+      const dateObj = new Date(fecha);
+      return dateObj.toLocaleDateString('es-ES', { timeZone: 'UTC' });
     };
 
     const openCreateModal = () => {
@@ -140,8 +145,14 @@ export default {
       }
     };
 
+    // Vigilar cambios en fichaClinicaId para cargar tratamientos
+    watch(() => props.fichaClinicaId, (newId) => {
+      if (newId) fetchTratamientos();
+    });
+
+    // Llamada inicial para cargar tratamientos
     onMounted(() => {
-      fetchTratamientos();
+      if (props.fichaClinicaId) fetchTratamientos();
     });
 
     return {
@@ -156,6 +167,7 @@ export default {
       openEditModal,
       closeEditModal,
       getEstadoColor,
+      formatFecha,
     };
   },
 };
