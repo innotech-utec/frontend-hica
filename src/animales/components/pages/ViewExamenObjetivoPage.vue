@@ -1,125 +1,143 @@
 <template>
-    <v-card>
-      <v-card-title>Examen Objetivo</v-card-title>
-      <v-card-text>
-        <!-- Mostrar detalles del examen si ya está creado -->
-        <div v-if="examen">
-          <p><strong>FC:</strong> {{ examen.FC }}</p>
-          <p><strong>Respiración:</strong> {{ examen.Resp }}</p>
-          <p><strong>Temperatura:</strong> {{ examen.temperatura }} °C</p>
-          <!-- Agregar más detalles del examen objetivo según corresponda -->
-        </div>
-  
-        <!-- Mostrar botón para registrar si no está creado -->
-        <div v-else>
-          <v-btn color="primary" @click="openCreateModal">Registrar Examen Objetivo</v-btn>
-        </div>
-      </v-card-text>
-    </v-card>
-  
-    <!-- Modal para crear examen objetivo -->
-    <v-dialog v-model="createModal" max-width="600px">
-      <v-card>
-        <v-card-title>Registrar Examen Objetivo</v-card-title>
-        <v-card-text>
-          <!-- Formulario para registrar los datos del examen -->
-          <v-form ref="form">
-            <v-text-field v-model="examenData.FC" label="FC (Frecuencia Cardíaca)" required></v-text-field>
-            <v-text-field v-model="examenData.Resp" label="Respiración" required></v-text-field>
-            <v-text-field v-model="examenData.temperatura" label="Temperatura (°C)" required></v-text-field>
-            <!-- Agregar más campos según los datos necesarios -->
-          </v-form>
-        </v-card-text>
+  <v-card>
+    <v-card-title>Examen Objetivo</v-card-title>
+    <v-card-text>
+      <!-- Mostrar detalles del examen si ya está creado -->
+      <div v-if="examen">
+        <p><strong>Frecuencia Cardíaca (FC):</strong> {{ examen.FC }}</p>
+        <p><strong>Respiración:</strong> {{ examen.Resp }}</p>
+        <p><strong>Temperatura:</strong> {{ examen.temperatura }} °C</p>
+        <p><strong>Condición Corporal:</strong> {{ examen.condicionCorporal }}</p>
+        <p><strong>Sensorio:</strong> {{ examen.sensorio }}</p>
+        <p><strong>Fascies:</strong> {{ examen.fascies }}</p>
+        <p><strong>Ganglios Linfáticos:</strong> {{ examen.gangliosLinfaticos }}</p>
+        <p><strong>Piel y Subcutáneo:</strong> {{ examen.pielSubcutaneo }}</p>
+        <p><strong>Mucosas Aparentes:</strong> {{ examen.mucosasAparentes }}</p>
+        <p><strong>Grandes Funcionales:</strong> {{ examen.grandesFuncionales }}</p>
+        <p><strong>Actitudes Anómalas:</strong> {{ examen.actitudesAnomalas }}</p>
+        <p><strong>EOP:</strong> {{ examen.EOP }}</p>
+        <p><strong>Paraclínicos:</strong> {{ examen.paraclinicos }}</p>
+        <p><strong>Diagnóstico:</strong> {{ examen.diagnostico }}</p>
+        <p><strong>Observaciones:</strong> {{ examen.observaciones }}</p>
+
+      
+      <v-card-actions>
+          <v-btn color="primary" @click="openEditModal" outlined>
+            <v-icon left>mdi-pencil</v-icon> Editar Examen Objetivo
+          </v-btn>
+          <v-btn color="secondary" @click="openResena" outlined>
+          <v-icon left>mdi-drawing</v-icon> Reseña Interactiva
+        </v-btn>
+      </v-card-actions>
+      </div>
+
+     
+      <div v-else>
         <v-card-actions>
-          <v-btn color="primary" @click="createExamen">Guardar</v-btn>
-          <v-btn color="secondary" @click="createModal = false">Cancelar</v-btn>
+          <v-btn color="primary" @click="openCreateModal" outlined>
+            <v-icon left>mdi-pencil</v-icon> Registrar Examen Objetivo
+          </v-btn>
         </v-card-actions>
-      </v-card>
+      </div>
+    </v-card-text>
+
+    <!-- Modal para editar examen objetivo -->
+    <v-dialog v-model="showEditModal" max-width="600px">
+      <EditExamenObjetivo
+        v-if="showEditModal"
+        :ficha-clinica-id="fichaClinicaId"
+        :examen-objetivo="examen"
+        @closeModal="closeEditModal"
+        @examenActualizado="fetchExamenObjetivo"
+      />
     </v-dialog>
-  </template>
-  
-  <script>
-  import backend from "@/backend";
-  import Swal from "sweetalert2";
-  
-  export default {
-    props: ['animalId', 'fichaClinicaId'],
-    data() {
-      return {
-        examen: null,
-        examenData: {
-          FC: '',
-          Resp: '',
-          temperatura: '',
-        },
-        createModal: false,
-      };
-    },
-    methods: {
-      async fetchExamenObjetivo() {
-        if (!this.fichaClinicaId) return;
-  
-        try {
-          const response = await backend.get(`/examenesObjetivos/${this.fichaClinicaId}`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          });
-  
-          if (response.data && response.data.length > 0) {
-            this.examen = response.data[0];
-          }
-        } catch (error) {
-          console.error("Error al obtener el examen objetivo:", error);
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: error.response?.data?.message || "No se pudo obtener el examen objetivo.",
-          });
-        }
-      },
-  
-      // Método para abrir el modal de crear examen objetivo
-      openCreateModal() {
-        this.createModal = true;
-      },
-  
-      // Método para crear un examen objetivo
-      async createExamen() {
-        if (!this.fichaClinicaId) return;
-  
-        try {
-          await backend.post('/examenesObjetivos', {
-            ...this.examenData,
-            fichaClinicaId: this.fichaClinicaId,
-          }, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          });
-  
-          Swal.fire({
-            title: "Examen Registrado",
-            text: "El examen objetivo ha sido registrado con éxito.",
-            icon: "success",
-          });
-  
-          this.createModal = false;
-          this.fetchExamenObjetivo();
-        } catch (error) {
-          console.error("Error al registrar el examen objetivo:", error);
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: error.response?.data?.message || "No se pudo registrar el examen objetivo.",
-          });
-        }
-      },
-    },
-  
-    created() {
-      this.fetchExamenObjetivo();
-    }
-  };
-  </script>
-  
+
+    <!-- Modal para crear examen objetivo -->
+    <v-dialog v-model="showCreateModal" max-width="600px">
+      <create-examen-objetivo
+        v-if="showCreateModal"
+        :ficha-clinica-id="fichaClinicaId"
+        :animal-id="animalId"
+        @examenRegistrado="fetchExamenObjetivo"
+        @cerrarModal="closeCreateModal"
+      />
+    </v-dialog>
+  </v-card>
+</template>
+
+<script>
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import backend from "@/backend";
+import CreateExamenObjetivo from './CreateExamenObjetivoPage.vue';
+import EditExamenObjetivo from './EditExamenObjetivoPage.vue'; // Importa el modal de edición
+
+export default {
+  components: {
+    CreateExamenObjetivo,
+    EditExamenObjetivo, // Registro del componente
+  },
+  setup() {
+    const route = useRoute();
+    const fichaClinicaId = ref(route.query.fichaClinicaId); // Se obtiene desde query
+    const animalId = ref(route.query.animalId);
+    const examen = ref(null);
+    const showCreateModal = ref(false);
+    const showEditModal = ref(false); // Controla si se muestra el modal de edición
+
+    // Función para obtener el examen objetivo
+    const fetchExamenObjetivo = async () => {
+      if (!fichaClinicaId.value) {
+        console.error("Falta el ID de la ficha clínica");
+        return;
+      }
+
+      try {
+        const response = await backend.get(`/examenObjetivo/fichaClinica/${fichaClinicaId.value}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+
+        examen.value = response.data;
+      } catch (error) {
+        examen.value = null; // Si no se encuentra, no mostramos error
+        console.error("Error al obtener el Examen Objetivo:", error);
+      }
+    };
+
+    const openCreateModal = () => {
+      showCreateModal.value = true;
+    };
+
+    const closeCreateModal = () => {
+      showCreateModal.value = false;
+    };
+
+    const openEditModal = () => {
+      showEditModal.value = true; 
+    };
+
+    const closeEditModal = () => {
+      showEditModal.value = false; 
+    };
+
+    onMounted(() => {
+      fetchExamenObjetivo(); 
+    });
+
+    return {
+      examen,
+      fichaClinicaId,
+      animalId,
+      showCreateModal,
+      showEditModal,
+      openCreateModal,
+      closeCreateModal,
+      openEditModal,
+      closeEditModal,
+      fetchExamenObjetivo,
+    };
+  },
+};
+</script>

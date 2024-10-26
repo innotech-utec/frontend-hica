@@ -20,14 +20,17 @@ import EditResponsablePage from './responsables/components/pages/EditResponsable
 // Páginas de Animales
 import CreateAnimalPage from '@/animales/components/pages/CreateAnimalPage.vue';
 import IndexAnimalPage from '@/animales/components/pages/IndexAnimalPage.vue';
+import EditAnimalPage from './animales/components/pages/EditAnimalPage.vue';
 
 // Páginas de Ficha Clínica
 import CreateFichaClinicaPage from '@/animales/components/pages/CreateFichaClinicaPage.vue';
 import ViewFichaClinicaPage from '@/animales/components/pages/ViewFichaClinicaPage.vue';
+import EditFichaClinicaPage from './animales/components/pages/EditFichaClinicaPage.vue';
 
 // Páginas de Tratamientos
 import CreateTratamientoPage from '@/animales/components/pages/CreateTratamientoPage.vue';
 import ViewTratamientoPage from '@/animales/components/pages/ViewTratamientoPage.vue';
+import EditTratamientoPage from '@/animales/components/pages/EditTratamientoPage.vue';
 
 // Páginas de Registro de Parámetros
 import CreateParametrosPage from '@/animales/components/pages/CreateParametrosPage.vue';
@@ -36,6 +39,7 @@ import ViewRegistroParametrosPage from '@/animales/components/pages/ViewRegistro
 // Páginas de Examen Objetivo
 import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenObjetivoPage.vue';
 import ViewExamenObjetivoPage from '@/animales/components/pages/ViewExamenObjetivoPage.vue';
+import EditExamenObjetivoPage from './animales/components/pages/EditExamenObjetivoPage.vue';
 
 
 const routes = [
@@ -128,6 +132,14 @@ const routes = [
           requiresAuth: true,
         },
       },
+      {
+        path: '/animales/:id/editar',
+        name: 'animales.edit',
+        component: EditAnimalPage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
       // Rutas para Fichas Clínicas
       {
         path: '/animales/ficha-clinica/crear',
@@ -145,11 +157,30 @@ const routes = [
           requiresAuth: true,
         },
       },
+
+      {
+        path: '/fichasClinicas/:fichaClinicaId/editar',
+        name: 'EditFichaClinica',
+        component: EditFichaClinicaPage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      
+      
       // Rutas para Tratamientos
       {
         path: '/animales/ficha-clinica/tratamiento/crear',
         name: 'tratamiento.create',
         component: CreateTratamientoPage,
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
+        path: '/animales/ficha-clinica/tratamiento/editar/:tratamientoId',
+        name: 'tratamiento.edit',
+        component: EditTratamientoPage,
         meta: {
           requiresAuth: true,
         },
@@ -181,7 +212,7 @@ const routes = [
       },
       // Rutas para Examen Objetivo
       {
-        path: '/animales/ficha-clinica/examen-objetivo/crear',
+        path: '/animales/ficha-clinica/examen-objetivo/crear/:fichaClinicaId',
         name: 'examenObjetivo.create',
         component: CreateExamenObjetivoPage,
         meta: {
@@ -195,8 +226,16 @@ const routes = [
         meta: {
           requiresAuth: true,
         },
+        
       },
-  
+      {
+        path: '/animales/ficha-clinica/examen-objetivo/editar/:fichaClinicaId',  // Nueva ruta para editar
+        name: 'examenObjetivo.edit',
+        component: EditExamenObjetivoPage,  // Asegúrate de tener este componente
+        meta: {
+          requiresAuth: true,
+        },
+      },
     ],
   },
   {

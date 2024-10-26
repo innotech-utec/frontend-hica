@@ -2,8 +2,7 @@
   <v-container>
     <!-- Botón de regreso -->
     <BackButton />
-    
-    <!-- Título de la página -->
+
     <v-row>
       <v-col cols="12" class="text-center">
         <h2 class="page-title">Ficha Clínica del Animal</h2>
@@ -31,7 +30,9 @@
     <v-row>
       <v-col cols="12" class="ficha-info">
         <v-card class="mb-5">
-          <v-card-title>Detalles de la Ficha Clínica</v-card-title>
+          <v-card-title>
+            Detalles de la Ficha Clínica
+          </v-card-title>
           <v-card-text>
             <p><strong>Motivo de Consulta:</strong> {{ fichaClinica.motivoConsulta }}</p>
             <p><strong>Condición Sanitaria:</strong> {{ fichaClinica.sanitaria }}</p>
@@ -40,26 +41,41 @@
             <p><strong>Remota Patológica:</strong> {{ fichaClinica.remotaPatologica }}</p>
             <p><strong>Próxima Fisiológica:</strong> {{ fichaClinica.proximaFisiologica }}</p>
             <p><strong>Próxima Patológica:</strong> {{ fichaClinica.proximaPatologica }}</p>
+            <p><strong>Estado del Paciente:</strong> {{ fichaClinica.estadoFichaClinica }}</p>
+            <v-card-actions>
+              <!-- Botón para abrir el modal de edición -->
+              <v-btn color="primary" @click="openEditModal" outlined>
+                <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
+              </v-btn>
+            </v-card-actions>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
+    <!-- Modal para editar ficha clínica -->
+    <v-dialog v-model="showEditModal" max-width="600px">
+      <EditFichaClinicaPage
+        :ficha-clinica-id="fichaClinicaId"
+        @closeModal="closeEditModal"
+        @fichaActualizada="refreshData"
+      />
+    </v-dialog>
+
+    <!-- Otros componentes como examen objetivo, tratamiento, etc. -->
     <v-row>
       <v-col cols="12">
         <ViewExamenObjetivoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" />
       </v-col>
     </v-row>
-
     <v-row>
       <v-col cols="12">
-        <ViewTratamientoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" />
+        <ViewTratamientoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
       </v-col>
     </v-row>
-
     <v-row>
       <v-col cols="12">
-        <ViewRegistroParametrosPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" />
+        <ViewRegistroParametrosPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
       </v-col>
     </v-row>
   </v-container>
@@ -69,14 +85,15 @@
 import backend from "@/backend";
 import Swal from "sweetalert2";
 import BackButton from "@/shared/components/BackButton.vue";
+import EditFichaClinicaPage from "@/animales/components/pages/EditFichaClinicaPage.vue";  // Importamos el modal de edición
 import ViewExamenObjetivoPage from "@/animales/components/pages/ViewExamenObjetivoPage.vue";
 import ViewTratamientoPage from "@/animales/components/pages/ViewTratamientoPage.vue";
 import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistroParametrosPage.vue";
 
-
 export default {
   components: {
     BackButton,
+    EditFichaClinicaPage,  // Registramos el componente de edición como modal
     ViewExamenObjetivoPage,
     ViewTratamientoPage,
     ViewRegistroParametrosPage,
@@ -85,12 +102,29 @@ export default {
     return {
       animal: {},
       fichaClinicaId: null,
-      fichaClinica: {}, 
+      fichaClinica: {},
+      showEditModal: false,  // Controla si el modal está abierto o cerrado
     };
   },
+  computed: {
+    isFichaClosed() {
+      const estadosCerrados = ['ALTA', 'FALLECIMIENTO', 'EUTANASIA'];
+      return estadosCerrados.includes(this.fichaClinica.estadoFichaClinica);
+    }
+  },
   methods: {
+    openEditModal() {
+      this.showEditModal = true;  // Abre el modal
+    },
+    closeEditModal() {
+      this.showEditModal = false;  // Cierra el modal
+    },
+    async refreshData() {
+      await this.fetchAnimalDetails();
+      await this.fetchFichaClinica();
+    },
     async fetchAnimalDetails() {
-      const animalId = this.$route.query.animalId; 
+      const animalId = this.$route.query.animalId;
       if (!animalId) {
         Swal.fire({
           icon: "error",
@@ -103,9 +137,7 @@ export default {
       try {
         const response = await backend.get(`/animales/${animalId}`);
         this.animal = response.data;
-        console.log('Animal:', this.animal);
       } catch (error) {
-        console.error("Error al obtener los detalles del animal:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -113,37 +145,32 @@ export default {
         });
       }
     },
-
     async fetchFichaClinica() {
-  const fichaClinicaId = this.$route.query.fichaClinicaId; // Cambia a query
-  if (!fichaClinicaId) {
-      Swal.fire({
+      const fichaClinicaId = this.$route.query.fichaClinicaId;
+      if (!fichaClinicaId) {
+        Swal.fire({
           icon: "error",
           title: "Error",
           text: "No se proporcionó una ficha clínica válida.",
-      });
-      return;
-  }
+        });
+        return;
+      }
 
-  try {
-      const response = await backend.get(`/fichasClinicas/${fichaClinicaId}`);
-      this.fichaClinica = response.data; // Almacena los datos de la ficha clínica
-      console.log('Ficha clínica:', this.fichaClinica); // Para verificar la respuesta
-  } catch (error) {
-      console.error("Error al obtener la ficha clínica:", error);
-      Swal.fire({
+      try {
+        const response = await backend.get(`/fichasClinicas/${fichaClinicaId}`);
+        this.fichaClinica = response.data;
+        this.fichaClinicaId = fichaClinicaId;
+      } catch (error) {
+        Swal.fire({
           icon: "error",
           title: "Error",
           text: error.response?.data?.message || "No se pudo obtener la ficha clínica del animal.",
-      });
-  }
-},
-
+        });
+      }
+    }
   },
-
   created() {
-    this.fetchAnimalDetails();
-    this.fetchFichaClinica();
+    this.refreshData();
   },
 };
 </script>
@@ -155,11 +182,9 @@ export default {
   font-weight: bold;
   margin-bottom: 20px;
 }
-
 .animal-info {
   margin-bottom: 20px;
 }
-
 .mb-5 {
   margin-bottom: 20px;
 }

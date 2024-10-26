@@ -78,10 +78,11 @@
         required
       ></v-text-field>
 
+      <!-- Campo para seleccionar el estado de la ficha clínica -->
       <v-select
-        v-model="fichaClinica.estado"
-        :items="['ABIERTO', 'CERRADO']"
-        label="Estado de la Ficha"
+        v-model="fichaClinica.estadoFichaClinica"
+        :items="['ALTA', 'INGRESADO','INTERNADO', 'FALLECIMIENTO', 'EUTANASIA']"
+        label="Estado de la Ficha Clínica"
         required
       ></v-select>
 
@@ -111,7 +112,7 @@ export default {
         remotaPatologica: '',
         proximaFisiologica: '',
         proximaPatologica: '',
-        estado: 'ABIERTO',
+        estadoFichaClinica: 'INGRESADO', // Estado por defecto
         animalId: null,
       },
       requiredRule: [v => !!v || 'Este campo es requerido'],
@@ -120,7 +121,7 @@ export default {
   },
   methods: {
     async fetchAnimalDetails() {
-      const animalId = this.$route.query.animalId; // Asegúrate de que esto sea correcto
+      const animalId = this.$route.query.animalId;
       if (!animalId) {
         Swal.fire({
           icon: "error",
@@ -132,10 +133,9 @@ export default {
 
       try {
         const response = await backend.get(`/animales/${animalId}`);
-        this.animal = response.data; // Almacenar los detalles del animal
-        this.fichaClinica.animalId = this.animal.id; // Asignar el ID del animal a fichaClinica
+        this.animal = response.data;
+        this.fichaClinica.animalId = this.animal.id;
       } catch (error) {
-        console.error("Error al obtener los detalles del animal:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -144,56 +144,51 @@ export default {
       }
     },
     async onSubmit() {
-  if (!this.$refs.form.validate()) return;
+      if (!this.$refs.form.validate()) return;
 
-  try {
-    // Verificar si hay una ficha clínica abierta antes de crear una nueva
-    const response = await backend.get(`/fichasClinicas/abiertas/${this.fichaClinica.animalId}`);
-    const fichasAbiertas = response.data;
+      try {
+        const response = await backend.post('fichasClinicas', {
+          motivoConsulta: this.fichaClinica.motivoConsulta,
+          sanitaria: this.fichaClinica.sanitaria,
+          ambiental: this.fichaClinica.ambiental,
+          remotaFisiologica: this.fichaClinica.remotaFisiologica,
+          remotaPatologica: this.fichaClinica.remotaPatologica,
+          proximaFisiologica: this.fichaClinica.proximaFisiologica,
+          proximaPatologica: this.fichaClinica.proximaPatologica,
+          estadoFichaClinica: this.fichaClinica.estadoFichaClinica, // Enviar el estado
+          animalId: this.fichaClinica.animalId,
+        });
 
-    if (fichasAbiertas.length > 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Ficha Clínica Abierta',
-        text: 'Este animal ya tiene una ficha clínica abierta. No se puede crear otra.',
-      });
-      return; // No continuar con la creación
+        Swal.fire({
+          icon: "success",
+          title: "Éxito",
+          text: "Ficha clínica creada exitosamente.",
+        });
+
+        // Redirigir a la vista de la ficha clínica creada
+        this.$router.push({
+          name: 'fichaClinica.view',
+          query: {
+            fichaClinicaId: response.data.id,  // Usar el ID de la ficha clínica creada
+            animalId: this.fichaClinica.animalId
+          }
+        });
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.response?.data?.message || "No se pudo crear la ficha clínica.",
+        });
+      }
+    },
+    cancel() {
+      
+      this.$router.back();
     }
-
-    // Crear la nueva ficha clínica
-    const createResponse = await backend.post('fichasClinicas', {
-      motivoConsulta: this.fichaClinica.motivoConsulta,
-      sanitaria: this.fichaClinica.sanitaria,
-      ambiental: this.fichaClinica.ambiental,
-      remotaFisiologica: this.fichaClinica.remotaFisiologica,
-      remotaPatologica: this.fichaClinica.remotaPatologica,
-      proximaFisiologica: this.fichaClinica.proximaFisiologica,
-      proximaPatologica: this.fichaClinica.proximaPatologica,
-      estado: this.fichaClinica.estado,
-      animalId: this.fichaClinica.animalId,
-    });
-
-    // Redirigir a la página de visualización de la ficha clínica
-    this.$router.push({ name: 'fichaClinica.view', query: { fichaClinicaId: createResponse.data.id, animalId: this.fichaClinica.animalId } });
-
-    Swal.fire({
-      icon: "success",
-      title: "Éxito",
-      text: "Ficha clínica creada exitosamente.",
-    });
-  } catch (error) {
-    console.error('Error al crear la ficha clínica:', error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: error.response?.data?.message || "No se pudo crear la ficha clínica.",
-    });
-  }
-},
   },
   created() {
     this.fetchAnimalDetails();
-  }
+  },
 };
 </script>
 
@@ -237,6 +232,6 @@ export default {
 }
 
 .v-card {
-  background-color: transparent; /* Mantener el fondo transparente o del tono de la interfaz */
+  background-color: transparent;
 }
 </style>

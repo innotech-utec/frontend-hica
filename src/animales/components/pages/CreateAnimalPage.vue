@@ -91,35 +91,53 @@ export default {
   },
   methods: {
     async onSubmit() {
-      if (!this.$refs.form.validate()) return;
+  if (!this.$refs.form.validate()) return;
 
-      try {
-        await backend.post('animales', {
-          nombre: this.animal.nombre,
-          especie: this.animal.especie,
-          raza: this.animal.raza,
-          edad: this.animal.edad,
-          sexo: this.animal.sexo,   
-          peso: this.animal.peso,   
-          responsableId: this.animal.responsableId
-        });
+  try {
+    // Realiza la solicitud POST para crear el animal
+    const response = await backend.post('animales', {
+      nombre: this.animal.nombre,
+      especie: this.animal.especie,
+      raza: this.animal.raza,
+      edad: this.animal.edad,
+      sexo: this.animal.sexo,   
+      peso: this.animal.peso,   
+      responsableId: this.animal.responsableId
+    });
 
-        Swal.fire({
-          title: "Animal creado",
-          text: `Los datos del animal han sido guardados`,
-          icon: "success",
-        });
+    Swal.fire({
+      title: "Animal creado",
+      text: `Los datos del animal han sido guardados`,
+      icon: "success",
+    });
 
-        this.$router.push("/responsables");
-      } catch (error) {
-        console.error('Error al crear el animal:', error.response || error.message);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response?.data?.message || "Error al crear el animal",
-        });
+    // Asegúrate de obtener el ID del animal recién creado
+    const animalId = response.data.animal.id;
+
+    // Llama al endpoint para obtener los detalles del animal con el ID
+    const animalResponse = await backend.get(`/animales/${animalId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`, 
       }
-    },
+    });
+
+    const animal = animalResponse.data;  // Datos completos del animal recuperados
+
+    // Redirige a la creación de ficha clínica pasando el animalId
+    this.$router.push({ 
+      name: 'fichaClinica.create',  // Nombre de la ruta
+      query: { animalId: animal.id }  // Pasa el ID del animal como query
+    });
+
+  } catch (error) {
+    console.error('Error al crear el animal:', error.response || error.message);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.response?.data?.message || "Error al crear el animal",
+    });
+  }
+},
 
     // Método para cargar el responsable seleccionado
     async fetchResponsable() {
