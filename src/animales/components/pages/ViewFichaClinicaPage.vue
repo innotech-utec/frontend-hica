@@ -13,7 +13,7 @@
     <v-row>
       <v-col cols="12" class="animal-info">
         <v-card class="mb-5">
-          <v-card-title>Información del Animal</v-card-title>
+          <v-card-title class="section-title">Información del Animal</v-card-title>
           <v-card-text>
             <p><strong>Nombre:</strong> {{ animal.nombre }}</p>
             <p><strong>Especie:</strong> {{ animal.especie }}</p>
@@ -30,9 +30,7 @@
     <v-row>
       <v-col cols="12" class="ficha-info">
         <v-card class="mb-5">
-          <v-card-title>
-            Detalles de la Ficha Clínica
-          </v-card-title>
+          <v-card-title class="section-title">Detalles de la Ficha Clínica</v-card-title>
           <v-card-text>
             <p><strong>Motivo de Consulta:</strong> {{ fichaClinica.motivoConsulta }}</p>
             <p><strong>Condición Sanitaria:</strong> {{ fichaClinica.sanitaria }}</p>
@@ -65,7 +63,7 @@
     <!-- Otros componentes como examen objetivo, tratamiento, etc. -->
     <v-row>
       <v-col cols="12">
-        <ViewExamenObjetivoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" />
+        <ViewExamenObjetivoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
       </v-col>
     </v-row>
     <v-row>
@@ -85,7 +83,7 @@
 import backend from "@/backend";
 import Swal from "sweetalert2";
 import BackButton from "@/shared/components/BackButton.vue";
-import EditFichaClinicaPage from "@/animales/components/pages/EditFichaClinicaPage.vue";  // Importamos el modal de edición
+import EditFichaClinicaPage from "@/animales/components/pages/EditFichaClinicaPage.vue";  
 import ViewExamenObjetivoPage from "@/animales/components/pages/ViewExamenObjetivoPage.vue";
 import ViewTratamientoPage from "@/animales/components/pages/ViewTratamientoPage.vue";
 import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistroParametrosPage.vue";
@@ -93,7 +91,7 @@ import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistro
 export default {
   components: {
     BackButton,
-    EditFichaClinicaPage,  // Registramos el componente de edición como modal
+    EditFichaClinicaPage,
     ViewExamenObjetivoPage,
     ViewTratamientoPage,
     ViewRegistroParametrosPage,
@@ -103,7 +101,7 @@ export default {
       animal: {},
       fichaClinicaId: null,
       fichaClinica: {},
-      showEditModal: false,  // Controla si el modal está abierto o cerrado
+      showEditModal: false,
     };
   },
   computed: {
@@ -114,10 +112,10 @@ export default {
   },
   methods: {
     openEditModal() {
-      this.showEditModal = true;  // Abre el modal
+      this.showEditModal = true;
     },
     closeEditModal() {
-      this.showEditModal = false;  // Cierra el modal
+      this.showEditModal = false;
     },
     async refreshData() {
       await this.fetchAnimalDetails();
@@ -181,10 +179,55 @@ export default {
   color: #014582;
   font-weight: bold;
   margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
-.animal-info {
-  margin-bottom: 20px;
+
+.section-title {
+  font-size: 20px;
+  color: #014582;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: center;
 }
+
+.justified-text {
+  text-align: justify;
+  line-height: 1.6;
+}
+
+.animal-card, .ficha-card {
+  background-color: #f9f9f9;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
+  color: #333;
+  padding: 16px;
+}
+
+.v-btn.primary {
+  background-color: #014582;
+  color: #fff;
+}
+
+.v-btn.primary:hover {
+  background-color: #013262;
+}
+
+.v-btn.secondary {
+  background-color: #008575;
+  color: #fff;
+}
+
+.v-btn.secondary:hover {
+  background-color: #007460;
+}
+
+.disabled-module {
+  opacity: 0.6;
+  pointer-events: none;
+  color: #9e9e9e;
+}
+
 .mb-5 {
   margin-bottom: 20px;
 }

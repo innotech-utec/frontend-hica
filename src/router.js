@@ -193,23 +193,21 @@ const routes = [
           requiresAuth: true,
         },
       },
+
       // Rutas para Registro de Parámetros
       {
         path: '/animales/ficha-clinica/parametros/crear',
         name: 'parametros.create',
         component: CreateParametrosPage,
-        meta: {
-          requiresAuth: true,
-        },
       },
       {
         path: '/animales/ficha-clinica/parametros',
         name: 'parametros.view',
         component: ViewRegistroParametrosPage,
-        meta: {
-          requiresAuth: true,
-        },
+  
       },
+
+
       // Rutas para Examen Objetivo
       {
         path: '/animales/ficha-clinica/examen-objetivo/crear/:fichaClinicaId',

@@ -55,11 +55,12 @@
         required
       ></v-text-field>
 
-      <!-- Botón para guardar -->
+    <v-card-actions>
       <v-btn rounded color="primary" type="submit">Registrar Animal</v-btn>
 
       <!-- Botón de cancelar con confirmación -->
       <v-btn rounded color="secondary" @click="confirmCancel">Cancelar</v-btn>
+    </v-card-actions>
     </v-form>
   </v-container>
 </template>
