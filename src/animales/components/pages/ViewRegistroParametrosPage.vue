@@ -21,9 +21,12 @@
 
       <!-- Mostrar mensaje si no hay parámetros registrados -->
       <p v-else>No hay registros de parámetros disponibles.</p>
-
-      <!-- Botón para registrar nuevos parámetros -->
-      <v-btn color="primary" @click="openCreateModal">Registrar Parámetros</v-btn>
+      <v-card-actions>
+              <!-- Botón para abrir el modal de edición -->
+              <v-btn color="primary" @click="openCreateModal" outlined>
+                <v-icon left>mdi-pencil</v-icon> Registrar Parametros
+              </v-btn>
+            </v-card-actions>
     </v-card-text>
 
     <!-- Modal para registrar nuevos parámetros -->

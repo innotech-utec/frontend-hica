@@ -3,7 +3,6 @@
     <!-- Botón de regreso -->
     <BackButton />
 
-    <!-- Título de la página -->
     <v-row>
       <v-col cols="12" class="text-center">
         <h2 class="page-title">Ficha Clínica del Animal</h2>
@@ -33,10 +32,6 @@
         <v-card class="mb-5">
           <v-card-title>
             Detalles de la Ficha Clínica
-            <!-- Botón de edición (lápiz) al lado del título -->
-            <v-btn icon @click="editarFichaClinica(fichaClinica.id)">
-              <v-icon color="#014582">mdi-pencil</v-icon>
-            </v-btn>
           </v-card-title>
           <v-card-text>
             <p><strong>Motivo de Consulta:</strong> {{ fichaClinica.motivoConsulta }}</p>
@@ -47,10 +42,25 @@
             <p><strong>Próxima Fisiológica:</strong> {{ fichaClinica.proximaFisiologica }}</p>
             <p><strong>Próxima Patológica:</strong> {{ fichaClinica.proximaPatologica }}</p>
             <p><strong>Estado del Paciente:</strong> {{ fichaClinica.estadoFichaClinica }}</p>
+            <v-card-actions>
+              <!-- Botón para abrir el modal de edición -->
+              <v-btn color="primary" @click="openEditModal" outlined>
+                <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
+              </v-btn>
+            </v-card-actions>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Modal para editar ficha clínica -->
+    <v-dialog v-model="showEditModal" max-width="600px">
+      <EditFichaClinicaPage
+        :ficha-clinica-id="fichaClinicaId"
+        @closeModal="closeEditModal"
+        @fichaActualizada="refreshData"
+      />
+    </v-dialog>
 
     <!-- Otros componentes como examen objetivo, tratamiento, etc. -->
     <v-row>
@@ -58,26 +68,14 @@
         <ViewExamenObjetivoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" />
       </v-col>
     </v-row>
-
     <v-row>
       <v-col cols="12">
-        <!-- Deshabilitar si el estado es Alta, Fallecimiento o Eutanasia -->
-        <ViewTratamientoPage 
-          :animalId="animal.id" 
-          :fichaClinicaId="fichaClinicaId" 
-          :disabled="isFichaClosed"
-        />
+        <ViewTratamientoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
       </v-col>
     </v-row>
-
     <v-row>
       <v-col cols="12">
-        <!-- Deshabilitar si el estado es Alta, Fallecimiento o Eutanasia -->
-        <ViewRegistroParametrosPage 
-          :animalId="animal.id" 
-          :fichaClinicaId="fichaClinicaId" 
-          :disabled="isFichaClosed"
-        />
+        <ViewRegistroParametrosPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
       </v-col>
     </v-row>
   </v-container>
@@ -87,6 +85,7 @@
 import backend from "@/backend";
 import Swal from "sweetalert2";
 import BackButton from "@/shared/components/BackButton.vue";
+import EditFichaClinicaPage from "@/animales/components/pages/EditFichaClinicaPage.vue";  // Importamos el modal de edición
 import ViewExamenObjetivoPage from "@/animales/components/pages/ViewExamenObjetivoPage.vue";
 import ViewTratamientoPage from "@/animales/components/pages/ViewTratamientoPage.vue";
 import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistroParametrosPage.vue";
@@ -94,6 +93,7 @@ import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistro
 export default {
   components: {
     BackButton,
+    EditFichaClinicaPage,  // Registramos el componente de edición como modal
     ViewExamenObjetivoPage,
     ViewTratamientoPage,
     ViewRegistroParametrosPage,
@@ -102,33 +102,29 @@ export default {
     return {
       animal: {},
       fichaClinicaId: null,
-      fichaClinica: {}, 
+      fichaClinica: {},
+      showEditModal: false,  // Controla si el modal está abierto o cerrado
     };
   },
   computed: {
     isFichaClosed() {
-      // Si el estado es 'Alta', 'Fallecimiento' o 'Eutanasia', deshabilitar los botones
       const estadosCerrados = ['ALTA', 'FALLECIMIENTO', 'EUTANASIA'];
       return estadosCerrados.includes(this.fichaClinica.estadoFichaClinica);
     }
   },
   methods: {
-    // Función para redirigir a la página de edición
-    editarFichaClinica(fichaClinicaId) {
-      if (fichaClinicaId) {
-        this.$router.push({ name: 'EditFichaClinica', params: { fichaClinicaId: fichaClinicaId } });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se encontró el ID de la ficha clínica.',
-        });
-      }
+    openEditModal() {
+      this.showEditModal = true;  // Abre el modal
     },
-
-    // Recarga los detalles del animal
+    closeEditModal() {
+      this.showEditModal = false;  // Cierra el modal
+    },
+    async refreshData() {
+      await this.fetchAnimalDetails();
+      await this.fetchFichaClinica();
+    },
     async fetchAnimalDetails() {
-      const animalId = this.$route.query.animalId; 
+      const animalId = this.$route.query.animalId;
       if (!animalId) {
         Swal.fire({
           icon: "error",
@@ -142,7 +138,6 @@ export default {
         const response = await backend.get(`/animales/${animalId}`);
         this.animal = response.data;
       } catch (error) {
-        console.error("Error al obtener los detalles del animal:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -150,8 +145,6 @@ export default {
         });
       }
     },
-
-    // Recarga los detalles de la ficha clínica
     async fetchFichaClinica() {
       const fichaClinicaId = this.$route.query.fichaClinicaId;
       if (!fichaClinicaId) {
@@ -168,24 +161,16 @@ export default {
         this.fichaClinica = response.data;
         this.fichaClinicaId = fichaClinicaId;
       } catch (error) {
-        console.error("Error al obtener la ficha clínica:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
           text: error.response?.data?.message || "No se pudo obtener la ficha clínica del animal.",
         });
       }
-    },
-
-    // Vuelve a cargar los datos cuando regresa desde la edición
-    async refreshData() {
-      await this.fetchAnimalDetails(); // Recarga los detalles del animal
-      await this.fetchFichaClinica();  // Recarga los detalles de la ficha clínica
     }
   },
-
   created() {
-    this.refreshData();  // Carga inicial de los datos
+    this.refreshData();
   },
 };
 </script>
@@ -197,11 +182,9 @@ export default {
   font-weight: bold;
   margin-bottom: 20px;
 }
-
 .animal-info {
   margin-bottom: 20px;
 }
-
 .mb-5 {
   margin-bottom: 20px;
 }
