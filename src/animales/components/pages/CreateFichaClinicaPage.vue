@@ -81,7 +81,7 @@
       <!-- Campo para seleccionar el estado de la ficha clínica -->
       <v-select
         v-model="fichaClinica.estadoFichaClinica"
-        :items="['ALTA', 'INGRESADO','INTERNADO', 'FALLECIMIENTO', 'EUTANASIA']"
+        :items="['Alta', 'Ingresado','Internado', 'Fallecimiento', 'Eutanasia']"
         label="Estado de la Ficha Clínica"
         required
       ></v-select>
@@ -114,7 +114,7 @@ export default {
         remotaPatologica: '',
         proximaFisiologica: '',
         proximaPatologica: '',
-        estadoFichaClinica: 'INGRESADO',
+        estadoFichaClinica: 'Ingresado',
         animalId: null,
       },
       requiredRule: [v => !!v || 'Este campo es requerido'],

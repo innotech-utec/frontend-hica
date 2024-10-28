@@ -76,7 +76,7 @@
                     <v-btn icon color="warning" @click="viewOpenFichas(animal.id)" title="Ver fichas clínicas abiertas">
                       <v-icon>mdi-file-eye-outline</v-icon>
                     </v-btn>
-                    <v-btn icon color="info" @click="viewHistoriaClinica(animal.id)" title="Ver historia clínica">
+                    <v-btn color="primary"outlined @click="goToHistoriaClinica(item.id)">" title="Ver historia clínica">
                       <v-icon>mdi-file-document-multiple-outline</v-icon>
                     </v-btn>
                   </v-card-actions>
@@ -239,11 +239,14 @@ export default {
       this.showEditModal = false;    
       this.animalSeleccionado = null;    
     },
-
+    goToHistoriaClinica(animalId) {
+      this.$router.push({ name: 'historiaClinica.view', params: { animalId } });
+    },
     handlePageChange(newPage) {
       this.currentPage = newPage;
       this.fetchAnimales();
-    }
+    },
+    
   },
   created() {
     this.fetchAnimales();

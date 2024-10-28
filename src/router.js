@@ -26,6 +26,7 @@ import EditAnimalPage from './animales/components/pages/EditAnimalPage.vue';
 import CreateFichaClinicaPage from '@/animales/components/pages/CreateFichaClinicaPage.vue';
 import ViewFichaClinicaPage from '@/animales/components/pages/ViewFichaClinicaPage.vue';
 import EditFichaClinicaPage from './animales/components/pages/EditFichaClinicaPage.vue';
+import ViewHistoriaClinicaPage from './animales/components/pages/ViewHistoriaClinicaPage.vue';
 
 // Páginas de Tratamientos
 import CreateTratamientoPage from '@/animales/components/pages/CreateTratamientoPage.vue';
@@ -157,6 +158,13 @@ const routes = [
         meta: {
           requiresAuth: true,
         },
+      },
+      {
+        path: '/animales/:animalId/historia-clinica',
+        name: 'historiaClinica.view',
+        component: ViewHistoriaClinicaPage,
+        meta: { requiresAuth: true },
+        props: true,
       },
 
       {

@@ -59,12 +59,12 @@
             ></v-text-field>
           </v-col>
           <v-col cols="12">
-            <v-text-field
+            <v-select
               v-model="veterinario.Dependencia"
-              :rules="requiredRule"
+             :items="['Clinica Pequeños Animales', 'Equinos','Endocrinologia y Metabolismo Animal', 'Gestión Hospitalaria', 'Semiología']"
               label="Dependencia"
               required
-            ></v-text-field>
+              ></v-select>
           </v-col>
           <v-col cols="12">
             <!-- Campo para subir la imagen del veterinario -->

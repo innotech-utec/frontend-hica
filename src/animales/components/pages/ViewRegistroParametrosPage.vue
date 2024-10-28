@@ -90,7 +90,7 @@ export default {
   },
   computed: {
     isDisabled() {
-      const estadosCerrados = ['ALTA', 'FALLECIMIENTO', 'EUTANASIA'];
+      const estadosCerrados = ['Alta', 'Fallecimiento', 'Eutanasia'];
       return this.disabled || estadosCerrados.includes(this.estadoFicha);
     },
   },
@@ -112,7 +112,7 @@ export default {
       const day = String(dateObj.getUTCDate()).padStart(2, '0');
       const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
       const year = dateObj.getUTCFullYear();
-      return `${day}-${month}-${year}`;
+      return `${day}/${month}/${year}`;
     },
     async fetchParametros() {
       if (!this.fichaClinicaId) return;
