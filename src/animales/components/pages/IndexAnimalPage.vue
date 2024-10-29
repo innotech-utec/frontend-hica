@@ -76,7 +76,7 @@
                     <v-btn icon color="warning" @click="viewOpenFichas(animal.id)" title="Ver fichas clínicas abiertas">
                       <v-icon>mdi-file-eye-outline</v-icon>
                     </v-btn>
-                    <v-btn color="primary"outlined @click="goToHistoriaClinica(item.id)">" title="Ver historia clínica">
+                    <v-btn color="primary" outlined @click="goToHistoriaClinica(animal.id)" title="Ver historia clínica">
                       <v-icon>mdi-file-document-multiple-outline</v-icon>
                     </v-btn>
                   </v-card-actions>
