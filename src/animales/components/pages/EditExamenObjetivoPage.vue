@@ -39,7 +39,7 @@
           <v-textarea v-model="localExamenObjetivo.diagnostico" label="Diagnóstico"></v-textarea>
           <v-textarea v-model="localExamenObjetivo.observaciones" label="Observaciones"></v-textarea>
           <v-card-actions>
-            <v-btn rounded color="primary" type="submit">Guardar Cambios</v-btn>
+            <v-btn rounded color="primary" type="submit">Guardar</v-btn>
             <v-btn rounded color="secondary" @click="cancelarEdicion">Cancelar</v-btn>
           </v-card-actions>
         </v-form>

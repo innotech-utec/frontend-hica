@@ -10,7 +10,7 @@
     >
       <!-- Logo en la parte superior -->
       <div class="pa-4">
-        <img src="/img/logo_hica.a2471d14.png" alt="HICA" class="logo mb-6" />
+        <img src="/HICA_logo.png" alt="HICA" class="logo mb-6" />
       </div>
 
       <!-- Menú debajo del logo -->

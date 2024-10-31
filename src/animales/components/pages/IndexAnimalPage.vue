@@ -2,12 +2,9 @@
   <v-container>
     <!-- Botón de regreso -->
     <BackButton />
-
+  
     <!-- Título del formulario -->
     <v-row>
-      <v-col cols="12" class="text-center">
-        <h2 class="page-title">Listado de Animales</h2>
-      </v-col>
     </v-row>
 
     <!-- Filtros de búsqueda -->
@@ -173,7 +170,7 @@ export default {
     },
 
     filtrarAnimales() {
-      this.currentPage = 1; // Reinicia la paginación al aplicar filtros
+      this.currentPage = 1;
       this.fetchAnimales();
     },
 
@@ -303,4 +300,11 @@ export default {
     padding: 8px;
   }
 }
+/* Estilo para el logo */
+.logo {
+  width: 150px;
+  display: block;
+  margin: 0 auto;
+}
+
 </style>

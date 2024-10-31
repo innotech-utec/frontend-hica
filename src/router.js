@@ -55,18 +55,19 @@ const routes = [
     component: LoginPage,
   },
   {
+    path: '/home',
+    name: 'home',
+    component: HomePage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/',
     component: AuthLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: '/home',
-        name: 'home',
-        component: HomePage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
+     
       {
         path: '/usuarios',
         name: 'users.index',

@@ -46,7 +46,7 @@
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Guardar</v-btn>
+        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Registrar</v-btn>
         <v-btn color="secondary" @click="closeModal">Cancelar</v-btn>
       </v-card-actions>
     </v-card>

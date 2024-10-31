@@ -4,16 +4,19 @@
 
     <!-- Título de la página -->
     <v-row>
-      <v-col cols="12" class="text-center">
-        <h2 class="page-title">Listado de Responsables</h2>
+ 
+    </v-row>
+    <v-row>
+      <v-col cols="12" class="text-right">
+        
+        <v-card-actions>
+          <v-btn rounded color="primary" class="add-responsable-btn" dark @click="$router.push({ name: 'responsables.create' })">
+            <v-icon left>mdi-plus</v-icon>
+            Añadir Responsable
+          </v-btn>
+        </v-card-actions>
       </v-col>
     </v-row>
-
-    <!-- Botón para añadir responsable -->
-    <v-btn color="primary" class="add-responsable-btn" @click="$router.push({ name: 'responsables.create' })">
-      <v-icon>mdi-plus</v-icon>
-      Añadir Responsable
-    </v-btn>
 
     <!-- Tabla de responsables -->
     <v-row>
@@ -26,6 +29,9 @@
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Domicilio</th>
+                <th>teléfono</th>
+                <th>Departamento</th>
+                <th>Localidad</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -35,6 +41,9 @@
                 <td>{{ responsable.nombre }}</td>
                 <td>{{ responsable.apellido }}</td>
                 <td>{{ responsable.domicilio }}</td>
+                <td>{{ responsable.telefono }}</td>
+                <td>{{ responsable.departamento }}</td>
+                <td>{{ responsable.localidad }}</td>
                 <td>
                   <!-- Editar responsable -->
                   <v-btn icon @click="editResponsable(responsable.id)">
@@ -204,7 +213,13 @@ export default {
   font-size: 28px;
   color: #014582;
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.add-user-btn {
+  background-color: #014582 !important;
+  color: white !important;
 }
 
 .table-responsive {
@@ -214,46 +229,30 @@ export default {
 .table {
   width: 100%;
   border-collapse: collapse;
+  background-color: #fafafa;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .table th,
 .table td {
   border: 1px solid #ddd;
   padding: 10px;
+  text-align: center;
 }
 
 .table th {
-  background-color: #f2f2f2;
-  text-align: left;
+  background-color: #e8eaf6;
+  color: #014582;
 }
 
-.table td {
-  text-align: left;
-  vertical-align: middle;
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 24px;
-  }
-
-  .add-responsable-btn {
-    width: 100%;
-    margin-bottom: 10px;
-    margin-bottom: 20px;
-  }
-
-  .table {
-    font-size: 12px;
-  }
-
-  .table th,
-  .table td {
-    padding: 8px;
-  }
-
-  .v-btn {
-    width: 100%;
-  }
+.filter-row {
+  margin-bottom: 20px;
 }
 </style>
+

@@ -12,7 +12,7 @@
         <v-text-field v-model="fichaClinica.proximaPatologica" label="Próxima Patológica" required></v-text-field>
         <v-select v-model="fichaClinica.estadoFichaClinica" :items="['ALTA', 'INGRESADO', 'INTERNADO', 'FALLECIMIENTO', 'EUTANASIA']" label="Estado de la Ficha" required></v-select>
         <v-card-actions>
-        <v-btn rounded color="primary" type="submit">Guardar Cambios</v-btn>
+        <v-btn rounded color="primary" type="submit">Guardar</v-btn>
         <v-btn rounded color="secondary" @click="cancelarEdicion">Cancelar</v-btn>
       </v-card-actions>
       </v-form>

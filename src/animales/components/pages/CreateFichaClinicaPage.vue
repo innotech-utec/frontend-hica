@@ -87,7 +87,7 @@
       ></v-select>
 
       <v-card-actions class="actions-centered">
-        <v-btn rounded color="primary" type="submit">Crear Ficha Clínica</v-btn>
+        <v-btn rounded color="primary" type="submit">Registrar</v-btn>
         <v-btn rounded color="secondary" @click="cancel">Cancelar</v-btn>
       </v-card-actions>
     </v-form>

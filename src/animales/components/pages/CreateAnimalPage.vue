@@ -56,7 +56,7 @@
       ></v-text-field>
 
     <v-card-actions>
-      <v-btn rounded color="primary" type="submit">Registrar Animal</v-btn>
+      <v-btn rounded color="primary" type="submit">Registrar</v-btn>
 
       <!-- Botón de cancelar con confirmación -->
       <v-btn rounded color="secondary" @click="confirmCancel">Cancelar</v-btn>

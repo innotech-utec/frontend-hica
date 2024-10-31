@@ -37,6 +37,7 @@
 
     <v-row>
       <v-col cols="12" class="text-right">
+        
         <v-card-actions>
           <v-btn rounded color="primary" class="add-user-btn" dark @click="$router.push({ name: 'users.create' })">
             <v-icon left>mdi-plus</v-icon>
@@ -45,6 +46,7 @@
         </v-card-actions>
       </v-col>
     </v-row>
+    
 
 
     <v-row>
@@ -275,10 +277,7 @@ export default {
   margin-bottom: 10px;
 }
 
-.add-user-btn {
-  background-color: #014582 !important;
-  color: white !important;
-}
+
 
 .table-responsive {
   overflow-x: auto;
