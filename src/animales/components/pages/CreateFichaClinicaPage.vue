@@ -3,7 +3,7 @@
     <BackButton />
     <v-row>
       <v-col cols="12" class="text-center">
-        <h2 class="page-title">Crear Ficha Clínica</h2>
+        <h2 class="modal-title">Crear Ficha Clínica</h2>
       </v-col>
     </v-row>
 
@@ -11,7 +11,7 @@
     <v-row>
       <v-col cols="12" class="animal-info">
         <v-card>
-          <v-card-title>Información del Animal</v-card-title>
+          <v-card-title class="title-centered">Información del Animal</v-card-title>
           <v-card-text>
             <v-row>
               <v-col v-if="animal.nombre" class="animal-details">
@@ -27,8 +27,8 @@
       </v-col>
     </v-row>
 
-    <!-- Formulario para crear ficha clínica -->
     <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
+     
       <v-text-field
         v-model="fichaClinica.motivoConsulta"
         label="Motivo de la Consulta"
@@ -81,13 +81,15 @@
       <!-- Campo para seleccionar el estado de la ficha clínica -->
       <v-select
         v-model="fichaClinica.estadoFichaClinica"
-        :items="['ALTA', 'INGRESADO','INTERNADO', 'FALLECIMIENTO', 'EUTANASIA']"
+        :items="['Alta', 'Ingresado','Internado', 'Fallecimiento', 'Eutanasia']"
         label="Estado de la Ficha Clínica"
         required
       ></v-select>
 
-      <v-btn rounded color="primary" type="submit">Crear Ficha Clínica</v-btn>
-      <v-btn rounded color="secondary" @click="cancel">Cancelar</v-btn>
+      <v-card-actions class="actions-centered">
+        <v-btn rounded color="primary" type="submit">Registrar</v-btn>
+        <v-btn rounded color="secondary" @click="cancel">Cancelar</v-btn>
+      </v-card-actions>
     </v-form>
   </v-container>
 </template>
@@ -112,7 +114,7 @@ export default {
         remotaPatologica: '',
         proximaFisiologica: '',
         proximaPatologica: '',
-        estadoFichaClinica: 'INGRESADO', // Estado por defecto
+        estadoFichaClinica: 'Ingresado',
         animalId: null,
       },
       requiredRule: [v => !!v || 'Este campo es requerido'],
@@ -148,15 +150,7 @@ export default {
 
       try {
         const response = await backend.post('fichasClinicas', {
-          motivoConsulta: this.fichaClinica.motivoConsulta,
-          sanitaria: this.fichaClinica.sanitaria,
-          ambiental: this.fichaClinica.ambiental,
-          remotaFisiologica: this.fichaClinica.remotaFisiologica,
-          remotaPatologica: this.fichaClinica.remotaPatologica,
-          proximaFisiologica: this.fichaClinica.proximaFisiologica,
-          proximaPatologica: this.fichaClinica.proximaPatologica,
-          estadoFichaClinica: this.fichaClinica.estadoFichaClinica, // Enviar el estado
-          animalId: this.fichaClinica.animalId,
+          ...this.fichaClinica
         });
 
         Swal.fire({
@@ -165,11 +159,10 @@ export default {
           text: "Ficha clínica creada exitosamente.",
         });
 
-        // Redirigir a la vista de la ficha clínica creada
         this.$router.push({
           name: 'fichaClinica.view',
           query: {
-            fichaClinicaId: response.data.id,  // Usar el ID de la ficha clínica creada
+            fichaClinicaId: response.data.id,
             animalId: this.fichaClinica.animalId
           }
         });
@@ -182,7 +175,6 @@ export default {
       }
     },
     cancel() {
-      
       this.$router.back();
     }
   },
@@ -193,11 +185,13 @@ export default {
 </script>
 
 <style scoped>
-.page-title {
+.page-title,
+.modal-title {
   font-size: 28px;
   color: #014582;
   font-weight: bold;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .animal-info {
@@ -206,8 +200,12 @@ export default {
 
 .animal-details {
   display: flex;
-  flex-direction: row; /* Mostrar en fila */
-  gap: 10px; /* Espacio entre elementos */
+  flex-direction: row;
+  gap: 10px;
+}
+
+.actions-centered {
+  justify-content: center;
 }
 
 .v-btn {
@@ -229,9 +227,5 @@ export default {
 
 .v-btn.secondary:hover {
   background-color: #007460;
-}
-
-.v-card {
-  background-color: transparent;
 }
 </style>

@@ -26,6 +26,7 @@ import EditAnimalPage from './animales/components/pages/EditAnimalPage.vue';
 import CreateFichaClinicaPage from '@/animales/components/pages/CreateFichaClinicaPage.vue';
 import ViewFichaClinicaPage from '@/animales/components/pages/ViewFichaClinicaPage.vue';
 import EditFichaClinicaPage from './animales/components/pages/EditFichaClinicaPage.vue';
+import ViewHistoriaClinicaPage from './animales/components/pages/ViewHistoriaClinicaPage.vue';
 
 // Páginas de Tratamientos
 import CreateTratamientoPage from '@/animales/components/pages/CreateTratamientoPage.vue';
@@ -35,6 +36,7 @@ import EditTratamientoPage from '@/animales/components/pages/EditTratamientoPage
 // Páginas de Registro de Parámetros
 import CreateParametrosPage from '@/animales/components/pages/CreateParametrosPage.vue';
 import ViewRegistroParametrosPage from '@/animales/components/pages/ViewRegistroParametrosPage.vue';
+import EditParametrosPage from './animales/components/pages/EditParametrosPage.vue';
 
 // Páginas de Examen Objetivo
 import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenObjetivoPage.vue';
@@ -53,18 +55,19 @@ const routes = [
     component: LoginPage,
   },
   {
+    path: '/home',
+    name: 'home',
+    component: HomePage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/',
     component: AuthLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: '/home',
-        name: 'home',
-        component: HomePage,
-        meta: {
-          requiresAuth: true,
-        },
-      },
+     
       {
         path: '/usuarios',
         name: 'users.index',
@@ -157,6 +160,13 @@ const routes = [
           requiresAuth: true,
         },
       },
+      {
+        path: '/animales/:animalId/historia-clinica',
+        name: 'historiaClinica.view',
+        component: ViewHistoriaClinicaPage,
+        meta: { requiresAuth: true },
+        props: true,
+      },
 
       {
         path: '/fichasClinicas/:fichaClinicaId/editar',
@@ -193,23 +203,29 @@ const routes = [
           requiresAuth: true,
         },
       },
+
       // Rutas para Registro de Parámetros
       {
         path: '/animales/ficha-clinica/parametros/crear',
         name: 'parametros.create',
         component: CreateParametrosPage,
-        meta: {
-          requiresAuth: true,
-        },
       },
       {
         path: '/animales/ficha-clinica/parametros',
         name: 'parametros.view',
         component: ViewRegistroParametrosPage,
+  
+      },
+      {
+        path: '/animales/ficha-clinica/parametro/editar/:parametroId',
+        name: 'parametro.edit',
+        component: EditParametrosPage,
         meta: {
           requiresAuth: true,
         },
       },
+
+
       // Rutas para Examen Objetivo
       {
         path: '/animales/ficha-clinica/examen-objetivo/crear/:fichaClinicaId',

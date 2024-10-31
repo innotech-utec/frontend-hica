@@ -49,15 +49,15 @@
             ></v-text-field>
           </v-col>
           <v-col cols="12">
-            <v-text-field
+            <v-select
               v-model="veterinario.Dependencia"
-              :rules="requiredRule"
+             :items="['Clinica Pequeños Animales', 'Equinos','Endocrinologia y Metabolismo Animal', 'Gestión Hospitalaria', 'Semiología']"
               label="Dependencia"
               required
-            ></v-text-field>
+              ></v-select>
           </v-col>
           <v-col cols="12">
-            <!-- Campo para subir la imagen del veterinario -->
+          
             <v-file-input
               v-model="veterinario.Foto"
               accept="image/png, image/jpeg"
@@ -66,15 +66,15 @@
           </v-col>
         </v-row>
 
-        <!-- Botones de acción -->
-        <v-btn rounded type="submit" color="primary">
-          <v-icon class="mdi">mdi-content-save</v-icon>
-          Guardar
-        </v-btn>
-        <v-btn rounded @click="confirmCancel('edición')" color="secondary">
-          <v-icon class="mdi">mdi-cancel</v-icon>
-          Cancelar
-        </v-btn>
+        <v-card-actions>
+        <v-btn rounded color="primary" type="submit">Guardar</v-btn>
+
+        <!-- Botón de cancelar con confirmación -->
+        <v-btn rounded color="secondary" @click="confirmCancel('edición')">Cancelar</v-btn>
+      </v-card-actions>
+
+
+        
       </v-form>
     </v-container>
   </v-card>
@@ -232,10 +232,11 @@ export default {
 </script>
 
 <style scoped>
-.card {
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
+.page-title {
+  font-size: 28px;
+  color: #014582;
+  font-weight: bold;
+  margin-bottom: 20px;
 }
 
 .v-btn {
@@ -258,11 +259,5 @@ export default {
 .v-btn.secondary:hover {
   background-color: #007460;
 }
-
-.form-title {
-  font-size: 28px;
-  color: #014582;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
 </style>
+

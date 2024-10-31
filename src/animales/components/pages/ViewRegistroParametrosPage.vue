@@ -1,79 +1,79 @@
 <template>
-  <v-card>
-    <v-card-title>Registro de Parámetros</v-card-title>
-    <v-card-text>
-      <!-- Mostrar tabla de parámetros si ya están registrados -->
-      <v-data-table v-if="parametros.length > 0" :items="parametros" :headers="headers">
-        <template #item="{ item }">
-          <tr>
-            <td>{{ new Date(item.fecha).toLocaleDateString() }}</td>
-            <td>{{ item.hora }}</td>
-            <td>{{ item.FC }}</td>
-            <td>{{ item.FR }}</td>
-            <td>{{ item.temperatura }}</td>
-            <td>{{ item.mucosas }}</td>
-            <td>{{ item.TllC }}</td>
-            <td>{{ item.pliegueCutaneo }}</td>
-            <td>{{ item.observaciones }}</td>
-          </tr>
-        </template>
-      </v-data-table>
-
-      <!-- Mostrar mensaje si no hay parámetros registrados -->
-      <p v-else>No hay registros de parámetros disponibles.</p>
-      <v-card-actions>
-              <!-- Botón para abrir el modal de edición -->
-              <v-btn color="primary" @click="openCreateModal" outlined>
-                <v-icon left>mdi-pencil</v-icon> Registrar Parametros
-              </v-btn>
-            </v-card-actions>
-    </v-card-text>
-
-    <!-- Modal para registrar nuevos parámetros -->
-    <v-dialog v-model="createModal" max-width="600px">
-      <v-card>
-        <v-card-title>Registrar Parámetros</v-card-title>
-        <v-card-text>
-          <!-- Formulario para ingresar los parámetros -->
-          <v-form ref="form">
-            <v-text-field v-model="parametrosData.FC" label="Frecuencia Cardíaca (FC)" required></v-text-field>
-            <v-text-field v-model="parametrosData.FR" label="Frecuencia Respiratoria (FR)" required></v-text-field>
-            <v-text-field v-model="parametrosData.temperatura" label="Temperatura (°C)" required></v-text-field>
-            <v-text-field v-model="parametrosData.mucosas" label="Mucosas" required></v-text-field>
-            <v-text-field v-model="parametrosData.TllC" label="Tiempo de Llenado Capilar (TllC)" required></v-text-field>
-            <v-text-field v-model="parametrosData.pliegueCutaneo" label="Pliegue Cutáneo" required></v-text-field>
-            <v-textarea v-model="parametrosData.observaciones" label="Observaciones"></v-textarea>
-          </v-form>
+  <v-row>
+    <v-col cols="12" class="animal-info">
+      <v-card :class="{ 'disabled-module': isDisabled }">
+        <v-card-title class="section-title">Detalle de toma de Parámetros</v-card-title>
+        <v-card-text class="justified-text">
+          <!-- Mostrar tabla de parámetros si ya están registrados -->
+          <v-data-table v-if="parametros.length > 0" :items="parametros" :headers="headers" class="mb-5">
+            <template #item="{ item }">
+              <tr>
+                <td>{{ item.fecha }}</td>
+                <td>{{ item.hora }}</td>
+                <td>{{ item.FC }}</td>
+                <td>{{ item.FR }}</td>
+                <td>{{ item.temperatura }}</td>
+                <td>{{ item.mucosas }}</td>
+                <td>{{ item.TllC }}</td>
+                <td>{{ item.pliegueCutaneo }}</td>
+                <td>{{ item.observaciones }}</td>
+                <td>
+                  <v-card-actions>
+                    <v-btn icon @click="openEditModal(item)" :disabled="isDisabled" outlined>
+                      <v-icon color="#014582">mdi-pencil</v-icon>
+                    </v-btn>
+                  </v-card-actions>
+                </td>
+              </tr>
+            </template>
+          </v-data-table>
+          <p v-else>No hay registros de parámetros disponibles.</p>
+          <v-card-actions>
+            <v-btn color="primary" :disabled="isDisabled" @click="openCreateModal" outlined>
+              <v-icon left>mdi-pencil</v-icon> Registrar Parámetros
+            </v-btn>
+          </v-card-actions>
         </v-card-text>
-        <v-card-actions>
-          <v-btn color="primary" @click="createParametros">Guardar</v-btn>
-          <v-btn color="secondary" @click="createModal = false">Cancelar</v-btn>
-        </v-card-actions>
+
+        <!-- Modal para registrar nuevos parámetros -->
+        <CreateParametrosPage
+          v-if="showCreateModal"
+          :ficha-clinica-id="fichaClinicaId"
+          @closeModal="showCreateModal = false"
+          @parametroRegistrado="fetchParametros"
+        />
+
+        <!-- Modal para editar parámetros -->
+        <EditParametrosPage
+          v-if="showEditModal"
+          :parametro="parametroSeleccionado"
+          @ParametroActualizado="fetchParametros"
+          @cerrarModal="showEditModal = false"
+        />
       </v-card>
-    </v-dialog>
-  </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script>
 import backend from "@/backend";
 import Swal from "sweetalert2";
+import CreateParametrosPage from '@/animales/components/pages/CreateParametrosPage.vue';
+import EditParametrosPage from '@/animales/components/pages/EditParametrosPage.vue';
 
 export default {
-  props: ['animalId', 'fichaClinicaId'],
+  props: ['fichaClinicaId', 'disabled', 'estadoFicha'],
+  components: {
+    CreateParametrosPage,
+    EditParametrosPage,
+  },
   data() {
     return {
       parametros: [],
-      parametrosData: {
-        FC: '',
-        FR: '',
-        temperatura: '',
-        mucosas: '',
-        TllC: '',
-        pliegueCutaneo: '',
-        observaciones: '',
-        fichaClinicaId: this.fichaClinicaId,
-      },
-      createModal: false,
+      tratamientos: [],
+      showCreateModal: false,
+      showEditModal: false,
+      parametroSeleccionado: null,
       headers: [
         { text: 'Fecha', value: 'fecha' },
         { text: 'Hora', value: 'hora' },
@@ -84,72 +84,99 @@ export default {
         { text: 'TllC', value: 'TllC' },
         { text: 'Pliegue Cutáneo', value: 'pliegueCutaneo' },
         { text: 'Observaciones', value: 'observaciones' },
+        { text: 'Acciones', value: 'acciones' }
       ],
     };
   },
+  computed: {
+    isDisabled() {
+      const estadosCerrados = ['Alta', 'Fallecimiento', 'Eutanasia'];
+      return this.disabled || estadosCerrados.includes(this.estadoFicha);
+    },
+  },
+  watch: {
+    fichaClinicaId(newId) {
+      if (newId) {
+        this.fetchParametros();
+        this.fetchTratamientos();
+      }
+    }
+  },
   methods: {
+    formatFecha(fecha) {
+      if (!fecha) return "Fecha inválida";
+      
+      const dateObj = new Date(fecha);
+      if (isNaN(dateObj.getTime())) return "Fecha inválida";
+
+      const day = String(dateObj.getUTCDate()).padStart(2, '0');
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+      const year = dateObj.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    },
     async fetchParametros() {
       if (!this.fichaClinicaId) return;
 
       try {
-        const response = await backend.get(`/parametros/${this.fichaClinicaId}`, {
+        const response = await backend.get(`/registroParametros/fichaClinica/${this.fichaClinicaId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
 
-        this.parametros = response.data;
+        // Asigna los parámetros aplicando formatFecha antes de renderizar
+        this.parametros = response.data.map(parametro => ({
+          ...parametro,
+          fecha: this.formatFecha(parametro.fecha),
+          hora: parametro.hora.slice(0, 5)
+        }));
       } catch (error) {
         console.error("Error al obtener los parámetros:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response?.data?.message || "No se pudo obtener los parámetros registrados.",
-        });
+        // Evitar mensaje de error si no hay parámetros en la respuesta
+        if (error.response && error.response.status !== 404) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.response?.data?.message || "No se pudo obtener los parámetros registrados.",
+          });
+        }
       }
     },
-
-    openCreateModal() {
-      this.createModal = true;
-    },
-
-    async createParametros() {
+    async fetchTratamientos() {
       if (!this.fichaClinicaId) return;
 
       try {
-        await backend.post('/parametros', {
-          ...this.parametrosData,
-          fichaClinicaId: this.fichaClinicaId,
-        }, {
+        const response = await backend.get(`/tratamientos/${this.fichaClinicaId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
-
-        Swal.fire({
-          title: "Parámetros Registrados",
-          text: "Los parámetros han sido registrados con éxito.",
-          icon: "success",
-        });
-
-        this.createModal = false;
-        this.fetchParametros();
+        this.tratamientos = response.data;
       } catch (error) {
-        console.error("Error al registrar los parámetros:", error);
+        console.error("Error al obtener los tratamientos:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: error.response?.data?.message || "No se pudo registrar los parámetros.",
+          text: error.response?.data?.message || "No se pudo obtener los tratamientos registrados.",
         });
       }
     },
+    openCreateModal() {
+      this.showCreateModal = true;
+    },
+    openEditModal(parametro) {
+      this.parametroSeleccionado = { ...parametro };
+      this.showEditModal = true;
+    },
   },
   created() {
-    this.fetchParametros();
-  }
+    if (this.fichaClinicaId) {
+      this.fetchParametros();
+      this.fetchTratamientos();
+    }
+  },
 };
 </script>
-
 <style scoped>
 .page-title {
   font-size: 28px;
@@ -158,16 +185,24 @@ export default {
   margin-bottom: 20px;
 }
 
+.section-title {
+  font-size: 20px;
+  color: #014582;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
 .v-btn {
   margin-top: 20px;
 }
 
-.v-btn.rounded {
+.v-btn.primary {
   background-color: #014582;
   color: white;
 }
 
-.v-btn.rounded:hover {
+.v-btn.primary:hover {
   background-color: #013262;
 }
 
@@ -177,5 +212,11 @@ export default {
 
 .v-btn.secondary:hover {
   background-color: #007460;
+}
+
+/* Estilo para módulos deshabilitados */
+.disabled-module {
+  opacity: 0.5;
+  pointer-events: none;
 }
 </style>

@@ -42,13 +42,13 @@
           required
         ></v-text-field>
 
-        <!-- Checkbox Administrador -->
+       
         <v-checkbox v-model="user.isAdmin" label="Administrador"></v-checkbox>
 
-        <!-- Checkbox para definir si es veterinario -->
-        <v-checkbox v-model="esVeterinario" label="Es Veterinario"></v-checkbox>
+        
+        <v-checkbox v-model="esVeterinario" label="Veterinario"></v-checkbox>
 
-        <!-- Si es veterinario, muestra los campos adicionales -->
+       
         <v-row v-if="esVeterinario">
           <v-col cols="12">
             <v-text-field
@@ -59,12 +59,12 @@
             ></v-text-field>
           </v-col>
           <v-col cols="12">
-            <v-text-field
+            <v-select
               v-model="veterinario.Dependencia"
-              :rules="requiredRule"
+             :items="['Clinica Pequeños Animales', 'Equinos','Endocrinologia y Metabolismo Animal', 'Gestión Hospitalaria', 'Semiología']"
               label="Dependencia"
               required
-            ></v-text-field>
+              ></v-select>
           </v-col>
           <v-col cols="12">
             <!-- Campo para subir la imagen del veterinario -->
@@ -77,11 +77,12 @@
           </v-col>
         </v-row>
 
-        <!-- Botón para guardar -->
+      <v-card-actions>
         <v-btn rounded color="primary" type="submit">Registrar</v-btn>
 
         <!-- Botón de cancelar con confirmación -->
         <v-btn rounded color="secondary" @click="confirmCancel">Cancelar</v-btn>
+      </v-card-actions>
       </v-form>
     </v-container>
   </v-card>

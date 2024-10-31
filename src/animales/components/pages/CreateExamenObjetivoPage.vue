@@ -9,21 +9,28 @@
             v-model="examenObjetivo.FC"
             label="Frecuencia Cardíaca (FC)"
             :rules="requiredRule"
+            @blur="validateNumber('FC')"
             required
+            :error-messages="errors.FC"
           ></v-text-field>
           <v-text-field
             v-model="examenObjetivo.Resp"
             label="Frecuencia Respiratoria (FR)"
             :rules="requiredRule"
+            @blur="validateNumber('Resp')"
             required
+            :error-messages="errors.Resp"
           ></v-text-field>
           <v-text-field
             v-model="examenObjetivo.temperatura"
             label="Temperatura (°C)"
             :rules="requiredRule"
+            @blur="validateNumber('temperatura')"
             required
+            :error-messages="errors.temperatura"
           ></v-text-field>
 
+          <!-- Otros campos opcionales -->
           <v-textarea v-model="examenObjetivo.condicionCorporal" label="Condición Corporal"></v-textarea>
           <v-textarea v-model="examenObjetivo.sensorio" label="Sensorio"></v-textarea>
           <v-textarea v-model="examenObjetivo.fascies" label="Fascies"></v-textarea>
@@ -39,7 +46,7 @@
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Guardar</v-btn>
+        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Registrar</v-btn>
         <v-btn color="secondary" @click="closeModal">Cancelar</v-btn>
       </v-card-actions>
     </v-card>
@@ -70,9 +77,7 @@ export default {
       Resp: '',
       temperatura: '',
       observaciones: '',
-      fichaClinicaId: fichaClinicaId,  // Lo obtenemos de los props
-
-      // Otros campos adicionales
+      fichaClinicaId: fichaClinicaId,
       condicionCorporal: '',
       sensorio: '',
       fascies: '',
@@ -86,20 +91,43 @@ export default {
       diagnostico: ''
     });
 
+    const errors = reactive({ FC: '', Resp: '', temperatura: '' });
     const requiredRule = [v => !!v || 'Este campo es requerido'];
+
+    const validateNumber = (field) => {
+      if (isNaN(examenObjetivo[field]) || examenObjetivo[field] === '') {
+        errors[field] = "El valor debe ser numérico.";
+        Swal.fire({
+          title: "Error",
+          text: `El campo ${field} debe ser un número válido.`,
+          icon: "error",
+          customClass: { popup: "swal-popup-zindex" },
+        });
+      } else {
+        errors[field] = "";
+      }
+    };
 
     const onSubmit = async () => {
       if (!form.value) return;
 
-      const isValid = await form.value.validate();
-      if (isValid) {
-        crearExamenObjetivo();
-      } else {
+      validateNumber('FC');
+      validateNumber('Resp');
+      validateNumber('temperatura');
+
+      if (Object.values(errors).some(error => error)) {
         Swal.fire({
           icon: "warning",
           title: "Formulario Incompleto",
-          text: "Por favor completa todos los campos requeridos.",
+          text: "Por favor completa todos los campos requeridos y verifica los campos numéricos.",
+          customClass: { popup: "swal-popup-zindex" },
         });
+        return;
+      }
+
+      const isValid = await form.value.validate();
+      if (isValid) {
+        crearExamenObjetivo();
       }
     };
 
@@ -134,6 +162,7 @@ export default {
           icon: "error",
           title: "Error",
           text: error.message || error.response?.data?.message || "No se pudo registrar el examen objetivo.",
+          customClass: { popup: "swal-popup-zindex" }
         });
       } finally {
         loading.value = false;
@@ -151,7 +180,9 @@ export default {
       createModal,
       examenObjetivo,
       requiredRule,
+      errors,
       loading,
+      validateNumber,
       onSubmit,
       closeModal,
     };
@@ -162,5 +193,8 @@ export default {
 <style scoped>
 .v-btn {
   margin-top: 20px;
+}
+.swal-popup-zindex {
+  z-index: 2000 !important; 
 }
 </style>

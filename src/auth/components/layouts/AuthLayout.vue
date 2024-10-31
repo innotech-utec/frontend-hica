@@ -2,15 +2,15 @@
     <div class="auth-layout">
       <nav class="layout-nav">
        
-        <v-img
+         <v-img
           src="@/assets/img/logo_hica.png"
           alt="Logo HICA"
           max-width="130"
           class="logo-hica"
-        />
+        /> 
   
         <!-- Icono del usuario a la derecha -->
-        <UserProfile />
+        <!-- <UserProfile /> -->
       </nav>
   
       <v-container>
@@ -20,12 +20,12 @@
   </template>
   
   <script>
-  import UserProfile from '@/users/components/organisms/UserProfile.vue';
+  // import UserProfile from '@/users/components/organisms/UserProfile.vue';
   
   export default {
-    components: {
-      UserProfile
-    }
+    // components: {
+    //   UserProfile
+    // }
   };
   </script>
   

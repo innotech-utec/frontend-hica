@@ -1,57 +1,92 @@
 <template>
   <v-container>
+    <!-- Botón de regreso -->
     <BackButton />
 
-    <!-- Título de la página -->
-    <v-row>
+    <v-row class="justify-center">
       <v-col cols="12" class="text-center">
         <h2 class="page-title">Listado de Usuarios</h2>
       </v-col>
     </v-row>
 
-    <!-- Botón para añadir usuario -->
-    <v-btn color="primary" class="add-user-btn" @click="$router.push({ name: 'users.create' })">
-      <v-icon>mdi-plus</v-icon>
-      Añadir Usuario
-    </v-btn>
+ 
+    <v-row class="filter-row" justify="center">
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="filtroDocumento"
+          label="Documento de Identidad"
+          clearable
+          outlined
+          dense
+          prepend-inner-icon="mdi-magnify"
+          @input="filtrarUsuarios"
+        ></v-text-field>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="filtroApellido"
+          label="Apellido"
+          clearable
+          outlined
+          dense
+          prepend-inner-icon="mdi-magnify"
+          @input="filtrarUsuarios"
+        ></v-text-field>
+      </v-col>
+    </v-row>
 
-    <!-- Tabla de usuarios y veterinarios -->
+    <v-row>
+      <v-col cols="12" class="text-right">
+        
+        <v-card-actions>
+          <v-btn rounded color="primary" class="add-user-btn" dark @click="$router.push({ name: 'users.create' })">
+            <v-icon left>mdi-plus</v-icon>
+            Añadir Usuario
+          </v-btn>
+        </v-card-actions>
+      </v-col>
+    </v-row>
+    
+
+
     <v-row>
       <v-col cols="12">
         <div class="table-responsive">
           <table class="table">
             <thead>
               <tr>
-                <th>Documento de Identidad</th>
+                
                 <th>Nombre</th>
                 <th>Apellido</th>
+                <th>Documento de Identidad</th>
                 <th>Rol</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Renderizar filas de usuarios y veterinarios -->
-              <tr v-for="user in users" :key="user.id">
-                <td>{{ user.documento }}</td>
+              <tr v-if="usuariosFiltrados.length === 0 && !loading">
+                <td colspan="5" class="text-center">No hay usuarios registrados.</td>
+              </tr>
+              <tr v-for="user in usuariosFiltrados" :key="user.id">
+                
                 <td>{{ user.nombre }}</td>
                 <td>{{ user.apellido }}</td>
+                <td>{{ user.documento }}</td>
                 <td>
-                  <!-- Mostrar el ícono y el rol del usuario -->
                   <v-icon :color="getIconColor(user)">
                     {{ getIcon(user) }}
                   </v-icon>
                   {{ determineRole(user) }}
                 </td>
                 <td>
-                  <!-- Editar usuario -->
-                  <v-btn icon @click="$router.push({ name: 'users.edit', params: { id: user.id } })">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-
-                  <!-- Eliminar usuario -->
-                  <v-btn icon @click="confirmDeleteUser(user.id)">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
+                  <v-card-actions>
+                    <v-btn icon color="primary" @click="$router.push({ name: 'users.edit', params: { id: user.id } })">
+                      <v-icon>mdi mdi-account-edit-outline</v-icon>
+                    </v-btn>
+                    <v-btn icon color="success" @click="confirmDeleteUser(user.id, !!user.veterinario)">
+                      <v-icon>mdi mdi-delete-outline</v-icon>
+                    </v-btn>
+                  </v-card-actions>
                 </td>
               </tr>
             </tbody>
@@ -59,6 +94,8 @@
         </div>
       </v-col>
     </v-row>
+
+    <!-- Paginación -->
     <div class="pagination-container">
       <PaginatorComponent
         :length="totalPages"
@@ -78,45 +115,52 @@ import BackButton from '@/shared/components/BackButton.vue';
 export default {
   components: {
     BackButton,
-    PaginatorComponent
+    PaginatorComponent,
   },
   data() {
     return {
-      users: [], // Lista combinada de usuarios
+      users: [],
+      filtroDocumento: '',
+      filtroApellido: '',
       currentPage: 1,
       totalPages: 1,
       loading: false,
     };
   },
+  computed: {
+    usuariosFiltrados() {
+      return this.users.filter(user => {
+        const matchesDocumento = user.documento.includes(this.filtroDocumento);
+        const matchesApellido = user.apellido.toLowerCase().includes(this.filtroApellido.toLowerCase());
+        return matchesDocumento && matchesApellido;
+      });
+    }
+  },
   methods: {
-  
     async fetchUsers(page = 1) {
       this.loading = true;
       try {
         const response = await backend.get(`/usuarios?page=${page}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
 
         const responseVeterinarios = await backend.get(`/veterinarios`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
 
         this.users = response.data.data;
         const veterinarios = responseVeterinarios.data;
 
-        // Agregar a cada usuario la información si es veterinario
+        // Asocia el rol de veterinario a los usuarios que lo tienen
         this.users.forEach(user => {
           const veterinarioAsociado = veterinarios.find(vet => vet.user.id === user.id);
           if (veterinarioAsociado) {
-            user.veterinario = veterinarioAsociado; // Agrega el veterinario al usuario
+            user.veterinario = veterinarioAsociado;
           }
         });
 
-        // Paginación
         this.currentPage = response.data.meta.current || 1;
         this.totalPages = response.data.meta.last || 1;
-
-        console.log('Lista de usuarios:', this.users);
       } catch (error) {
         console.error('Error al obtener usuarios:', error);
         Swal.fire('Error', 'No se pudo obtener la lista de usuarios', 'error');
@@ -125,83 +169,63 @@ export default {
       }
     },
 
-    // Determina el rol del usuario para mostrar en la tabla
-    determineRole(user) {
-      if (user.isAdmin && user.veterinario) return 'Administrador, Veterinario';
-      if (user.isAdmin) return 'Administrador';
-      if (user.veterinario) return 'Veterinario';
-      return 'Usuario';
-    },
+    async confirmDeleteUser(id, isVeterinario) {
+      // Verificación de eliminación de veterinario con tratamientos asignados
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: '¡No podrás revertir esto!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, inhabilitar',
+        cancelButtonText: 'Cancelar',
+      });
 
-    // Devuelve el ícono correspondiente al usuario según su rol
-    getIcon(user) {
-      if (user.isAdmin && user.veterinario) return 'mdi-shield-account';
-      if (user.isAdmin) return 'mdi-shield-account';
-      if (user.veterinario) return 'mdi-stethoscope'; // Ícono específico para veterinarios
-      return 'mdi-account';
-    },
+      if (result.isConfirmed) {
+        if (isVeterinario) {
+          try {
+            // Verificar si el veterinario tiene tratamientos asignados
+            const tratamientosResponse = await backend.get(`/veterinarios/${id}/tratamientos`, {
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+            });
 
-    // Devuelve el color del ícono según el rol del usuario
-    getIconColor(user) {
-      if (user.isAdmin && user.veterinario) return '#014582';  // Azul para Admin + Veterinario
-      if (user.isAdmin) return '#014582';  // Azul para Admin
-      if (user.veterinario) return '#008575';  // Verde para Veterinario
-      return '#A9A9A9';  // Gris para Usuario
-    },
-
-  // Confirmar eliminación de usuario
-// Confirmar eliminación de usuario
-async confirmDeleteUser(id, isVeterinario) {
-  const result = await Swal.fire({
-    title: '¿Estás seguro?',
-    text: '¡No podrás revertir esto!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Sí, inhabilitar',
-    cancelButtonText: 'Cancelar',
-  });
-
-  if (result.isConfirmed) {
-    if (isVeterinario) {
-      try {
-        // Verificar si el veterinario tiene tratamientos asignados
-        const tratamientosResponse = await backend.get(`/veterinarios/${id}/tratamientos`);
-
-        // Mostrar en consola la respuesta para verificar los datos recibidos
-        console.log('Tratamientos asignados:', tratamientosResponse.data);
-        
-        if (tratamientosResponse.data.length > 0) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Tratamientos asignados',
-            text: 'Este veterinario tiene tratamientos asignados. Debes reasignar los tratamientos antes de inhabilitar al veterinario.',
-          });
-          return; // Detener el proceso si hay tratamientos asignados
+            if (tratamientosResponse.data.length > 0) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Tratamientos asignados',
+                text: 'Este veterinario tiene tratamientos asignados. Debes reasignar los tratamientos antes de inhabilitar al veterinario.',
+              });
+              return; // Detener la eliminación si hay tratamientos asignados
+            }
+          } catch (error) {
+            console.error('Error al verificar tratamientos:', error);
+            Swal.fire('Error', 'No se pudo verificar los tratamientos del veterinario.', 'error');
+            return;
+          }
         }
-      } catch (error) {
-        console.error('Error al verificar tratamientos:', error);
-        Swal.fire('Error', 'No se pudo verificar los tratamientos del veterinario.', 'error');
-        return;
+        
+        // Proceder con la eliminación si no tiene tratamientos asignados
+        this.deleteUser(id);
       }
-    }
-    
-    // Proceder con la eliminación si no es veterinario o no tiene tratamientos
-    this.deleteUser(id);
-  }
-},
+    },
 
-// Método para eliminar usuario
-async deleteUser(id) {
+    async deleteUser(id) {
   try {
-    await backend.delete(`/usuarios/${id}`);
+    await backend.delete(`/usuarios/${id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
     this.fetchUsers(); // Refresca la lista después de eliminar
     Swal.fire('Inhabilitado!', 'El usuario ha sido inhabilitado.', 'success');
   } catch (error) {
     if (error.response && error.response.status === 400) {
-      // Mostrar un mensaje específico si es un error 400 de tratamientos asignados
-      Swal.fire('Error', error.response.data.message || 'No se pudo inhabilitar el usuario', 'error');
+      // Verifica si el error proviene de la relación de tratamientos asignados
+      const errorMessage = error.response.data.message;
+      if (errorMessage.includes('tratamientos asignados')) {
+        Swal.fire('Error', 'Este veterinario tiene tratamientos asignados. Debes reasignar los tratamientos antes de inhabilitar al veterinario.', 'warning');
+      } else {
+        Swal.fire('Error', errorMessage || 'No se pudo inhabilitar el usuario', 'error');
+      }
     } else {
       // Mensaje genérico para otros errores
       Swal.fire('Error', 'No se pudo inhabilitar el usuario', 'error');
@@ -209,16 +233,36 @@ async deleteUser(id) {
   }
 },
 
-
-
+    filtrarUsuarios() {
+      this.currentPage = 1; // Reinicia la paginación al aplicar filtros
+    },
 
     handlePageChange(newPage) {
       this.fetchUsers(newPage);
     },
-  },
 
+    determineRole(user) {
+      if (user.isAdmin && user.veterinario) return 'Administrador, Veterinario';
+      if (user.isAdmin) return 'Administrador';
+      if (user.veterinario) return 'Veterinario';
+      return 'Usuario';
+    },
+
+    getIcon(user) {
+      if (user.isAdmin && user.veterinario) return 'mdi-shield-account';
+      if (user.isAdmin) return 'mdi-shield-account';
+      if (user.veterinario) return 'mdi-stethoscope';
+      return 'mdi-account';
+    },
+
+    getIconColor(user) {
+      if (user.isAdmin && user.veterinario) return '#014582';
+      if (user.isAdmin) return '#014582';
+      if (user.veterinario) return '#008575';
+      return '#A9A9A9';
+    },
+  },
   created() {
-    // Llamar al método fetchUsers al crearse el componente
     this.fetchUsers();
   },
 };
@@ -229,8 +273,11 @@ async deleteUser(id) {
   font-size: 28px;
   color: #014582;
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
+
+
 
 .table-responsive {
   overflow-x: auto;
@@ -239,22 +286,20 @@ async deleteUser(id) {
 .table {
   width: 100%;
   border-collapse: collapse;
+  background-color: #fafafa;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .table th,
 .table td {
   border: 1px solid #ddd;
   padding: 10px;
+  text-align: center;
 }
 
 .table th {
-  background-color: #f2f2f2;
-  text-align: left;
-}
-
-.table td {
-  text-align: left;
-  vertical-align: middle;
+  background-color: #e8eaf6;
+  color: #014582;
 }
 
 .pagination-container {
@@ -263,27 +308,7 @@ async deleteUser(id) {
   margin-top: 20px;
 }
 
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 24px;
-  }
-
-  .add-user-btn {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
-  .table {
-    font-size: 12px;
-  }
-
-  .table th,
-  .table td {
-    padding: 8px;
-  }
-
-  .v-btn {
-    width: 100%;
-  }
+.filter-row {
+  margin-bottom: 20px;
 }
 </style>
