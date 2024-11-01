@@ -1,16 +1,35 @@
 <template>
   <v-container>
+    <!-- Botón de regreso -->
     <BackButton />
 
     <!-- Título de la página -->
-    <v-row>
- 
+    <v-row class="justify-center">
+      <v-col cols="12" class="text-center">
+        <h2 class="page-title">Listado de Responsables</h2>
+      </v-col>
     </v-row>
+
+    <!-- Filtros -->
+    <v-row class="filter-row" justify="center">
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="filtroDocumento"
+          label="Documento"
+          clearable
+          outlined
+          dense
+          prepend-inner-icon="mdi-magnify"
+          @input="filtrarResponsables"
+        ></v-text-field>
+      </v-col>
+    </v-row>
+
+    <!-- Botón de Añadir Responsable -->
     <v-row>
-      <v-col cols="12" class="text-right">
-        
+      <v-col cols="12" class="text-left">
         <v-card-actions>
-          <v-btn rounded color="primary" class="add-responsable-btn" dark @click="$router.push({ name: 'responsables.create' })">
+          <v-btn rounded color="primary" class="add-responsable-btn"  @click="$router.push({ name: 'responsables.create' })">
             <v-icon left>mdi-plus</v-icon>
             Añadir Responsable
           </v-btn>
@@ -26,39 +45,40 @@
             <thead>
               <tr>
                 <th>Documento</th>
-                <th>Nombre</th>
-                <th>Apellido</th>
+                <th>Nombre y Apellido</th>
                 <th>Domicilio</th>
-                <th>teléfono</th>
+                <th>Teléfono</th>
                 <th>Departamento</th>
                 <th>Localidad</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="responsable in responsables" :key="responsable.id">
+              <tr v-if="responsablesFiltrados.length === 0 && !loading">
+                <td colspan="7" class="text-center">No hay responsables registrados.</td>
+              </tr>
+              <tr v-for="responsable in responsablesFiltrados" :key="responsable.id">
                 <td>{{ responsable.documento }}</td>
-                <td>{{ responsable.nombre }}</td>
-                <td>{{ responsable.apellido }}</td>
+                <td>{{ responsable.nombre }} {{ responsable.apellido }}</td>
                 <td>{{ responsable.domicilio }}</td>
                 <td>{{ responsable.telefono }}</td>
-                <td>{{ responsable.departamento }}</td>
+                <td>{{ responsable.departamento.nombre }}</td>
                 <td>{{ responsable.localidad }}</td>
                 <td>
-                  <!-- Editar responsable -->
-                  <v-btn icon @click="editResponsable(responsable.id)">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-
-                  <!-- Agregar animales -->
-                  <v-btn icon @click="addAnimalToResponsable(responsable.id)">
-                    <v-icon>mdi-paw</v-icon> <!-- Icono de animal para agregar animales -->
-                  </v-btn>
-
-                  <!-- Eliminar responsable -->
-                  <v-btn icon @click="confirmDeleteResponsable(responsable.id)">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
+                  <v-card-actions>
+                    <v-btn icon color="primary" @click="editResponsable(responsable.id)">
+                      <v-icon>mdi mdi-account-edit-outline</v-icon>
+                    </v-btn>
+                    <v-btn icon color="success" @click="addAnimalToResponsable(responsable.id)">
+                      <v-icon>mdi mdi-paw</v-icon>
+                    </v-btn>
+                    <v-btn icon color="info" @click="viewAnimales(responsable.id)">
+                      <v-icon>mdi mdi-eye-outline</v-icon>
+                    </v-btn>
+                    <v-btn icon color="error" @click="confirmDeleteResponsable(responsable.id)">
+                      <v-icon>mdi mdi-delete-outline</v-icon>
+                    </v-btn>
+                  </v-card-actions>
                 </td>
               </tr>
             </tbody>
@@ -66,6 +86,8 @@
         </div>
       </v-col>
     </v-row>
+
+    <!-- Paginación -->
     <div class="pagination-container">
       <PaginatorComponent
         :length="totalPages"
@@ -73,11 +95,35 @@
         @pageChange="handlePageChange"
       />
     </div>
+
+  
+    <v-dialog v-model="showAnimalesModal" max-width="600px">
+      <v-card>
+        <v-card-title class="headline">Animales de {{ currentResponsableNombre }}</v-card-title>
+        <v-card-text>
+          <v-list dense>
+            <v-list-item
+              v-for="animal in animalesResponsable"
+              :key="animal.id"
+              @click="goToAnimalHistory(animal.id)"
+              class="clickable"
+            >
+              <v-list-item-content>
+                <v-list-item-title>Nombre: {{ animal.nombre }}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="secondary" @click="showAnimalesModal = false">Cerrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
-import backend from '@/backend'; // Asegúrate de que esta ruta esté bien definida
+import backend from '@/backend';
 import Swal from 'sweetalert2';
 import BackButton from '@/shared/components/BackButton.vue';
 import PaginatorComponent from "@/shared/components/PaginatorComponent.vue";
@@ -85,9 +131,14 @@ import PaginatorComponent from "@/shared/components/PaginatorComponent.vue";
 export default {
   data() {
     return {
-      responsables: [], // Array para almacenar los responsables
-      currentPage: 1, // Página actual
-      totalPages: 1,  // Total de páginas
+      responsables: [],
+      filtroDocumento: '',
+      currentPage: 1,
+      totalPages: 1,
+      loading: false,
+      showAnimalesModal: false,
+      animalesResponsable: [],
+      currentResponsableNombre: '',
     };
   },
 
@@ -96,50 +147,38 @@ export default {
     PaginatorComponent,
   },
 
-  methods: {
-    
-    async fetchResponsables(page = 1) {
-      console.log("Obteniendo lista de responsables para la página:", page); // Mostrar la página solicitada
-      this.loading = true;
+  computed: {
+    responsablesFiltrados() {
+      return this.responsables.filter(responsable => 
+        responsable.documento.includes(this.filtroDocumento)
+      );
+    },
+  },
 
+  methods: {
+    async fetchResponsables(page = 1) {
+      this.loading = true;
       try {
-        // Hacer la solicitud al backend para obtener los responsables
         const response = await backend.get(`/responsables`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`, // Asegúrate de que el token esté presente
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
-          params: {
-            page, // Pasar el parámetro de la página como query param
-          },
+          params: { page },
         });
-
-        // Verificar que los datos existen en response.data
-        console.log('Respuesta de /responsables:', response.data);
-
-        if (response.data) {
-          this.responsables = response.data; // Asignar los datos al array responsables
-          this.currentPage = page; // Asignar la página actual
-        } else {
-          console.error('La respuesta no contiene los datos esperados.');
-        }
+        this.responsables = response.data;
+        this.currentPage = page;
       } catch (error) {
         console.error('Error al obtener responsables:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'No se pudo obtener la lista de responsables.',
-        });
+        Swal.fire('Error', 'No se pudo obtener la lista de responsables.', 'error');
       } finally {
-        this.loading = false; // Desactivar el loading después de obtener los datos
+        this.loading = false;
       }
     },
 
-    // Método para redirigir a la página de editar responsable
     editResponsable(id) {
       this.$router.push({ name: 'responsables.edit', params: { id } });
     },
 
-    // Método para confirmar la eliminación de un responsable
     async confirmDeleteResponsable(id) {
       const result = await Swal.fire({
         title: '¿Estás seguro?',
@@ -151,7 +190,6 @@ export default {
         confirmButtonText: 'Sí, eliminarlo',
         cancelButtonText: 'Cancelar',
       });
-
       if (result.isConfirmed) {
         this.deleteResponsable(id);
       }
@@ -159,49 +197,48 @@ export default {
 
     async deleteResponsable(id) {
       try {
-        const response = await backend.delete(`/responsables/${id}`, {
+        await backend.delete(`/responsables/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
-
-        Swal.fire({
-          title: "Responsable eliminado",
-          text: response.data.message,
-          icon: "success",
-        });
-
-        // Refresca la lista después de eliminar un responsable
+        Swal.fire('Eliminado', 'El responsable ha sido eliminado.', 'success');
         this.fetchResponsables(this.currentPage);
       } catch (error) {
-        if (error.response && error.response.status === 400) {
-          Swal.fire({
-            title: "Error",
-            text: error.response.data.message,
-            icon: "error",
-          });
-        } else {
-          Swal.fire({
-            title: "Error",
-            text: "No se pudo eliminar el responsable.",
-            icon: "error",
-          });
-        }
+        Swal.fire('Error', 'No se pudo eliminar el responsable.', 'error');
       }
     },
 
-    // Método para redirigir a la página de añadir un nuevo animal para un responsable
     addAnimalToResponsable(id) {
       this.$router.push({ name: 'animales.create', query: { responsableId: id } });
     },
 
-    // Método para manejar el cambio de página
+    viewAnimales(id) {
+      backend.get(`/responsables/${id}/animales`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+      .then(response => {
+        this.animalesResponsable = response.data;
+        this.currentResponsableNombre = response.data.nombre;
+        this.showAnimalesModal = true;
+      })
+    },
+
+    goToAnimalHistory(animalId) {
+      this.$router.push({ name: 'historiaClinica.view', params: { animalId } });
+    },
+
+    filtrarResponsables() {
+      this.currentPage = 1;
+    },
+
     handlePageChange(newPage) {
       this.fetchResponsables(newPage);
     },
   },
 
-  // Cargar la lista de responsables cuando se monta el componente
   created() {
     this.fetchResponsables();
   },
@@ -217,10 +254,7 @@ export default {
   margin-bottom: 10px;
 }
 
-.add-user-btn {
-  background-color: #014582 !important;
-  color: white !important;
-}
+
 
 .table-responsive {
   overflow-x: auto;
@@ -254,5 +288,8 @@ export default {
 .filter-row {
   margin-bottom: 20px;
 }
-</style>
 
+.clickable {
+  cursor: pointer;
+}
+</style>

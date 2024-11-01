@@ -23,7 +23,7 @@
       <v-col cols="12" md="4">
         <v-text-field
           v-model="filtroNombre"
-          label="Nombre del Animal"
+          label="Nombre del Paciente"
           clearable
           outlined
           dense

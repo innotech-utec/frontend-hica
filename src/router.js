@@ -43,6 +43,15 @@ import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenOb
 import ViewExamenObjetivoPage from '@/animales/components/pages/ViewExamenObjetivoPage.vue';
 import EditExamenObjetivoPage from './animales/components/pages/EditExamenObjetivoPage.vue';
 
+//facturas
+import IndexArticuloPage from '@/facturas/components/pages/IndexArticuloPage.vue';
+import CreateArticuloPage from '@/facturas/components/pages/CreateArticuloPage.vue';
+import  UpdateArticuloPage from '@/facturas/components/pages/UpdateArticuloPage.vue';
+import IndexFacturaPage from '@/facturas/components/pages/IndexFacturaPage.vue';
+import CreateFacturaPage from '@/facturas/components/pages/CreateFacturaPage.vue';
+import UpdateFacturaPage from '@/facturas/components/pages/UpdateFacturaPage.vue';
+
+
 
 const routes = [
   {
@@ -245,12 +254,48 @@ const routes = [
         
       },
       {
-        path: '/animales/ficha-clinica/examen-objetivo/editar/:fichaClinicaId',  // Nueva ruta para editar
+        path: '/animales/ficha-clinica/examen-objetivo/editar/:fichaClinicaId',  
         name: 'examenObjetivo.edit',
-        component: EditExamenObjetivoPage,  // Asegúrate de tener este componente
+        component: EditExamenObjetivoPage,  
         meta: {
           requiresAuth: true,
         },
+      },
+      {
+        path: '/articulos',
+        name: 'articulos.index',
+        component: IndexArticuloPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/articulos/crear',
+        name: 'articulos.create',
+        component: CreateArticuloPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/articulos/:id/editar',
+        name: 'articulos.edit',
+        component: UpdateArticuloPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/facturas',
+        name: 'facturas.index',
+        component: IndexFacturaPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/facturas/crear',
+        name: 'facturas.create',
+        component: CreateFacturaPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/facturas/:id/editar',
+        name: 'facturas.edit',
+        component: UpdateFacturaPage,
+        meta: { requiresAuth: true },
       },
     ],
   },

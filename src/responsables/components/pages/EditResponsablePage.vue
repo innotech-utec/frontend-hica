@@ -49,7 +49,7 @@
         ></v-text-field>
         
         <v-select
-          v-model="responsable.departamentoId"
+          v-model="selectedDepartamentoId"
           :items="departamentos"
           label="Departamento"
           :rules="requiredRule"
@@ -61,14 +61,14 @@
         ></v-select>
         
         <v-select
-          v-model="responsable.localidadId"
+          v-model="selectedLocalidadId"
           :items="localidades"
           label="Localidad"
           :rules="requiredRule"
           item-title="nombre"
-          item-value="id"
+          item-value="nombre"
           :loading="loadingLocalidades"
-          :disabled="!responsable.departamentoId || loadingLocalidades"
+          :disabled="!selectedDepartamentoId || loadingLocalidades"
           required
         ></v-select>
 
@@ -112,14 +112,14 @@ export default {
       loadingLocalidades: false,
       departamentos: [],
       localidades: [],
+      selectedDepartamentoId: null,
+      selectedLocalidadId: null,
       responsable: {
         documento: '',
         nombre: '',
         apellido: '',
         domicilio: '',
         telefono: '',
-        departamentoId: null,
-        localidadId: null
       },
       documentoRules: [
         v => !!v || 'El documento es requerido',
@@ -148,10 +148,8 @@ export default {
   },
   
   async created() {
-    await Promise.all([
-      this.loadDepartamentos(),
-      this.cargarResponsable()
-    ]);
+    await this.loadDepartamentos();
+    await this.cargarResponsable();
   },
 
   methods: {
@@ -172,17 +170,15 @@ export default {
       }
     },
 
-    async handleDepartamentoChange(newDepartamentoId) {
-      this.localidades = [];
-      this.responsable.localidadId = null;
-      
-      if (!newDepartamentoId) return;
-
-      const departamento = this.departamentos.find(d => d.id === newDepartamentoId);
-      if (!departamento) {
-        console.error("No se encontró el departamento seleccionado");
+    async handleDepartamentoChange(departamentoId) {
+      if (!departamentoId) {
+        this.localidades = [];
+        this.selectedLocalidadId = null;
         return;
       }
+
+      const departamento = this.departamentos.find(d => d.id === departamentoId);
+      if (!departamento) return;
 
       this.loadingLocalidades = true;
       try {
@@ -190,18 +186,16 @@ export default {
         
         if (Array.isArray(localidadesResponse)) {
           this.localidades = localidadesResponse.map(loc => ({
-            id: loc.id || loc.nombre,
+            id: loc.nombre,
             nombre: loc.nombre
           }));
-        } else {
-          throw new Error('La respuesta de localidades no es válida');
         }
       } catch (error) {
         console.error("Error al cargar localidades:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: "No se pudieron cargar las localidades para el departamento seleccionado.",
+          text: "No se pudieron cargar las localidades.",
         });
         this.localidades = [];
       } finally {
@@ -213,16 +207,29 @@ export default {
       try {
         const responsableId = this.$route.params.id;
         const response = await backend.get(`/responsables/${responsableId}`);
-        this.responsable = {
-          ...response.data,
-          departamentoId: response.data.departamento?.id,
-          localidadId: response.data.localidad?.id
-        };
         
-        // Cargar las localidades del departamento actual
-        if (this.responsable.departamentoId) {
-          await this.handleDepartamentoChange(this.responsable.departamentoId);
+        // Cargar datos básicos
+        this.responsable = {
+          documento: response.data.documento,
+          nombre: response.data.nombre,
+          apellido: response.data.apellido,
+          domicilio: response.data.domicilio,
+          telefono: response.data.telefono,
+        };
+
+        // Cargar departamento
+        if (response.data.departamento) {
+          this.selectedDepartamentoId = response.data.departamento.id;
+          await this.handleDepartamentoChange(response.data.departamento.id);
         }
+
+        // Cargar localidad después de que se hayan cargado las localidades
+        if (response.data.localidad) {
+          this.$nextTick(() => {
+            this.selectedLocalidadId = response.data.localidad.nombre;
+          });
+        }
+
       } catch (error) {
         console.error("Error al cargar responsable:", error);
         Swal.fire({
@@ -239,7 +246,22 @@ export default {
       this.loading = true;
       try {
         const responsableId = this.$route.params.id;
-        const response = await backend.patch(`/responsables/${responsableId}`, this.responsable, {
+        
+        const departamento = this.departamentos.find(d => d.id === this.selectedDepartamentoId);
+        ///const localidad = this.localidades.find(l => l.nombre === this.selectedLocalidadId);
+
+        const dataToSend = {
+          ...this.responsable,
+          departamentoId: this.selectedDepartamentoId,
+          localidadId: this.selectedLocalidadId,
+          departamento: departamento,
+          localidad: {
+            nombre: this.selectedLocalidadId,
+           
+          }
+        };
+
+        const response = await backend.patch(`/responsables/${responsableId}`, dataToSend, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
@@ -281,18 +303,6 @@ export default {
       }
     },
   },
-
-  watch: {
-    'responsable.departamentoId': {
-      immediate: true,
-      handler(newVal) {
-        if (!newVal) {
-          this.localidades = [];
-          this.responsable.localidadId = null;
-        }
-      }
-    }
-  }
 };
 </script>
 

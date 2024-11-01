@@ -1,19 +1,12 @@
 <template>
   <v-container class="home-container pa-0" fluid>
-    <!-- Barra lateral usando v-navigation-drawer -->
-    <!-- Barra lateral con logo arriba -->
-    <v-navigation-drawer
-      permanent
-      color="white"
-      width="250"
-      class="elevation-4"
-    >
+    <v-navigation-drawer permanent color="white" width="250" class="elevation-4">
       <!-- Logo en la parte superior -->
       <div class="pa-4">
         <img src="/HICA_logo.png" alt="HICA" class="logo mb-6" />
       </div>
 
-      <!-- Menú debajo del logo -->
+      <!-- Menú lateral -->
       <v-list nav>
         <v-list-item
           v-for="item in menuItems"
@@ -33,28 +26,28 @@
     <!-- Contenido principal -->
     <v-main class="pl-0">
       <v-container fluid class="pa-6">
-        <h2 class="text-h5 mb-4">Panel tareas del día</h2>
+        <h2 class="text-h5 mb-4">Panel de tareas del día</h2>
 
         <!-- Tarjetas de resumen -->
-  <v-row>
-    <v-col cols="4" v-for="(card, index) in summaryCards" :key="index">
-      <v-card
-        :class="card.bgColor"
-        class="summary-card"
-        :style="`border: 2px solid ${card.borderColor}`"
-      >
-        <div class="d-flex align-center pa-4">
-          <v-icon :color="card.iconColor" size="50" class="mr-4">
-            {{ card.icon }}
-          </v-icon>
-          <div>
-            <div class="text-h4 font-weight-bold text-black">{{ card.count }}</div>
-            <div class="text-body-2 text-black">{{ card.title }}</div>
-          </div>
-        </div>
-      </v-card>
-    </v-col>
-  </v-row>
+        <v-row>
+          <v-col cols="4" v-for="(card, index) in summaryCards" :key="index">
+            <v-card
+              :class="card.bgColor"
+              class="summary-card"
+              :style="`border: 2px solid ${card.borderColor}`"
+            >
+              <div class="d-flex align-center pa-4">
+                <v-icon :color="card.iconColor" size="50" class="mr-4">
+                  {{ card.icon }}
+                </v-icon>
+                <div>
+                  <div class="text-h4 font-weight-bold text-black">{{ card.count }}</div>
+                  <div class="text-body-2 text-black">{{ card.title }}</div>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
 
         <!-- Contenido Principal -->
         <v-row class="mt-4">
@@ -80,11 +73,7 @@
                       <td>{{ treatment.species }}</td>
                       <td>{{ treatment.treatment }}</td>
                       <td>
-                        <v-chip
-                          :color="getStatusColor(treatment.status)"
-                          text-color="white"
-                          size="small"
-                        >
+                        <v-chip :color="getStatusColor(treatment.status)" text-color="white" size="small">
                           {{ treatment.status }}
                         </v-chip>
                       </td>
@@ -165,7 +154,8 @@ export default {
         { title: 'Usuarios', icon: 'mdi-account-group', route: '/usuarios' },
         { title: 'Animales', icon: 'mdi-paw', route: '/animales' },
         { title: 'Laboratorio', icon: 'mdi-flask', route: '/laboratorio' },
-        { title: 'Insumos', icon: 'mdi-cube-outline', route: '/insumos' },
+        { title: 'Insumos', icon: 'mdi-cube-outline', route: '/articulos' },
+        { title: 'Facturación', icon: 'mdi-receipt', route: '/facturas' },
         { title: 'Reportes', icon: 'mdi-file-chart', route: '/reportes' },
       ],
       summaryCards: [
@@ -257,56 +247,17 @@ export default {
 </script>
 
 <style scoped>
-
 .summary-card {
   border-radius: 8px;
 }
-
-.bg-light-green {
-  background-color: rgba(76, 175, 80, 0.1) !important;
-}
-
-.bg-light-blue {
-  background-color: rgba(33, 150, 243, 0.1) !important;
-}
-
-.bg-purple {
-  background-color: rgba(156, 39, 176, 0.1) !important;
-}
-
-.v-navigation-drawer {
-  border-radius: 0 10px 10px 0;
-}
-
-/* Estilo para el logo */
-.logo {
-  width: 150px;
-  display: block;
-  margin: 0 auto;
-}
-
-/* Estilo para los items del menú */
-.menu-item {
-  margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.v-list-item-title {
-  font-size: 1.1rem;
-  padding: 8px 0;
-}
-
-.v-table {
-  width: 100%;
-}
-
-.current-day {
-  background-color: var(--v-primary-base);
-  color: white;
-  border-radius: 50%;
-}
+.bg-light-green { background-color: rgba(76, 175, 80, 0.1) !important; }
+.bg-light-blue { background-color: rgba(33, 150, 243, 0.1) !important; }
+.bg-purple { background-color: rgba(156, 39, 176, 0.1) !important; }
+.v-navigation-drawer { border-radius: 0 10px 10px 0; }
+.logo { width: 150px; display: block; margin: 0 auto; }
+.menu-item { margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.menu-item:hover { background-color: rgba(255, 255, 255, 0.1); }
+.v-list-item-title { font-size: 1.1rem; padding: 8px 0; }
+.v-table { width: 100%; }
+.current-day { background-color: var(--v-primary-base); color: white; border-radius: 50%; }
 </style>
