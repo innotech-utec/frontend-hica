@@ -35,15 +35,19 @@
             <p><strong>Motivo de Consulta:</strong> {{ fichaClinica.motivoConsulta }}</p>
             <p><strong>Condición Sanitaria:</strong> {{ fichaClinica.sanitaria }}</p>
             <p><strong>Condición Ambiental:</strong> {{ fichaClinica.ambiental }}</p>
-            <p><strong>Remota Fisiológica:</strong> {{ fichaClinica.remotaFisiologica }}</p>
-            <p><strong>Remota Patológica:</strong> {{ fichaClinica.remotaPatologica }}</p>
-            <p><strong>Próxima Fisiológica:</strong> {{ fichaClinica.proximaFisiologica }}</p>
-            <p><strong>Próxima Patológica:</strong> {{ fichaClinica.proximaPatologica }}</p>
             <p><strong>Estado del Paciente:</strong> {{ fichaClinica.estadoFichaClinica }}</p>
             <v-card-actions>
-              <!-- Botón para abrir el modal de edición -->
+              <!-- Botón para editar ficha clínica -->
               <v-btn color="primary" @click="openEditModal" outlined>
                 <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
+              </v-btn>
+              <!-- Botón para facturación -->
+              <v-btn 
+                color="primary" 
+                class="ml-2" 
+                @click="irAFacturacion"
+              >
+                <v-icon left>mdi-currency-usd</v-icon>{{ facturaExistente ? 'Visualizar Factura' : 'Nueva Factura' }}
               </v-btn>
             </v-card-actions>
           </v-card-text>
@@ -51,16 +55,7 @@
       </v-col>
     </v-row>
 
-    <!-- Modal para editar ficha clínica -->
-    <v-dialog v-model="showEditModal" max-width="600px">
-      <EditFichaClinicaPage
-        :ficha-clinica-id="fichaClinicaId"
-        @closeModal="closeEditModal"
-        @fichaActualizada="refreshData"
-      />
-    </v-dialog>
-
-    <!-- Otros componentes como examen objetivo, tratamiento, etc. -->
+    <!-- Modulos de Examen Objetivo, Tratamientos y Parámetros -->
     <v-row>
       <v-col cols="12">
         <ViewExamenObjetivoPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
@@ -76,6 +71,15 @@
         <ViewRegistroParametrosPage :animalId="animal.id" :fichaClinicaId="fichaClinicaId" :disabled="isFichaClosed" />
       </v-col>
     </v-row>
+
+    <!-- Modal para editar ficha clínica -->
+    <v-dialog v-model="showEditModal" max-width="600px">
+      <EditFichaClinicaPage
+        :ficha-clinica-id="fichaClinicaId"
+        @closeModal="closeEditModal"
+        @fichaActualizada="refreshData"
+      />
+    </v-dialog>
   </v-container>
 </template>
 
@@ -83,7 +87,7 @@
 import backend from "@/backend";
 import Swal from "sweetalert2";
 import BackButton from "@/shared/components/BackButton.vue";
-import EditFichaClinicaPage from "@/animales/components/pages/EditFichaClinicaPage.vue";  
+import EditFichaClinicaPage from "@/animales/components/pages/EditFichaClinicaPage.vue";
 import ViewExamenObjetivoPage from "@/animales/components/pages/ViewExamenObjetivoPage.vue";
 import ViewTratamientoPage from "@/animales/components/pages/ViewTratamientoPage.vue";
 import ViewRegistroParametrosPage from "@/animales/components/pages/ViewRegistroParametrosPage.vue";
@@ -102,6 +106,8 @@ export default {
       fichaClinicaId: null,
       fichaClinica: {},
       showEditModal: false,
+      facturaExistente: false,
+      facturaId: null
     };
   },
   computed: {
@@ -111,6 +117,49 @@ export default {
     }
   },
   methods: {
+    async verificarFactura() {
+      try {
+        const response = await backend.post('/facturas/createOrGet', { fichaClinicaId: this.fichaClinicaId });
+        if (response.data && response.data.id) {
+          this.facturaId = response.data.id;
+          this.facturaExistente = true;
+        }
+      } catch (error) {
+        console.error("Error al verificar la factura:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.response?.data?.message || "No se pudo obtener la factura.",
+        });
+      }
+    },
+    async irAFacturacion() {
+      if (this.facturaExistente) {
+        // Redirige a la factura existente
+        this.$router.push({
+          name: 'IndexFacturaPage',
+          params: { fichaClinicaId: this.fichaClinicaId, facturaId: this.facturaId }
+        });
+      } else {
+        // Crea una nueva factura si no existe
+        try {
+          const response = await backend.post('/facturas/createOrGet', { fichaClinicaId: this.fichaClinicaId });
+          this.facturaId = response.data.id;
+          this.facturaExistente = true;
+          this.$router.push({
+            name: 'IndexFacturaPage',
+            params: { fichaClinicaId: this.fichaClinicaId, facturaId: this.facturaId }
+          });
+        } catch (error) {
+          console.error("Error al crear la factura:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.response?.data?.message || "No se pudo crear la factura.",
+          });
+        }
+      }
+    },
     openEditModal() {
       this.showEditModal = true;
     },
@@ -120,6 +169,7 @@ export default {
     async refreshData() {
       await this.fetchAnimalDetails();
       await this.fetchFichaClinica();
+      await this.verificarFactura(); // Verifica o crea la factura después de cargar la ficha clínica
     },
     async fetchAnimalDetails() {
       const animalId = this.$route.query.animalId;
@@ -167,9 +217,9 @@ export default {
       }
     }
   },
-  created() {
-    this.refreshData();
-  },
+  async created() {
+    await this.refreshData();
+  }
 };
 </script>
 
@@ -191,11 +241,6 @@ export default {
   text-align: center;
 }
 
-.justified-text {
-  text-align: justify;
-  line-height: 1.6;
-}
-
 .animal-card, .ficha-card {
   background-color: #f9f9f9;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
@@ -211,21 +256,6 @@ export default {
 
 .v-btn.primary:hover {
   background-color: #013262;
-}
-
-.v-btn.secondary {
-  background-color: #008575;
-  color: #fff;
-}
-
-.v-btn.secondary:hover {
-  background-color: #007460;
-}
-
-.disabled-module {
-  opacity: 0.6;
-  pointer-events: none;
-  color: #9e9e9e;
 }
 
 .mb-5 {

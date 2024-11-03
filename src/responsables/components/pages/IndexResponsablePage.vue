@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <!-- Botón de regreso -->
+    
     <BackButton />
 
     <!-- Título de la página -->
