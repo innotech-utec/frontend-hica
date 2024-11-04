@@ -15,18 +15,18 @@ import AuthLayout from '@/auth/components/layouts/AuthLayout.vue';
 // Páginas de Responsables
 import ResponsablePage from '@/responsables/components/pages/IndexResponsablePage.vue';
 import CreateResponsablePage from '@/responsables/components/pages/CreateResponsablePage.vue';
-import EditResponsablePage from './responsables/components/pages/EditResponsablePage.vue';
+import EditResponsablePage from '@/responsables/components/pages/EditResponsablePage.vue';
 
 // Páginas de Animales
 import CreateAnimalPage from '@/animales/components/pages/CreateAnimalPage.vue';
 import IndexAnimalPage from '@/animales/components/pages/IndexAnimalPage.vue';
-import EditAnimalPage from './animales/components/pages/EditAnimalPage.vue';
+import EditAnimalPage from '@/animales/components/pages/EditAnimalPage.vue';
 
 // Páginas de Ficha Clínica
 import CreateFichaClinicaPage from '@/animales/components/pages/CreateFichaClinicaPage.vue';
 import ViewFichaClinicaPage from '@/animales/components/pages/ViewFichaClinicaPage.vue';
-import EditFichaClinicaPage from './animales/components/pages/EditFichaClinicaPage.vue';
-import ViewHistoriaClinicaPage from './animales/components/pages/ViewHistoriaClinicaPage.vue';
+import EditFichaClinicaPage from '@/animales/components/pages/EditFichaClinicaPage.vue';
+import ViewHistoriaClinicaPage from '@/animales/components/pages/ViewHistoriaClinicaPage.vue';
 
 // Páginas de Tratamientos
 import CreateTratamientoPage from '@/animales/components/pages/CreateTratamientoPage.vue';
@@ -36,14 +36,27 @@ import EditTratamientoPage from '@/animales/components/pages/EditTratamientoPage
 // Páginas de Registro de Parámetros
 import CreateParametrosPage from '@/animales/components/pages/CreateParametrosPage.vue';
 import ViewRegistroParametrosPage from '@/animales/components/pages/ViewRegistroParametrosPage.vue';
-import EditParametrosPage from './animales/components/pages/EditParametrosPage.vue';
+import EditParametrosPage from '@/animales/components/pages/EditParametrosPage.vue';
 
 // Páginas de Examen Objetivo
 import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenObjetivoPage.vue';
 import ViewExamenObjetivoPage from '@/animales/components/pages/ViewExamenObjetivoPage.vue';
-import EditExamenObjetivoPage from './animales/components/pages/EditExamenObjetivoPage.vue';
+import EditExamenObjetivoPage from '@/animales/components/pages/EditExamenObjetivoPage.vue';
 
+<<<<<<< HEAD
 import ResenaEquino from './reseña/components/resena.vue';
+=======
+// Páginas de Facturación y Artículos
+import IndexArticuloPage from '@/facturas/components/pages/IndexArticuloPage.vue';
+import CreateArticuloPage from '@/facturas/components/pages/CreateArticuloPage.vue';
+import UpdateArticuloPage from '@/facturas/components/pages/UpdateArticuloPage.vue';
+import IndexFacturaPage from '@/facturas/components/pages/IndexFacturaPage.vue';
+
+import UpdateFacturaPage from '@/facturas/components/pages/UpdateFacturaPage.vue';
+
+// Modal de Gastos
+import AddGastosModal from './facturas/components/pages/AddGastosModal.vue';
+>>>>>>> 650772e69b7ff6ba8401164dbccec2b96900af2d
 
 const routes = [
   {
@@ -76,7 +89,6 @@ const routes = [
     component: AuthLayout,
     meta: { requiresAuth: true },
     children: [
-     
       {
         path: '/usuarios',
         name: 'users.index',
@@ -118,7 +130,6 @@ const routes = [
           requiresAuth: true,
         },
       },
-
       {
         path: '/responsables/:id/editar',
         name: 'responsables.edit',
@@ -176,17 +187,19 @@ const routes = [
         meta: { requiresAuth: true },
         props: true,
       },
-
       {
         path: '/fichasClinicas/:fichaClinicaId/editar',
-        name: 'EditFichaClinica',
+        name: 'fichaClinica.edit',
         component: EditFichaClinicaPage,
         meta: {
           requiresAuth: true,
         },
       },
+<<<<<<< HEAD
       
 
+=======
+>>>>>>> 650772e69b7ff6ba8401164dbccec2b96900af2d
       // Rutas para Tratamientos
       {
         path: '/animales/ficha-clinica/tratamiento/crear',
@@ -197,7 +210,7 @@ const routes = [
         },
       },
       {
-        path: '/animales/ficha-clinica/tratamiento/editar/:tratamientoId',
+        path: '/animales/ficha-clinica/tratamiento/:tratamientoId/editar',
         name: 'tratamiento.edit',
         component: EditTratamientoPage,
         meta: {
@@ -212,7 +225,6 @@ const routes = [
           requiresAuth: true,
         },
       },
-
       // Rutas para Registro de Parámetros
       {
         path: '/animales/ficha-clinica/parametros/crear',
@@ -223,7 +235,6 @@ const routes = [
         path: '/animales/ficha-clinica/parametros',
         name: 'parametros.view',
         component: ViewRegistroParametrosPage,
-  
       },
       {
         path: '/animales/ficha-clinica/parametro/editar/:parametroId',
@@ -233,8 +244,6 @@ const routes = [
           requiresAuth: true,
         },
       },
-
-
       // Rutas para Examen Objetivo
       {
         path: '/animales/ficha-clinica/examen-objetivo/crear/:fichaClinicaId',
@@ -251,16 +260,55 @@ const routes = [
         meta: {
           requiresAuth: true,
         },
-        
       },
       {
-        path: '/animales/ficha-clinica/examen-objetivo/editar/:fichaClinicaId',  // Nueva ruta para editar
+        path: '/animales/ficha-clinica/examen-objetivo/editar/:fichaClinicaId',
         name: 'examenObjetivo.edit',
-        component: EditExamenObjetivoPage,  // Asegúrate de tener este componente
+        component: EditExamenObjetivoPage,
         meta: {
           requiresAuth: true,
         },
       },
+      // Rutas para Artículos y Facturas
+      {
+        path: '/articulos',
+        name: 'articulos.index',
+        component: IndexArticuloPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/articulos/crear',
+        name: 'articulos.create',
+        component: CreateArticuloPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/articulos/:id/editar',
+        name: 'articulos.edit',
+        component: UpdateArticuloPage,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/facturas/:fichaClinicaId/:facturaId',
+        name: 'IndexFacturaPage',
+        component: IndexFacturaPage,
+        meta: { requiresAuth: true }
+      },
+
+      {
+        path: '/facturas/:id/editar',
+        name: 'facturas.edit',
+        component: UpdateFacturaPage,
+        meta: { requiresAuth: true },
+      },
+      // Modal de Gastos
+      {
+        path: '/facturas/components/pages/AddGastosModal.vue',
+        name: 'gastos.add',
+        component: AddGastosModal,
+        meta: { requiresAuth: true },
+      },
+      
     ],
   },
   {

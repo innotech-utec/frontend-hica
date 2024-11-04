@@ -19,34 +19,20 @@
           ></v-text-field>
         </v-col>
         <v-col cols="12" md="4">
-  <v-menu
-    ref="menu"
-    v-model="menuFecha"
-    :close-on-content-click="false"
-    transition="scale-transition"
-    offset-y
-    min-width="auto"
-  >
-    <template v-slot:activator="{ on, attrs }">
-      <v-text-field
-        v-model="filtroFecha"
-        label="Filtrar por Fecha de Ingreso"
-        prepend-inner-icon="mdi-calendar"
-        
-        v-bind="attrs"
-        v-on="on"
-        outlined
-        dense
-        clearable
-      ></v-text-field>
-    </template>
-    <v-date-picker
-      v-model="filtroFecha"
-      @input="(val) => { filtroFecha = val; menuFecha = false; filtrarFichasClinicas(); }"
-    ></v-date-picker>
-  </v-menu>
-</v-col>
-
+          <v-menu ref="menu" v-model="menuFecha" :close-on-content-click="false" transition="scale-transition" offset-y min-width="auto">
+            <template v-slot:activator="{ on, attrs }">
+              <v-text-field
+                v-model="filtroFecha"
+                label="Filtrar por Fecha de Ingreso"
+                prepend-inner-icon="mdi-calendar"
+                v-bind="attrs"
+                v-on="on"
+                outlined dense clearable
+              ></v-text-field>
+            </template>
+            <v-date-picker v-model="filtroFecha" @input="(val) => { filtroFecha = val; menuFecha = false; filtrarFichasClinicas(); }"></v-date-picker>
+          </v-menu>
+        </v-col>
       </v-row>
 
       <!-- Fichas Clínicas -->
@@ -69,7 +55,6 @@
           </v-card>
         </v-col>
       </v-row>
-
       <p v-else>No hay fichas clínicas registradas.</p>
     </v-card-text>
 
@@ -186,57 +171,58 @@ export default {
       }
     };
 
+    const getBase64Image = async (url) => {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    };
+
     const downloadFichaPDF = async (ficha) => {
       const doc = new jsPDF();
-      const primaryColor = "#6FA1D2";
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 20;
+      let yPosition = 20;
 
-      const getBase64Image = async (url) => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+      try {
+        const hicaLogo = await getBase64Image('/HICA_logo.png');
+        const fvetLogo = await getBase64Image('/FVET_logo.png');
+        if (hicaLogo) doc.addImage(hicaLogo, 'PNG', 10, 5, 20, 20);
+        if (fvetLogo) doc.addImage(fvetLogo, 'PNG', 170, 5, 20, 20);
 
-  try {
-   
-    const hicaLogo = await getBase64Image('/HICA_logo.png');
-    const fvetLogo = await getBase64Image('/FVET_logo.png');
+        yPosition += 30;
+        doc.setFontSize(20);
+        doc.setTextColor(50, 100, 200);
+        doc.text('HISTORIA CLÍNICA', pageWidth / 2, yPosition, { align: 'center' });
 
-  
-    const logoWidth = 20; 
-    const logoHeight = 20;
+        doc.setTextColor(0, 0, 0);
+        yPosition += 15;
+        doc.setFontSize(12);
+        doc.text('Facultad de Veterinaria', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 7;
+        doc.text('Universidad de la República Uruguay', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 7;
+        doc.text('Ruta 8 Km. 18, Montevideo', pageWidth / 2, yPosition, { align: 'center' });
 
-   
-    if (hicaLogo) doc.addImage(hicaLogo, 'PNG', 10, 5, logoWidth, logoHeight);
-    if (fvetLogo) doc.addImage(fvetLogo, 'PNG', 170, 5, logoWidth, logoHeight);
+        yPosition += 15;
+        doc.setDrawColor(50, 100, 200);
+        doc.setLineWidth(0.3);
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
-      // Título principal
-      doc.setFontSize(16);
-      doc.setTextColor(primaryColor);
-      doc.text("Ficha Clínica", 105, 40, null, null, 'center');
+        yPosition += 15;
+        doc.setFontSize(11);
+        doc.text(`Ficha Nº: ${ficha.id || 'N/A'}`, margin, yPosition);
+        doc.text(`Fecha: ${formatFecha(ficha.createdAt)}`, pageWidth - margin - 50, yPosition);
 
-      const tableStyles = {
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 1 },
-        headStyles: { fillColor: primaryColor },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 30 }
-        }
-      };
-
-      // Información del Responsable y Animal
-      doc.autoTable({
-        ...tableStyles,
-        startY: 50,
-        head: [['Documento', 'Nombre', 'Apellido', 'Nombre del Paciente', 'Especie', 'Raza', 'Sexo']],
-        body: [[
+        yPosition += 15;
+        const responsableInfo = [
+          ['Documento', 'Nombre', 'Apellido', 'Nombre del Paciente', 'Especie', 'Raza', 'Sexo']
+        ];
+        const responsableData = [[
           responsable.value.documento || 'Sin datos',
           responsable.value.nombre || 'Sin datos',
           responsable.value.apellido || 'Sin datos',
@@ -244,79 +230,86 @@ export default {
           animal.value.especie || 'Sin datos',
           animal.value.raza || 'Sin datos',
           animal.value.sexo || 'Sin datos'
-        ]]
-      });
+        ]];
 
-      // Detalles de la Ficha Clínica
-      doc.autoTable({
-        ...tableStyles,
-        startY: doc.lastAutoTable.finalY + 5,
-        head: [['Fecha de Ingreso', 'Motivo de Consulta', 'Estado', 'Fecha Última Modificación']],
-        body: [[
+        doc.autoTable({
+          startY: yPosition,
+          head: responsableInfo,
+          body: responsableData,
+          margin: { left: margin },
+        });
+
+        yPosition = doc.lastAutoTable.finalY + 10;
+        const fichaInfo = [['Fecha de Ingreso', 'Motivo de Consulta', 'Estado', 'Fecha Última Modificación']];
+        const fichaData = [[
           formatFecha(ficha.createdAt) || 'Sin datos',
           ficha.motivoConsulta || 'Sin datos',
           ficha.estadoFichaClinica || 'Sin datos',
           formatFecha(ficha.updatedAt) || 'Sin datos'
-        ]]
-      });
+        ]];
 
-      // Examen Objetivo
-      const examenObjetivo = await fetchExamenObjetivo(ficha.id);
-      doc.autoTable({
-        ...tableStyles,
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [['Diagnóstico', 'FC', 'Respiración', 'Temperatura']],
-        body: examenObjetivo
-          ? [[
-              examenObjetivo.diagnostico || 'Sin diagnóstico',
-              examenObjetivo.FC || 'N/A',
-              examenObjetivo.Resp || 'N/A',
-              examenObjetivo.temperatura || 'N/A'
-            ]]
-          : [['No hay datos de Examen Objetivo', '', '', '']]
-      });
+        doc.autoTable({
+          startY: yPosition,
+          head: fichaInfo,
+          body: fichaData,
+          margin: { left: margin },
+     
+        });
 
-      // Tratamientos
-      const tratamientos = await fetchTratamientos(ficha.id);
-      doc.autoTable({
-        ...tableStyles,
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [['Fecha Tratamiento', 'Medicación', 'Observaciones']],
-        body: tratamientos.length > 0
-          ? tratamientos.map(tratamiento => [
-              formatFecha(tratamiento.fechaTratamiento) || 'Sin fecha',
-              tratamiento.medicacion || 'Sin medicación',
-              tratamiento.observaciones || 'Sin observaciones'
-            ])
-          : [['No hay tratamientos registrados', '', '']]
-      });
+        yPosition = doc.lastAutoTable.finalY + 10;
+        const examenObjetivo = await fetchExamenObjetivo(ficha.id);
+        doc.autoTable({
+          startY: yPosition,
+          head: [['Diagnóstico', 'FC', 'Respiración', 'Temperatura']],
+          body: examenObjetivo
+            ? [[
+                examenObjetivo.diagnostico || 'Sin diagnóstico',
+                examenObjetivo.FC || 'N/A',
+                examenObjetivo.Resp || 'N/A',
+                examenObjetivo.temperatura || 'N/A'
+              ]]
+            : [['No hay datos de Examen Objetivo', '', '', '']]
+        });
 
-      // Parámetros
-      const parametros = await fetchRegistroParametros(ficha.id);
-      doc.autoTable({
-        ...tableStyles,
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [['Fecha', 'FC', 'FR', 'Temperatura']],
-        body: parametros.length > 0
-          ? parametros.map(parametro => [
-              formatFecha(parametro.fechaParametro) || 'Sin fecha',
-              parametro.FC || 'N/A',
-              parametro.FR || 'N/A',
-              parametro.temperatura || 'N/A'
-            ])
-          : [['No hay parámetros registrados', '', '', '']]
-      });
+        yPosition = doc.lastAutoTable.finalY + 10;
+        const tratamientos = await fetchTratamientos(ficha.id);
+        doc.autoTable({
+          startY: yPosition,
+          head: [['Fecha Tratamiento', 'Medicación', 'Observaciones']],
+          body: tratamientos.length > 0
+            ? tratamientos.map(tratamiento => [
+                formatFecha(tratamiento.fechaTratamiento) || 'Sin fecha',
+                tratamiento.medicacion || 'Sin medicación',
+                tratamiento.observaciones || 'Sin observaciones'
+              ])
+            : [['No hay tratamientos registrados', '', '']]
+        });
 
-      doc.save(`ficha_clinica_${ficha.id}.pdf`);
-  } catch (error) {
-    console.error("Error al cargar las imágenes:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Hubo un problema al cargar las imágenes en el PDF.",
-    });
-  }
-};
+        yPosition = doc.lastAutoTable.finalY + 10;
+        const parametros = await fetchRegistroParametros(ficha.id);
+        doc.autoTable({
+          startY: yPosition,
+          head: [['Fecha', 'FC', 'FR', 'Temperatura']],
+          body: parametros.length > 0
+            ? parametros.map(parametro => [
+                formatFecha(parametro.fechaParametro) || 'Sin fecha',
+                parametro.FC || 'N/A',
+                parametro.FR || 'N/A',
+                parametro.temperatura || 'N/A'
+              ])
+            : [['No hay parámetros registrados', '', '', '']]
+        });
+
+        doc.save(`historia_clinica_${ficha.id}.pdf`);
+      } catch (error) {
+        console.error("Error al generar el PDF:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Hubo un problema al generar el PDF.",
+        });
+      }
+    };
 
     const formatFecha = (fecha) => {
       if (!fecha) return 'Sin fecha';
@@ -366,27 +359,38 @@ export default {
 };
 </script>
 
-
 <style scoped>
-.section-title {
+.page-title {
+  font-size: 28px;
   color: #014582;
   font-weight: bold;
+  margin-bottom: 20px;
 }
-
-.v-card-text {
-  background-color: #fff !important;
+.v-table {
+  width: 100%;
+  background-color: #fafafa;
+  border-radius: 4px;
 }
-
-.filter-row,
-.ficha-card {
-  background-color: #fff;
-}
-
-.v-btn.primary {
+.v-table th {
+  background-color: #e8eaf6;
   color: #014582;
+  font-weight: bold;
+  text-align: left;
+  padding: 8px; 
 }
-
-.v-btn.secondary {
-  color: #008575;
+.v-table td {
+  padding: 12px;
+}
+.text-right {
+  text-align: right;
+}
+.font-weight-bold {
+  font-weight: bold;
+}
+.mb-4 {
+  margin-bottom: 16px;
+}
+.mt-4 {
+  margin-top: 16px;
 }
 </style>
