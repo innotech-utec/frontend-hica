@@ -43,6 +43,7 @@ import CreateExamenObjetivoPage from '@/animales/components/pages/CreateExamenOb
 import ViewExamenObjetivoPage from '@/animales/components/pages/ViewExamenObjetivoPage.vue';
 import EditExamenObjetivoPage from './animales/components/pages/EditExamenObjetivoPage.vue';
 
+import ResenaEquino from './reseña/components/resena.vue';
 
 const routes = [
   {
@@ -58,6 +59,14 @@ const routes = [
     path: '/home',
     name: 'home',
     component: HomePage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/animales/ficha-clinica/resena',
+    name: 'resena.create',
+    component: ResenaEquino,
     meta: {
       requiresAuth: true,
     },
@@ -177,7 +186,7 @@ const routes = [
         },
       },
       
-      
+
       // Rutas para Tratamientos
       {
         path: '/animales/ficha-clinica/tratamiento/crear',
