@@ -1,10 +1,20 @@
 <template>
-    <v-row class="h-100">
+    <v-row class="fill-height ma-0" style="min-height: 100vh; overflow: hidden;">
       <v-col cols="12" md="6" style="display: flex; align-items: center; justify-content: center">
         <div style="width: 500px">
-          <h1 style="margin: 0; text-align: center"><b>HICA</b></h1>
-          <p style="text-align: center">Bienvenidos a Historia Clinica Animal</p>
+
+          <div class="logo-wrapper">
+            <v-img
+              src="@/assets/img/logo-vertical.png"
+              alt="Logo HICA"
+              :width="250"
+              contain
+            /> 
+            <p class="text-center">Bienvenidos a Historia Clinica Animal</p>
+          </div>
+          
           <v-container style="display:flex; align-items:center; flex-direction: column">
+
             <div class="field">
               <v-icon class="field__icon">mdi-email</v-icon>
               <input class="field__input" v-model="email" type="text" placeholder="Correo electrónico" />
@@ -12,12 +22,15 @@
   
             <div class="field">
               <v-icon class="field__icon">mdi-lock</v-icon>
-              <!-- Uso de v-text-field para contraseña con ícono de ojo -->
               <v-text-field
                 v-model="password"
                 :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Contraseña"
+                variant="plain"
+                density="compact"
+                hide-details
+                class="field__input"
                 @click:append="showPassword = !showPassword"
               ></v-text-field>
             </div>
@@ -41,7 +54,7 @@
         style="padding: 0px; position: relative; background-image: url('./facultad.jpg'); background-size: cover; background-position: center"
       >
         <div
-          style="display: flex; align-items:center; justify-content: center; position: absolute; width: 100%; height: 100%; background-color: hsla(221, 86%, 88%, 80%)"
+          style="display: flex; align-items:center; justify-content: center; position: absolute; width: 100%; height: 100%"
         >
           <div></div>
         </div>
@@ -51,6 +64,7 @@
   
   <script>
   import { AuthService } from "@/auth/services/AuthService.js";
+
   
   export default {
     data() {
@@ -82,3 +96,45 @@
   };
   </script>
   
+  <style scoped>
+.field {
+  position: relative;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.field__icon {
+  color: #6B7280;
+  margin-right: 12px;
+}
+
+.field__input {
+  flex: 1;
+}
+
+:deep(.v-field) {
+  background-color: transparent !important;
+}
+
+:deep(.v-field__append-inner) {
+  padding: 0;
+}
+
+.logo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+:deep(.v-img) {
+  display: block;
+  height: auto;
+}
+</style>
+
