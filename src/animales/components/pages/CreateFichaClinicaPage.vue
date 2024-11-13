@@ -28,7 +28,6 @@
     </v-row>
 
     <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
-     
       <v-text-field
         v-model="fichaClinica.motivoConsulta"
         label="Motivo de la Consulta"
@@ -36,19 +35,23 @@
         required
       ></v-text-field>
 
-      <v-text-field
+      <v-select
         v-model="fichaClinica.sanitaria"
+        :items="opcionesSanitarias"
         label="Condición Sanitaria"
         :rules="requiredRule"
         required
-      ></v-text-field>
+        background-color="white"
+      ></v-select>
 
-      <v-text-field
+      <v-select
         v-model="fichaClinica.ambiental"
+        :items="opcionesAmbientales"
         label="Condición Ambiental"
         :rules="requiredRule"
         required
-      ></v-text-field>
+        background-color="white"
+      ></v-select>
 
       <v-text-field
         v-model="fichaClinica.remotaFisiologica"
@@ -84,6 +87,7 @@
         :items="['Alta', 'Ingresado','Internado', 'Fallecimiento', 'Eutanasia']"
         label="Estado de la Ficha Clínica"
         required
+        background-color="white"
       ></v-select>
 
       <v-card-actions class="actions-centered">
@@ -117,6 +121,18 @@ export default {
         estadoFichaClinica: 'Ingresado',
         animalId: null,
       },
+      opcionesSanitarias: [
+        'VACUNADO/DESPARASITADO',
+        'VACUNADO/NO DESPARASITADO',
+        'NO VACUNADO/NO DESPARASITADO',
+        'NO VACUNADO/DESPARASITADO'
+      ],
+      opcionesAmbientales: [
+        'BOX/A CAMPO',
+        'BOX',
+        'A CAMPO',
+        'A CORRAL'
+      ],
       requiredRule: [v => !!v || 'Este campo es requerido'],
       animal: {},
     };

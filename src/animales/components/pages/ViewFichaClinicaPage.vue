@@ -1,59 +1,93 @@
 <template>
   <v-container>
-    <!-- Botón de regreso -->
     <BackButton />
 
-    <v-row>
+    <!-- <v-row>
       <v-col cols="12" class="text-center">
-        <h2 class="page-title">Ficha Clínica del Animal</h2>
+        <h1 class="ficha-title">Ficha Clínica del Animal</h1>
       </v-col>
-    </v-row>
+    </v-row> -->
 
     <!-- Información básica del animal -->
-    <v-row>
-      <v-col cols="12" class="animal-info">
-        <v-card class="mb-5">
-          <v-card-title class="section-title">Información del Animal</v-card-title>
-          <v-card-text>
-            <p><strong>Nombre:</strong> {{ animal.nombre }}</p>
-            <p><strong>Especie:</strong> {{ animal.especie }}</p>
-            <p><strong>Raza:</strong> {{ animal.raza }}</p>
-            <p><strong>Edad:</strong> {{ animal.edad }}</p>
-            <p><strong>Sexo:</strong> {{ animal.sexo }}</p>
-            <p><strong>Peso:</strong> {{ animal.peso }} kg</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <v-card class="mb-4" flat>
+      <v-card-title class="info-title">Información del Animal</v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Nombre:</label>
+              <div class="field-value">{{ animal.nombre }}</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Especie:</label>
+              <div class="field-value">{{ animal.especie }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Raza:</label>
+              <div class="field-value">{{ animal.raza }}</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Edad:</label>
+              <div class="field-value">{{ animal.edad }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Sexo:</label>
+              <div class="field-value">{{ animal.sexo }}</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Peso:</label>
+              <div class="field-value">{{ animal.peso }} kg</div>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
     <!-- Información de la Ficha Clínica -->
-    <v-row>
-      <v-col cols="12" class="ficha-info">
-        <v-card class="mb-5">
-          <v-card-title class="section-title">Detalles de la Ficha Clínica</v-card-title>
-          <v-card-text>
-            <p><strong>Motivo de Consulta:</strong> {{ fichaClinica.motivoConsulta }}</p>
-            <p><strong>Condición Sanitaria:</strong> {{ fichaClinica.sanitaria }}</p>
-            <p><strong>Condición Ambiental:</strong> {{ fichaClinica.ambiental }}</p>
-            <p><strong>Estado del Paciente:</strong> {{ fichaClinica.estadoFichaClinica }}</p>
-            <v-card-actions>
-              <!-- Botón para editar ficha clínica -->
-              <v-btn color="primary" @click="openEditModal" outlined>
-                <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
-              </v-btn>
-              <!-- Botón para facturación -->
-              <v-btn 
-                color="primary" 
-                class="ml-2" 
-                @click="irAFacturacion"
-              >
-                <v-icon left>mdi-currency-usd</v-icon>{{ facturaExistente ? 'Visualizar Factura' : 'Nueva Factura' }}
-              </v-btn>
-            </v-card-actions>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <v-card class="mb-4" flat>
+      <v-card-title class="info-title">Detalles de la Ficha Clínica</v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="6">
+            <div class="field-group">
+              <label class="field-label">Motivo de Consulta</label>
+              <div class="field-value">{{ fichaClinica.motivoConsulta }}</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Condición Sanitaria</label>
+              <div class="field-value">{{ fichaClinica.sanitaria }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="6">
+            <div class="field-group">
+              <label class="field-label">Condición Ambiental</label>
+              <div class="field-value">{{ fichaClinica.ambiental }}</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Estado del Paciente</label>
+              <div class="field-value">{{ fichaClinica.estadoFichaClinica }}</div>
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- Botones -->
+        <v-row class="mt-4">
+          <v-col cols="12" class="d-flex justify-center">
+            <v-btn color="primary" @click="openEditModal" class="mx-2">
+              <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
+            </v-btn>
+            <v-btn color="primary" @click="irAFacturacion" class="mx-2">
+              <v-icon left>mdi-currency-usd</v-icon>
+              {{ facturaExistente ? 'Visualizar Factura' : 'Nueva Factura' }}
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
     <!-- Modulos de Examen Objetivo, Tratamientos y Parámetros -->
     <v-row>
@@ -224,41 +258,52 @@ export default {
 </script>
 
 <style scoped>
-.page-title {
-  font-size: 28px;
-  color: #014582;
-  font-weight: bold;
-  margin-bottom: 20px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.section-title {
-  font-size: 20px;
-  color: #014582;
+.ficha-title {
+  color: #0F3460;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 15px;
-  text-align: center;
+  margin-bottom: 20px;
 }
 
-.animal-card, .ficha-card {
-  background-color: #f9f9f9;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+.info-title {
+  color: #0F3460;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 12px 16px;
+}
+
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.field-value {
   border: 1px solid #ddd;
-  color: #333;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  background-color: white;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.v-btn {
+  text-transform: none;
 }
 
 .v-btn.primary {
   background-color: #014582;
-  color: #fff;
+  color: white;
 }
 
 .v-btn.primary:hover {
   background-color: #013262;
-}
-
-.mb-5 {
-  margin-bottom: 20px;
 }
 </style>
