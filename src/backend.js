@@ -1,6 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "./config";
 import { TokenService } from "./auth/services/TokenService";
+import { router } from './router';
 
 const backend = axios.create({
     baseURL: API_BASE_URL
@@ -17,6 +18,21 @@ backend.interceptors.request.use((config) => {
 
     return config;
 });
+
+// Añadir interceptor para manejar errores de respuesta
+backend.interceptors.response.use(
+    (response) => response,
+    (error) => {
+       
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            // Eliminar el token
+            TokenService.remove();
+            // Redirigir a login
+            router.push({ name: 'login' });
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default backend;
 

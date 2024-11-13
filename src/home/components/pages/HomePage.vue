@@ -54,32 +54,54 @@
           <!-- Tabla de Tratamientos -->
           <v-col cols="8">
             <v-card>
-              <v-card-title>Tratamientos</v-card-title>
+              <v-card-title class="d-flex justify-space-between align-center">
+                Tratamientos
+                <v-progress-circular
+                  v-if="loading"
+                  indeterminate
+                  color="primary"
+                  size="24"
+                ></v-progress-circular>
+              </v-card-title>
               <v-card-text>
-                <v-table>
-                  <thead>
-                    <tr>
-                      <th>No. Registro</th>
-                      <th>Nombre</th>
-                      <th>Especie</th>
-                      <th>Tratamiento</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="treatment in treatments" :key="treatment.id">
-                      <td class="text-primary">{{ treatment.id }}</td>
-                      <td>{{ treatment.name }}</td>
-                      <td>{{ treatment.species }}</td>
-                      <td>{{ treatment.treatment }}</td>
-                      <td>
-                        <v-chip :color="getStatusColor(treatment.status)" text-color="white" size="small">
-                          {{ treatment.status }}
-                        </v-chip>
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Medicación</th>
+                        <th>Observaciones</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="loading" class="text-center">
+                        <td colspan="5">
+                          <span class="text-medium-emphasis">Cargando tratamientos...</span>
+                        </td>
+                      </tr>
+                      <tr v-else-if="treatments.length === 0" class="text-center">
+                        <td colspan="5">No hay tratamientos disponibles.</td>
+                      </tr>
+                      <tr v-for="treatment in treatments" :key="treatment.id">
+                        <td>{{ formatDate(treatment.fecha) }}</td>
+                        <td>{{ formatTime(treatment.hora) }}</td>
+                        <td>{{ treatment.medicacion }}</td>
+                        <td>{{ treatment.observaciones }}</td>
+                        <td>
+                          <v-chip
+                            :color="getStatusColor(treatment.estadoAutorizacion)"
+                            text-color="white"
+                            size="small"
+                          >
+                            {{ treatment.estadoAutorizacion }}
+                          </v-chip>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -113,9 +135,9 @@
               </v-card-text>
             </v-card>
 
-            <!-- Tabla de Cirugías -->
+            <!-- Tabla de Mis casos -->
             <v-card>
-              <v-card-title>Cirugías</v-card-title>
+              <v-card-title>Mis Casos</v-card-title>
               <v-card-text>
                 <v-table>
                   <thead>
@@ -143,6 +165,9 @@
 </template>
 
 <script>
+import backend from '@/backend';
+import Swal from 'sweetalert2';
+
 export default {
   name: "HomePage",
   data() {
@@ -155,7 +180,6 @@ export default {
         { title: 'Animales', icon: 'mdi-paw', route: '/animales' },
         { title: 'Laboratorio', icon: 'mdi-flask', route: '/laboratorio' },
         { title: 'Insumos', icon: 'mdi-cube-outline', route: '/articulos' },
-        
         { title: 'Reportes', icon: 'mdi-file-chart', route: '/reportes' },
       ],
       summaryCards: [
@@ -176,7 +200,7 @@ export default {
           iconColor: 'light-blue-darken-2'
         },
         {
-          title: 'Cirugías programadas',
+          title: 'Casos asignados a mí',
           count: 10,
           icon: 'mdi-clipboard-text',
           bgColor: 'bg-purple',
@@ -184,21 +208,14 @@ export default {
           iconColor: 'purple-darken-2'
         }
       ],
-      treatments: [
-        { id: '2622/22', name: 'Methmat', species: 'Equino', treatment: 'Curación', status: 'Atrasado' },
-        { id: '2622/22', name: 'Ruth', species: 'Equino', treatment: 'Antiinflamatorio', status: 'Atrasado' },
-        { id: '2819/23', name: 'Mango', species: 'Equino', treatment: 'Analgésico', status: 'Pendiente' },
-        { id: '2794/22', name: 'Pieri', species: 'Equino', treatment: 'Antibiótico', status: 'Pendiente' },
-        { id: '2822/22', name: 'Dante', species: 'Equino', treatment: 'Antialérgico', status: 'Realizado' },
-        { id: '2516/23', name: 'Meli', species: 'Equino', treatment: 'Analgésico', status: 'Realizado' },
-        { id: '2516/23', name: 'Meli', species: 'Equino', treatment: 'Curación', status: 'Realizado' }
-      ],
+      treatments: [],
+      loading: false,
       surgeries: [
         { id: '2622/22', name: 'Methmat', species: 'Equino' },
         { id: '2622/22', name: 'Ruth', species: 'Equino' },
         { id: '2622/22', name: 'Ruth', species: 'Equino' }
       ]
-    }
+    };
   },
   computed: {
     currentMonthYear() {
@@ -218,12 +235,52 @@ export default {
     }
   },
   methods: {
+    formatDate(date) {
+      return new Date(date).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    },
+    formatTime(time) {
+      return time.substring(0, 5);
+    },
     getStatusColor(status) {
       switch (status) {
-        case 'Atrasado': return 'error';
-        case 'Pendiente': return 'warning';
-        case 'Realizado': return 'success';
-        default: return 'grey';
+        case 'PENDIENTE':
+          return 'warning';
+        case 'APROBADO':
+          return 'success';
+        case 'RECHAZADO':
+          return 'error';
+        default:
+          return 'grey';
+      }
+    },
+    async fetchTreatments() {
+      this.loading = true;
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        const response = await backend.get('/tratamientos', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        this.treatments = response.data;
+
+      } catch (error) {
+        console.error('Error al obtener tratamientos:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los tratamientos',
+          confirmButtonColor: '#3085d6'
+        });
+      } finally {
+        this.loading = false;
       }
     },
     previousMonth() {
@@ -242,6 +299,9 @@ export default {
              this.currentDate.getMonth() === today.getMonth() &&
              this.currentDate.getFullYear() === today.getFullYear();
     }
+  },
+  async created() {
+    await this.fetchTreatments();
   }
 };
 </script>
@@ -258,6 +318,29 @@ export default {
 .menu-item { margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 .menu-item:hover { background-color: rgba(255, 255, 255, 0.1); }
 .v-list-item-title { font-size: 1.1rem; padding: 8px 0; }
-.v-table { width: 100%; }
-.current-day { background-color: var(--v-primary-base); color: white; border-radius: 50%; }
+.table-responsive {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fafafa;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+}
+.table th,
+.table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+.table th {
+  background-color: #e8eaf6;
+  color: #014582;
+  font-weight: bold;
+}
+.current-day { 
+  background-color: var(--v-primary-base); 
+  color: white; 
+  border-radius: 50%; 
+}
 </style>

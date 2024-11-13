@@ -30,13 +30,45 @@
             :error-messages="errors.temperatura"
           ></v-text-field>
 
-          <!-- Otros campos opcionales -->
-          <v-textarea v-model="examenObjetivo.condicionCorporal" label="Condición Corporal"></v-textarea>
-          <v-textarea v-model="examenObjetivo.sensorio" label="Sensorio"></v-textarea>
-          <v-textarea v-model="examenObjetivo.fascies" label="Fascies"></v-textarea>
-          <v-textarea v-model="examenObjetivo.gangliosLinfaticos" label="Ganglios Linfáticos"></v-textarea>
+          <!-- Campos seleccionables -->
+          <v-select
+            v-model="examenObjetivo.condicionCorporal"
+            label="Condición Corporal"
+            :items="[1,2,3,4,5,6,7,8,9]"
+          ></v-select>
+          
+          <v-select
+            v-model="examenObjetivo.sensorio"
+            label="Sensorio"
+            :items="['NORMAL', 'ALERTA', 'DEPRIMIDO', 'OTROS']"
+          ></v-select>
+          
+          <v-select
+            v-model="examenObjetivo.fascies"
+            label="Fascies"
+            :items="['SP', 'DOLOR', 'ANSIEDAD', 'ANGUSTIA']"
+          ></v-select>
+          
+          <v-select
+            v-model="examenObjetivo.gangliosLinfaticos"
+            label="Ganglios Linfáticos"
+            :items="['SP', 'AUMENTADOS']"
+          ></v-select>
+
+          <v-select
+            v-model="examenObjetivo.mucosasAparentesTipo"
+            label="Tipo de Mucosas"
+            :items="['ROSADAS', 'PALIDAS', 'HIPEREMICAS', 'CONGESTIVAS', 'TOXEMICAS', 'HIPOXICAS']"
+          ></v-select>
+
+          <v-select
+            v-model="examenObjetivo.mucosasAparentesEstado"
+            label="Estado de Mucosas"
+            :items="['HUMEDAS', 'SECAS']"
+          ></v-select>
+
+          <!-- Campos de texto -->
           <v-textarea v-model="examenObjetivo.pielSubcutaneo" label="Piel y Subcutáneo"></v-textarea>
-          <v-textarea v-model="examenObjetivo.mucosasAparentes" label="Mucosas Aparentes"></v-textarea>
           <v-textarea v-model="examenObjetivo.grandesFuncionales" label="Grandes Funcionales"></v-textarea>
           <v-textarea v-model="examenObjetivo.actitudesAnomalas" label="Actitudes Anómalas"></v-textarea>
           <v-textarea v-model="examenObjetivo.EOP" label="EOP"></v-textarea>
@@ -83,7 +115,8 @@ export default {
       fascies: '',
       gangliosLinfaticos: '',
       pielSubcutaneo: '',
-      mucosasAparentes: '',
+      mucosasAparentesTipo: '',
+      mucosasAparentesEstado: '',
       grandesFuncionales: '',
       actitudesAnomalas: '',
       EOP: '',

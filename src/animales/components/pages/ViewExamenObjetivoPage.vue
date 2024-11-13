@@ -1,49 +1,107 @@
 <template>
   <v-row>
-    <v-col cols="12" class="animal-info">
-      <v-card :class="{ 'disabled-module': disabled }">
-        <v-card-title class="section-title">Detalle del Examen Objetivo</v-card-title>
-        <v-card-text class="justified-text">
+    <v-col cols="12">
+      <v-card :class="{ 'disabled-module': disabled }" flat>
+        <v-card-title class="info-title">Detalle del Examen Objetivo</v-card-title>
+        <v-card-text>
           <!-- Mostrar detalles del examen si ya está creado -->
           <div v-if="examen">
-            <p><strong>Frecuencia Cardíaca (FC):</strong> {{ examen.FC }}</p>
-            <p><strong>Respiración:</strong> {{ examen.Resp }}</p>
-            <p><strong>Temperatura:</strong> {{ examen.temperatura }} °C</p>
-            <p><strong>Condición Corporal:</strong> {{ examen.condicionCorporal }}</p>
-            <p><strong>Sensorio:</strong> {{ examen.sensorio }}</p>
-            <p><strong>Fascies:</strong> {{ examen.fascies }}</p>
-            <p><strong>Ganglios Linfáticos:</strong> {{ examen.gangliosLinfaticos }}</p>
-            <p><strong>Piel y Subcutáneo:</strong> {{ examen.pielSubcutaneo }}</p>
-            <p><strong>Mucosas Aparentes:</strong> {{ examen.mucosasAparentes }}</p>
-            <p><strong>Grandes Funcionales:</strong> {{ examen.grandesFuncionales }}</p>
-            <p><strong>Actitudes Anómalas:</strong> {{ examen.actitudesAnomales }}</p>
-            <p><strong>EOP:</strong> {{ examen.EOP }}</p>
-            <p><strong>Paraclínicos:</strong> {{ examen.paraclinicos }}</p>
-            <p><strong>Diagnóstico:</strong> {{ examen.diagnostico }}</p>
-            <p><strong>Observaciones:</strong> {{ examen.observaciones }}</p>
-            <v-card-actions>
-              <v-btn color="primary" @click="openEditModal" :disabled="disabled" outlined>
-                <v-icon left>mdi-pencil</v-icon> Editar Examen Objetivo
-              </v-btn>
-              <v-btn color="secondary" @click="openResena" :disabled="disabled" outlined>
-                <v-icon left>mdi-drawing</v-icon> Reseña Interactiva
-              </v-btn>
-            </v-card-actions>
+            <v-row>
+              <v-col cols="12" md="6">
+                <div class="field-group">
+                  <label class="field-label">Frecuencia Cardíaca (FC)</label>
+                  <div class="field-value">{{ examen.FC }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Respiración</label>
+                  <div class="field-value">{{ examen.Resp }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Temperatura</label>
+                  <div class="field-value">{{ examen.temperatura }} °C</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Condición Corporal</label>
+                  <div class="field-value">{{ examen.condicionCorporal }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Sensorio</label>
+                  <div class="field-value">{{ examen.sensorio }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Fascies</label>
+                  <div class="field-value">{{ examen.fascies }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Ganglios Linfáticos</label>
+                  <div class="field-value">{{ examen.gangliosLinfaticos }}</div>
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <div class="field-group">
+                  <label class="field-label">Piel y Subcutáneo</label>
+                  <div class="field-value">{{ examen.pielSubcutaneo }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Mucosas Aparentes</label>
+                  <div class="field-value">{{ examen.mucosasAparentes }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Grandes Funcionales</label>
+                  <div class="field-value">{{ examen.grandesFuncionales }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Actitudes Anómalas</label>
+                  <div class="field-value">{{ examen.actitudesAnomales }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">EOP</label>
+                  <div class="field-value">{{ examen.EOP }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Paraclínicos</label>
+                  <div class="field-value">{{ examen.paraclinicos }}</div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Diagnóstico</label>
+                  <div class="field-value">{{ examen.diagnostico }}</div>
+                </div>
+              </v-col>
+            </v-row>
+
+            <div class="field-group">
+              <label class="field-label">Observaciones</label>
+              <div class="field-value">{{ examen.observaciones }}</div>
+            </div>
+
+            <!-- Botones -->
+            <v-row class="mt-4">
+              <v-col cols="12" class="d-flex justify-center">
+                <v-btn color="primary" @click="openEditModal" :disabled="disabled" class="mx-2">
+                  <v-icon left>mdi-pencil</v-icon> Editar Examen Objetivo
+                </v-btn>
+                <v-btn color="primary" @click="openResena" :disabled="disabled" class="mx-2">
+                  <v-icon left>mdi-drawing</v-icon> Reseña Interactiva
+                </v-btn>
+              </v-col>
+            </v-row>
           </div>
 
           <div v-else>
-            <v-card-actions>
-              <v-btn color="primary" @click="openCreateModal" :disabled="disabled" outlined>
-                <v-icon left>mdi-pencil</v-icon> Registrar Examen Objetivo
-              </v-btn>
-            </v-card-actions>
+            <v-row class="mt-4">
+              <v-col cols="12" class="d-flex justify-center">
+                <v-btn color="primary" @click="openCreateModal" :disabled="disabled">
+                  <v-icon left>mdi-pencil</v-icon> Registrar Examen Objetivo
+                </v-btn>
+              </v-col>
+            </v-row>
           </div>
         </v-card-text>
       </v-card>
     </v-col>
   </v-row>
 
-  <!-- Modal para editar examen objetivo -->
+  <!-- Los modales se mantienen igual -->
   <v-dialog v-model="showEditModal" max-width="600px">
     <EditExamenObjetivo
       v-if="showEditModal"
@@ -55,7 +113,6 @@
     />
   </v-dialog>
 
-  <!-- Modal para crear examen objetivo -->
   <v-dialog v-model="showCreateModal" max-width="600px">
     <create-examen-objetivo
       v-if="showCreateModal"
@@ -69,7 +126,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import backend from "@/backend";
 import CreateExamenObjetivo from './CreateExamenObjetivoPage.vue';
 import EditExamenObjetivo from './EditExamenObjetivoPage.vue';
@@ -87,6 +144,7 @@ export default {
   },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const fichaClinicaId = ref(route.query.fichaClinicaId);
     const animalId = ref(route.query.animalId);
     const examen = ref(null);
@@ -129,6 +187,16 @@ export default {
       showEditModal.value = false;
     };
 
+    const openResena = () => {
+      router.push({
+        name: 'resena.create',
+        query: {
+          fichaClinicaId: fichaClinicaId.value,
+          animalId: animalId.value
+        }
+      });
+    };
+
     onMounted(() => {
       fetchExamenObjetivo();
     });
@@ -144,6 +212,7 @@ export default {
       openEditModal,
       closeEditModal,
       fetchExamenObjetivo,
+      openResena,
     };
   },
 };
@@ -155,20 +224,46 @@ export default {
   pointer-events: none;
   color: #9e9e9e;
 }
-.page-title {
-  font-size: 28px;
-  color: #014582;
-  font-weight: bold;
-  margin-bottom: 20px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+
+.info-title {
+  color: #0F3460;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 12px 16px;
 }
 
-.section-title {
-  font-size: 20px;
-  color: #014582;
-  font-weight: 600;
-  margin-bottom: 15px;
-  text-align: center;
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.field-value {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  background-color: white;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.v-btn {
+  text-transform: none;
+}
+
+.v-btn.primary {
+  background-color: #014582;
+  color: white;
+}
+
+.v-btn.primary:hover {
+  background-color: #013262;
 }
 </style>
