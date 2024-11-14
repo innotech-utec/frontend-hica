@@ -185,7 +185,7 @@ export default {
       summaryCards: [
         {
           title: 'Administrar tratamientos',
-          count: 10,
+          count: 35,
           icon: 'mdi-medical-bag',
           bgColor: 'bg-light-green',
           borderColor: '#4CAF50',
