@@ -25,6 +25,10 @@ jobs:
               --name ${{ secrets.AZURE_VM_NAME }} \
               --command-id RunShellScript \
               --scripts '
+                # Ejecutar como usuario innotech
+                sudo -u innotech bash << "EOF"
+                export HOME=/home/innotech
+                
                 echo "Configurando git safe.directory..."
                 git config --global --add safe.directory /home/innotech/hica/frontend/frontend-hica
                 
@@ -48,4 +52,5 @@ jobs:
                 git log -1
                 
                 echo "Actualización completada."
+                EOF
               '
