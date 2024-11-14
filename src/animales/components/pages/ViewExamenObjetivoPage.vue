@@ -101,6 +101,17 @@
     </v-col>
   </v-row>
 
+  <v-row class="mt-4">
+    <v-col cols="12" class="d-flex justify-center">
+      <img 
+        src="https://res.cloudinary.com/dqpzrc50c/image/upload/v1731535825/resenas/snlhc3a6igavpxcmsmze.png" 
+        alt="Reseña"
+        class="resena-image"
+      />
+    </v-col>
+  </v-row>
+
+
   <!-- Los modales se mantienen igual -->
   <v-dialog v-model="showEditModal" max-width="600px">
     <EditExamenObjetivo
@@ -252,6 +263,11 @@ export default {
   min-height: 48px;
   display: flex;
   align-items: center;
+}
+
+.resena-image {
+  max-width: 100%;
+  height: auto;
 }
 
 .v-btn {
