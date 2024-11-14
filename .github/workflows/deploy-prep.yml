@@ -1,5 +1,5 @@
-# .github/workflows/deploy-pre.yml
-name: Deploy Frontend to Prep
+# .github/workflows/deploy-preprod.yml
+name: Deploy Frontend to Preprod
 
 on:
   push:
@@ -12,12 +12,12 @@ jobs:
     
     steps:
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Update Repository
-        uses: azure/CLI@v2
+        uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command invoke \
@@ -25,8 +25,10 @@ jobs:
               --name ${{ secrets.AZURE_VM_NAME }} \
               --command-id RunShellScript \
               --scripts '
-                echo "Iniciando actualización del repositorio..."
+                echo "Configurando git safe.directory..."
+                git config --global --add safe.directory /home/innotech/hica/frontend/frontend-hica
                 
+                echo "Iniciando actualización del repositorio..."
                 cd /home/innotech/hica/frontend/frontend-hica || exit 1
                 echo "Directorio actual: $(pwd)"
                 
