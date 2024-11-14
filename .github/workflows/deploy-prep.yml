@@ -1,4 +1,4 @@
-# .github/workflows/deploy-prep.yml
+# .github/workflows/deploy-pre.yml
 name: Deploy Frontend to Prep
 
 on:
@@ -16,7 +16,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
-      - name: Update Repository and Containers
+      - name: Update Repository
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -25,29 +25,25 @@ jobs:
               --name ${{ secrets.AZURE_VM_NAME }} \
               --command-id RunShellScript \
               --scripts '
-                # Actualizar repositorio del frontend
-                cd /home/innotech/hica/frontend/frontend-hica
-                git fetch
-                git checkout preprod
-                git pull origin preprod
+                echo "Iniciando actualización del repositorio..."
                 
-                # Actualizar contenedores
-                cd ../docker
+                cd /home/innotech/hica/frontend/frontend-hica || exit 1
+                echo "Directorio actual: $(pwd)"
                 
-                # Pull de las imágenes más recientes
-                docker compose pull
+                echo "Estado actual del repositorio:"
+                git status
                 
-                # Reiniciar contenedores con las nuevas imágenes
-                docker compose down
-                docker compose up -d
+                echo "Obteniendo cambios remotos..."
+                git fetch origin preprod || exit 1
                 
-                # Mostrar estado de los contenedores
-                echo "Estado de los contenedores:"
-                docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep "docker_"
+                echo "Cambiando a rama preprod..."
+                git checkout preprod || exit 1
                 
-                # Mostrar últimos logs
-                echo -e "\nLogs del frontend:"
-                docker logs --tail 10 docker_frontend_1 2>&1 || true
-                echo -e "\nLogs del nginx:"
-                docker logs --tail 10 docker_nginx_1 2>&1 || true
+                echo "Actualizando rama preprod..."
+                git pull origin preprod || exit 1
+                
+                echo "Log del último commit:"
+                git log -1
+                
+                echo "Actualización completada."
               '
