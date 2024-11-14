@@ -1,0 +1,53 @@
+# .github/workflows/deploy-prep.yml
+name: Deploy Frontend to Prep
+
+on:
+  push:
+    branches:
+      - prep
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Update Repository and Containers
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command invoke \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --name ${{ secrets.AZURE_VM_NAME }} \
+              --command-id RunShellScript \
+              --scripts '
+                # Actualizar repositorio del frontend
+                cd /home/innotech/hica/frontend/frontend-hica
+                git fetch
+                git checkout prep
+                git pull origin prep
+                
+                # Actualizar contenedores
+                cd ../docker
+                
+                # Pull de las imágenes más recientes
+                docker compose pull
+                
+                # Reiniciar contenedores con las nuevas imágenes
+                docker compose down
+                docker compose up -d
+                
+                # Mostrar estado de los contenedores
+                echo "Estado de los contenedores:"
+                docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep "docker_"
+                
+                # Mostrar últimos logs
+                echo -e "\nLogs del frontend:"
+                docker logs --tail 10 docker_frontend_1 2>&1 || true
+                echo -e "\nLogs del nginx:"
+                docker logs --tail 10 docker_nginx_1 2>&1 || true
+              '
