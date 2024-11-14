@@ -4,7 +4,7 @@ name: Deploy Frontend to Prep
 on:
   push:
     branches:
-      - prep
+      - preprod
 
 jobs:
   deploy-frontend:
@@ -28,8 +28,8 @@ jobs:
                 # Actualizar repositorio del frontend
                 cd /home/innotech/hica/frontend/frontend-hica
                 git fetch
-                git checkout prep
-                git pull origin prep
+                git checkout preprod
+                git pull origin preprod
                 
                 # Actualizar contenedores
                 cd ../docker
