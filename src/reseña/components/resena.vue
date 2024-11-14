@@ -2,6 +2,7 @@
 <script setup>
 import { ref } from 'vue';
 import backend from "@/backend";
+import { useRoute, useRouter} from 'vue-router';
 import { 
   VpEditor, 
   useAllTools, 
@@ -39,6 +40,12 @@ const resetCanvas = () => {
     history.value = []
   }
 }
+
+const route = useRoute();
+const router = useRouter();
+const fichaClinicaId = route.query.fichaClinicaId;
+const animalId = route.query.animalId;
+
 
 const handleSave = async () => {
   try {
@@ -81,17 +88,30 @@ const handleSave = async () => {
       img.src = url;
     });
 
-    // Obtener base64 directamente
+    
     const base64Image = canvas.toDataURL('image/png').split(',')[1];
     console.log('Tamaño de la imagen en base64:', base64Image.length);
-
-    // Enviar al backend en el formato correcto
+    
+   
+  
     const response = await backend.post('/upload', {
-      imagen: base64Image
+      imagen: base64Image,
+      fichaClinicaId: fichaClinicaId  // sin .value
     });
 
     console.log('Respuesta del backend:', response.data);
     successMessage.value = 'Reseña guardada exitosamente';
+
+    setTimeout(() => {
+      // Navegar de vuelta a la ficha con todos los parámetros
+      router.push({
+        path: '/animales/ficha-clinica',
+        query: {
+          fichaClinicaId: fichaClinicaId,
+          animalId: animalId
+        }
+      });
+    }, 1500);
     
   } catch (error) {
     console.error('Error:', error);
