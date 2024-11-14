@@ -193,7 +193,7 @@ export default {
         },
         {
           title: 'Animales internados',
-          count: 3,
+          count: 1,
           icon: 'mdi-barn',
           bgColor: 'bg-light-blue',
           borderColor: '#2196F3',
