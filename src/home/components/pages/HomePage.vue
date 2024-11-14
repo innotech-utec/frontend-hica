@@ -201,7 +201,7 @@ export default {
         },
         {
           title: 'Casos asignados a mí',
-          count: 10,
+          count: 14,
           icon: 'mdi-clipboard-text',
           bgColor: 'bg-purple',
           borderColor: '#9C27B0',
