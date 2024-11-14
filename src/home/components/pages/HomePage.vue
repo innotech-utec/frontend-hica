@@ -3,7 +3,7 @@
     <v-navigation-drawer permanent color="white" width="250" class="elevation-4">
       <!-- Logo en la parte superior -->
       <div class="pa-4">
-        <img src="/HICA_logo.png" alt="HICA" class="logo mb-6" />
+        <img src="/Logo-Fvet.png" alt="HICA" class="logo mb-6" />
       </div>
 
       <!-- Menú lateral -->
