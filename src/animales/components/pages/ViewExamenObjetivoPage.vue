@@ -74,6 +74,23 @@
               <div class="field-value">{{ examen.observaciones }}</div>
             </div>
 
+
+            <v-row class="mt-4">
+    <v-col cols="12" class="d-flex justify-center">
+      <img
+        v-if="imagenResena"
+        :src="imagenResena"
+        alt="Reseña"
+        class="resena-image"
+      />
+      <v-alert
+        v-else
+        type="info"
+        text="Aun no se ha cargado una reseña para esta ficha"
+      ></v-alert>
+    </v-col>
+  </v-row>
+
             <!-- Botones -->
             <v-row class="mt-4">
               <v-col cols="12" class="d-flex justify-center">
@@ -98,16 +115,6 @@
           </div>
         </v-card-text>
       </v-card>
-    </v-col>
-  </v-row>
-
-  <v-row class="mt-4">
-    <v-col cols="12" class="d-flex justify-center">
-      <img 
-        src="https://res.cloudinary.com/dqpzrc50c/image/upload/v1731535825/resenas/snlhc3a6igavpxcmsmze.png" 
-        alt="Reseña"
-        class="resena-image"
-      />
     </v-col>
   </v-row>
 
@@ -142,6 +149,7 @@ import backend from "@/backend";
 import CreateExamenObjetivo from './CreateExamenObjetivoPage.vue';
 import EditExamenObjetivo from './EditExamenObjetivoPage.vue';
 
+
 export default {
   components: {
     CreateExamenObjetivo,
@@ -161,9 +169,27 @@ export default {
     const examen = ref(null);
     const showCreateModal = ref(false);
     const showEditModal = ref(false);
+    const imagenResena = ref(null);
+
+    const cargarImagenResena = async () => {
+      try {
+        console.log("reseña")
+        const response = await backend.get(`/resena/${fichaClinicaId.value}`)
+        if (response.data && response.data.imagen) {
+          imagenResena.value = response.data.imagen
+        } else {
+          console.log('No se encontró reseña para esta ficha')
+          imagenResena.value = null
+        }
+      } catch (error) {
+        console.error('Error al cargar la imagen:', error)
+        imagenResena.value = null
+      }
+    };
 
     const fetchExamenObjetivo = async () => {
       if (!fichaClinicaId.value) {
+        console.log("fetch examen")
         console.error("Falta el ID de la ficha clínica");
         return;
       }
@@ -181,6 +207,7 @@ export default {
         console.error("Error al obtener el Examen Objetivo:", error);
       }
     };
+    
 
     const openCreateModal = () => {
       showCreateModal.value = true;
@@ -210,6 +237,7 @@ export default {
 
     onMounted(() => {
       fetchExamenObjetivo();
+      cargarImagenResena();
     });
 
     return {
@@ -224,6 +252,8 @@ export default {
       closeEditModal,
       fetchExamenObjetivo,
       openResena,
+      imagenResena,
+      cargarImagenResena,
     };
   },
 };
