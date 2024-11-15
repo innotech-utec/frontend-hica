@@ -153,7 +153,8 @@ export default {
   methods: {
     async verificarFactura() {
       try {
-        const response = await backend.post('/facturas/createOrGet', { fichaClinicaId: this.fichaClinicaId });
+        const fichaClinicaId = this.$route.query.fichaClinicaId;
+        const response = await backend.post('/facturas/createOrGet', { fichaClinicaId: fichaClinicaId });
         if (response.data && response.data.id) {
           this.facturaId = response.data.id;
           this.facturaExistente = true;
