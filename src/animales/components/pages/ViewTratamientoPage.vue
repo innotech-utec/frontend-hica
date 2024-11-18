@@ -10,28 +10,43 @@
         item-key="id"
         class="mb-5"
       >
-        <template v-slot:item="{ item }">
-          <tr>
-            <!-- Formateo de fecha sin desfase -->
-            <td>{{ formatFecha(item.fecha) }}</td>
-            <td>{{ item.hora }}</td>
-            <td>{{ item.medicacion }}</td>
-            <td>{{ item.observaciones }}</td>
-            <td>{{ item.veterinario?.user?.nombre || 'Desconocido' }} {{ item.veterinario?.user?.apellido || '' }}</td>
-            <td>
-              <v-chip :color="getEstadoColor(item.estadoAutorizacion)">
-                {{ item.estadoAutorizacion }}
-              </v-chip>
-            </td>
-            <td>
-              <v-card-actions>
-                <v-btn icon @click="openEditModal(item)" :disabled="disabled">
-                  <v-icon color="#014582">mdi-pencil</v-icon>
-                </v-btn>
-              </v-card-actions>
-            </td>
-          </tr>
+        <!-- Eliminamos el v-slot:item personalizado y usamos el formato correcto para headers -->
+        <template v-slot:[`item.fecha`]="{ item }">
+          {{ formatFecha(item.fecha) }}
         </template>
+        <template v-slot:[`item.veterinario`]="{ item }">
+          {{ item.veterinario?.user?.nombre || 'Desconocido' }} {{ item.veterinario?.user?.apellido || '' }}
+        </template>
+        <template v-slot:[`item.estadoAutorizacion`]="{ item }">
+          <v-chip :color="getEstadoColor(item.estadoAutorizacion)">
+            {{ item.estadoAutorizacion }}
+          </v-chip>
+        </template>
+        <template v-slot:[`item.acciones`]="{ item }">
+          <v-btn 
+            icon 
+            @click="openEditModal(item)" 
+            :disabled="disabled" 
+            outlined 
+            style="margin:20px;"
+            title="Editar tratamiento"
+          >
+            <v-icon color="#014582">mdi-pencil</v-icon>
+          </v-btn>
+          <v-btn 
+            icon 
+            @click="completarTratamiento(item)" 
+            :disabled="disabled || item.estadoAutorizacion !== 'APROBADO'" 
+            outlined 
+            style="margin:20px;"
+            title="Marcar como completado"
+          >
+            <v-icon :color="item.estadoAutorizacion !== 'APROBADO' ? '#9e9e9e' : '#4CAF50'">
+              mdi-check-circle
+            </v-icon>
+          </v-btn>
+        </template>
+        
       </v-data-table>
 
       <p v-else>No hay tratamientos registrados.</p>
@@ -80,16 +95,51 @@ export default {
     const showEditModal = ref(false);
     const tratamientoSeleccionado = ref(null);
 
-    // Headers de la tabla
-    const headers = [
-      { text: 'Fecha del Tratamiento', value: 'fecha' },
-      { text: 'Hora del Tratamiento', value: 'hora' },
-      { text: 'Medicación', value: 'medicacion' },
-      { text: 'Observaciones', value: 'observaciones' },
-      { text: 'Veterinario Asignado', value: 'veterinario' },
-      { text: 'Estado de Autorización', value: 'estadoAutorizacion' },
-      { text: 'Acciones', value: 'acciones' },
-    ];
+    // Headers de la tabla actualizados con el formato correcto
+    const headers = ref([
+      { 
+        title: 'Fecha',
+        align: 'start',
+        sortable: true,
+        key: 'fecha',
+      },
+      { 
+        title: 'Hora',
+        align: 'start',
+        sortable: true,
+        key: 'hora',
+      },
+      { 
+        title: 'Medicación',
+        align: 'start',
+        sortable: true,
+        key: 'medicacion',
+      },
+      { 
+        title: 'Observaciones',
+        align: 'start',
+        sortable: true,
+        key: 'observaciones',
+      },
+      { 
+        title: 'Veterinario',
+        align: 'start',
+        sortable: true,
+        key: 'veterinario',
+      },
+      { 
+        title: 'Estado',
+        align: 'start',
+        sortable: true,
+        key: 'estadoAutorizacion',
+      },
+      { 
+        title: 'Acciones',
+        align: 'center',
+        sortable: false,
+        key: 'acciones',
+      },
+    ]);
 
     const fetchTratamientos = async () => {
       if (!props.fichaClinicaId) return;
@@ -129,16 +179,65 @@ export default {
       showEditModal.value = true;
     };
 
+    const completarTratamiento = async (tratamiento) => {
+      try {
+        await Swal.fire({
+          title: '¿Confirmar acción?',
+          text: '¿Está seguro que desea marcar este tratamiento como completado?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#4CAF50',
+          cancelButtonColor: '#9e9e9e',
+          confirmButtonText: 'Sí, completar',
+          cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            const response = await backend.put(
+              `/tratamientos/${tratamiento.id}/COMPLETADO`,
+              {},
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+              }
+            );
+
+            if (response.status === 200) {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Tratamiento completado',
+                text: 'El tratamiento ha sido marcado como completado exitosamente.',
+                timer: 2000,
+                showConfirmButton: false
+              });
+              
+              // Recargar los tratamientos para reflejar el cambio
+              await fetchTratamientos();
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Error al completar el tratamiento:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.response?.data?.message || 'No se pudo completar el tratamiento.',
+        });
+      }
+    };
+
     const closeEditModal = () => {
       showEditModal.value = false;
     };
 
     const getEstadoColor = (estado) => {
-      switch (estado.toLowerCase()) {
+      switch (estado?.toLowerCase()) {
         case 'aprobado':
-          return 'green';
+          return 'blue';
         case 'rechazado':
           return 'red';
+        case 'completado':
+          return 'green';
         case 'pendiente':
         default:
           return 'orange';
@@ -166,6 +265,7 @@ export default {
       closeCreateModal,
       openEditModal,
       closeEditModal,
+      completarTratamiento,
       getEstadoColor,
       formatFecha,
     };

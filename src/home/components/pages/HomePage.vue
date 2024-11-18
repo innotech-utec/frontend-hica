@@ -90,12 +90,8 @@
                         <td>{{ treatment.medicacion }}</td>
                         <td>{{ treatment.observaciones }}</td>
                         <td>
-                          <v-chip
-                            :color="getStatusColor(treatment.estadoAutorizacion)"
-                            text-color="white"
-                            size="small"
-                          >
-                            {{ treatment.estadoAutorizacion }}
+                          <v-chip :color="getStatusColor(treatment.estadoAutorizacion, treatment.fecha, treatment.hora)" text-color="white" size="small">
+                            {{ getStatusText(treatment.estadoAutorizacion, treatment.fecha, treatment.hora) }}
                           </v-chip>
                         </td>
                       </tr>
@@ -178,14 +174,13 @@ export default {
         { title: 'Responsables', icon: 'mdi-account', route: '/responsables' },
         { title: 'Usuarios', icon: 'mdi-account-group', route: '/usuarios' },
         { title: 'Animales', icon: 'mdi-paw', route: '/animales' },
-        { title: 'Laboratorio', icon: 'mdi-flask', route: '/laboratorio' },
         { title: 'Insumos', icon: 'mdi-cube-outline', route: '/articulos' },
         { title: 'Reportes', icon: 'mdi-file-chart', route: '/reportes' },
       ],
       summaryCards: [
         {
           title: 'Administrar tratamientos',
-          count: 35,
+          count: 0,
           icon: 'mdi-medical-bag',
           bgColor: 'bg-light-green',
           borderColor: '#4CAF50',
@@ -209,6 +204,7 @@ export default {
         }
       ],
       treatments: [],
+      internados: 0,
       loading: false,
       surgeries: [
         { id: '2622/22', name: 'Methmat', species: 'Equino' },
@@ -245,18 +241,48 @@ export default {
     formatTime(time) {
       return time.substring(0, 5);
     },
-    getStatusColor(status) {
-      switch (status) {
-        case 'PENDIENTE':
-          return 'warning';
-        case 'APROBADO':
-          return 'success';
-        case 'RECHAZADO':
-          return 'error';
-        default:
-          return 'grey';
-      }
-    },
+    isTreatmentOverdue(fecha, hora) {
+    // Crear fecha y hora del tratamiento
+    const treatmentDateTime = new Date(`${fecha}T${hora}`);
+    
+    const now = new Date();
+
+    return treatmentDateTime < now;
+  },
+
+  getStatusText(status, fecha, hora) {
+  switch(status) {
+    case 'APROBADO':
+      return this.isTreatmentOverdue(fecha, hora) ? 'ATRASADO' : 'PENDIENTE ADMINISTRACION';
+    case 'PENDIENTE':
+      return 'PENDIENTE AUTORIZACION';
+    default:
+      return status;
+  }
+  },
+
+  getStatusColor(status, fecha, hora) {
+  if(status === 'RECHAZADO') {
+    return false; // No mostrar rechazados
+  }
+  
+  if(status === 'COMPLETADO') {
+    return 'success'; // Verde
+  }
+  
+  if(status === 'PENDIENTE') {
+    return 'info'; // Azul
+  }
+  
+  if(status === 'APROBADO') {
+    // Si está atrasado
+    if(this.isTreatmentOverdue(fecha, hora)) {
+      return 'error'; // Rojo
+    }
+    // Si está en fecha
+    return 'warning'; // Amarillo
+  }
+},
     async fetchTreatments() {
       this.loading = true;
       try {
@@ -269,7 +295,18 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        this.treatments = response.data;
+        this.treatments = response.data.filter(t => t.estadoAutorizacion !== 'RECHAZADO');
+
+        //Contabilizar tratamientos
+        this.summaryCards[0].count = this.treatments.length;
+
+        //Contabilizar internados
+        const responseInternados = await backend.get('/internados', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        this.internados = responseInternados.data.internados;
+        this.summaryCards[1].count = this.internados
 
       } catch (error) {
         console.error('Error al obtener tratamientos:', error);
