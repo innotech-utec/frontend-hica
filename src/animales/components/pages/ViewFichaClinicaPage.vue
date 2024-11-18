@@ -47,6 +47,69 @@
       </v-card-text>
     </v-card>
 
+    <!-- Veterinarios asignados -->
+    <v-card class="mb-4" flat>
+    <v-card-title class="info-title d-flex justify-space-between align-center">
+      Veterinarios Asignados
+      <v-btn 
+        color="primary"
+        @click="openVeterinarioModal"
+        :disabled="isFichaClosed"
+      >
+        <v-icon>mdi-plus</v-icon> Agregar Veterinario
+      </v-btn>
+    </v-card-title>
+    <v-card-text>
+      <v-row v-if="veterinariosAsignados.length > 0">
+        <v-col 
+          v-for="vet in veterinariosAsignados" 
+          :key="vet.id"
+          cols="12"
+          sm="6"
+          md="4"
+        >
+          <div class="field-value">
+            {{ vet.user.nombre }} {{ vet.user.apellido }}
+          </div>
+        </v-col>
+      </v-row>
+      <div v-else class="field-value">
+        No hay veterinarios asignados
+      </div>
+    </v-card-text>
+  </v-card>
+
+  <!-- Modal para seleccionar veterinario -->
+  <v-dialog v-model="showVeterinarioModal" max-width="500px">
+    <v-card>
+      <v-card-title>Seleccionar Veterinario</v-card-title>
+      <v-card-text>
+        <v-select
+          v-if="!loadingVeterinarios"
+          v-model="selectedVeterinario"
+          :items="veterinariosDisponibles"
+          item-title="nombre"
+          item-value="id"
+          label="Veterinario"
+          :rules="[v => !!v || 'El veterinario es requerido']"
+          required
+        >
+          <template v-slot:item="{ item, props }">
+            <v-list-item
+              v-bind="props"
+              :title="item.raw.nombre"
+            ></v-list-item>
+          </template>
+        </v-select>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" @click="asignarVeterinario">Agregar</v-btn>
+        <v-btn color="secondary" @click="showVeterinarioModal = false">Cancelar</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
     <!-- Información de la Ficha Clínica -->
     <v-card class="mb-4" flat>
       <v-card-title class="info-title">Detalles de la Ficha Clínica</v-card-title>
@@ -141,7 +204,12 @@ export default {
       fichaClinica: {},
       showEditModal: false,
       facturaExistente: false,
-      facturaId: null
+      facturaId: null,
+      veterinariosAsignados: [],
+      showVeterinarioModal: false,
+      selectedVeterinario: null,
+      veterinariosDisponibles: [],
+      loadingVeterinarios: false
     };
   },
   computed: {
@@ -166,6 +234,52 @@ export default {
           title: "Error",
           text: error.response?.data?.message || "No se pudo obtener la factura.",
         });
+      }
+    },
+    async openVeterinarioModal() {
+      await this.fetchVeterinariosDisponibles();
+      this.showVeterinarioModal = true;
+    },
+
+    async fetchVeterinariosDisponibles() {
+      this.loadingVeterinarios = true;
+      try {
+        const response = await backend.get('/veterinarios');
+        this.veterinariosDisponibles = response.data.map(vet => ({
+          id: vet.id,
+          nombre: `${vet.user.nombre} ${vet.user.apellido}`
+        }));
+      } catch (error) {
+        console.error('Error al obtener veterinarios:', error);
+      } finally {
+        this.loadingVeterinarios = false;
+      }
+    },
+    async asignarVeterinario() {
+      if (!this.selectedVeterinario) return;
+      
+      try {
+        await backend.post('/asignacion', {
+          fichaClinicaId: this.fichaClinicaId,
+          veterinarioId: this.selectedVeterinario
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        await this.fetchVeterinariosAsignados();
+        this.showVeterinarioModal = false;
+        this.selectedVeterinario = null;
+        
+      } catch (error) {
+        console.error('Error al asignar veterinario:', error);
+      }
+    },
+    async fetchVeterinariosAsignados() {
+      try {
+        const response = await backend.get(`/asignacion/${this.fichaClinicaId}`);
+        this.veterinariosAsignados = response.data.veterinarios;
+      } catch (error) {
+        console.error("Error al obtener veterinarios:", error);
       }
     },
     async irAFacturacion() {
@@ -204,7 +318,8 @@ export default {
     async refreshData() {
       await this.fetchAnimalDetails();
       await this.fetchFichaClinica();
-      await this.verificarFactura(); // Verifica o crea la factura después de cargar la ficha clínica
+      await this.verificarFactura();
+      await this.fetchVeterinariosAsignados();
     },
     async fetchAnimalDetails() {
       const animalId = this.$route.query.animalId;

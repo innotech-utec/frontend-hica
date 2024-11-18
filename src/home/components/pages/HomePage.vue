@@ -163,6 +163,7 @@
 <script>
 import backend from '@/backend';
 import Swal from 'sweetalert2';
+import { AuthService } from '@/auth/services/AuthService';
 
 export default {
   name: "HomePage",
@@ -196,7 +197,7 @@ export default {
         },
         {
           title: 'Casos asignados a mí',
-          count: 14,
+          count: 0,
           icon: 'mdi-clipboard-text',
           bgColor: 'bg-purple',
           borderColor: '#9C27B0',
@@ -206,11 +207,8 @@ export default {
       treatments: [],
       internados: 0,
       loading: false,
-      surgeries: [
-        { id: '2622/22', name: 'Methmat', species: 'Equino' },
-        { id: '2622/22', name: 'Ruth', species: 'Equino' },
-        { id: '2622/22', name: 'Ruth', species: 'Equino' }
-      ]
+      veterinarioId: null,
+      casosPropios: [],
     };
   },
   computed: {
@@ -248,41 +246,41 @@ export default {
     const now = new Date();
 
     return treatmentDateTime < now;
-  },
+    },
 
-  getStatusText(status, fecha, hora) {
-  switch(status) {
-    case 'APROBADO':
-      return this.isTreatmentOverdue(fecha, hora) ? 'ATRASADO' : 'PENDIENTE ADMINISTRACION';
-    case 'PENDIENTE':
-      return 'PENDIENTE AUTORIZACION';
-    default:
-      return status;
-  }
-  },
-
-  getStatusColor(status, fecha, hora) {
-  if(status === 'RECHAZADO') {
-    return false; // No mostrar rechazados
-  }
-  
-  if(status === 'COMPLETADO') {
-    return 'success'; // Verde
-  }
-  
-  if(status === 'PENDIENTE') {
-    return 'info'; // Azul
-  }
-  
-  if(status === 'APROBADO') {
-    // Si está atrasado
-    if(this.isTreatmentOverdue(fecha, hora)) {
-      return 'error'; // Rojo
+    getStatusText(status, fecha, hora) {
+    switch(status) {
+      case 'APROBADO':
+        return this.isTreatmentOverdue(fecha, hora) ? 'ATRASADO' : 'PENDIENTE ADMINISTRACION';
+      case 'PENDIENTE':
+        return 'PENDIENTE AUTORIZACION';
+      default:
+        return status;
     }
-    // Si está en fecha
-    return 'warning'; // Amarillo
-  }
-},
+    },
+
+    getStatusColor(status, fecha, hora) {
+    if(status === 'RECHAZADO') {
+      return false; // No mostrar rechazados
+    }
+    
+    if(status === 'COMPLETADO') {
+      return 'success'; // Verde
+    }
+    
+    if(status === 'PENDIENTE') {
+      return 'info'; // Azul
+    }
+    
+    if(status === 'APROBADO') {
+      // Si está atrasado
+      if(this.isTreatmentOverdue(fecha, hora)) {
+        return 'error'; // Rojo
+      }
+      // Si está en fecha
+      return 'warning'; // Amarillo
+    }
+    },
     async fetchTreatments() {
       this.loading = true;
       try {
@@ -335,9 +333,37 @@ export default {
       return day === today.getDate() && 
              this.currentDate.getMonth() === today.getMonth() &&
              this.currentDate.getFullYear() === today.getFullYear();
-    }
+    },
+    async checkIfVeterinario() {
+      const user = AuthService.getLoggedUser();
+      try {
+        const response = await backend.get(`/veterinarios/${user.id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.data) {
+          this.veterinarioId = response.data.id;
+          await this.fetchCasosPropios();
+        }
+      } catch (error) {
+        console.error('Error al verificar veterinario:', error);
+      }
+    },
+    async fetchCasosPropios() {
+      if (!this.veterinarioId) return;
+      try {
+        const response = await backend.get(`/veterinarios/${this.veterinarioId}/fichas`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        this.casosPropios = response.data.fichas;
+        // Actualizar contador en summaryCards
+        this.summaryCards[2].count = this.casosPropios.length;
+      } catch (error) {
+        console.error('Error al obtener casos:', error);
+      }
+    },
   },
   async created() {
+    await this.checkIfVeterinario();
     await this.fetchTreatments();
   }
 };

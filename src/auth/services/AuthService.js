@@ -7,13 +7,12 @@ export class AuthService {
 
     // Guardar el token
     token(response.data.data.token);
+    //console.log(response.data.user.id);
+    console.log(response.data.data.token);
+    console.log(response.data.data.user);
 
     // Guardar la información del usuario en localStorage
-    const user = {
-      nombre: response.data.data.nombre,
-      apellido: response.data.data.apellido,
-      isAdmin: response.data.data.isAdmin, // Admin o Veterinario
-    };
+    const user = response.data.data.user
     localStorage.setItem("user", JSON.stringify(user)); // Guardamos al usuario logueado
 
     return response.data.data;
