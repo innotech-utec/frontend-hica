@@ -132,27 +132,44 @@
             </v-card>
 
             <!-- Tabla de Mis casos -->
-            <v-card>
-              <v-card-title>Mis Casos</v-card-title>
-              <v-card-text>
-                <v-table>
-                  <thead>
-                    <tr>
-                      <th>No. Registro</th>
-                      <th>Nombre</th>
-                      <th>Especie</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="surgery in surgeries" :key="surgery.id">
-                      <td class="text-primary">{{ surgery.id }}</td>
-                      <td>{{ surgery.name }}</td>
-                      <td>{{ surgery.species }}</td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </v-card-text>
-            </v-card>
+<v-card>
+  <v-card-title>Mis Casos</v-card-title>
+  <v-card-text>
+    <v-table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Especie</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-if="loading">
+          <td colspan="3" class="text-center">
+            <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          </td>
+        </tr>
+        <tr v-else-if="casosPropios.length === 0" class="text-center">
+          <td colspan="3">No hay casos asignados.</td>
+        </tr>
+        <tr v-for="caso in casosPropios" :key="caso.id">
+          <td>{{ caso.animal.nombre }}</td>
+          <td>{{ caso.animal.especie }}</td>
+          <td>
+            <v-btn
+              color="primary"
+              variant="text"
+              size="small"
+              :to="`/animales/ficha-clinica?fichaClinicaId=${caso.id}&animalId=${caso.animalId}`"
+            >
+              Ver Ficha
+            </v-btn>
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+  </v-card-text>
+</v-card>
           </v-col>
         </v-row>
       </v-container>
@@ -293,7 +310,10 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        this.treatments = response.data.filter(t => t.estadoAutorizacion !== 'RECHAZADO');
+        this.treatments = this.treatments = response.data.filter(t => 
+          t.estadoAutorizacion !== 'RECHAZADO' && 
+          t.estadoAutorizacion !== 'COMPLETADO'
+        );
 
         //Contabilizar tratamientos
         this.summaryCards[0].count = this.treatments.length;
