@@ -163,6 +163,18 @@ export default {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
 
+
+        console.log(fichaClinicaId);
+        console.log(tratamiento.veterinarioId);
+
+        //Asignar por defecto ficha a veterinario
+        await backend.post('/asignacion', {
+          fichaClinicaId: fichaClinicaId,
+          veterinarioId: tratamiento.veterinarioId
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
         Swal.fire({
           title: "Tratamiento Registrado",
           text: "El tratamiento ha sido registrado con éxito.",

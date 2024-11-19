@@ -90,12 +90,8 @@
                         <td>{{ treatment.medicacion }}</td>
                         <td>{{ treatment.observaciones }}</td>
                         <td>
-                          <v-chip
-                            :color="getStatusColor(treatment.estadoAutorizacion)"
-                            text-color="white"
-                            size="small"
-                          >
-                            {{ treatment.estadoAutorizacion }}
+                          <v-chip :color="getStatusColor(treatment.estadoAutorizacion, treatment.fecha, treatment.hora)" text-color="white" size="small">
+                            {{ getStatusText(treatment.estadoAutorizacion, treatment.fecha, treatment.hora) }}
                           </v-chip>
                         </td>
                       </tr>
@@ -136,27 +132,44 @@
             </v-card>
 
             <!-- Tabla de Mis casos -->
-            <v-card>
-              <v-card-title>Mis Casos</v-card-title>
-              <v-card-text>
-                <v-table>
-                  <thead>
-                    <tr>
-                      <th>No. Registro</th>
-                      <th>Nombre</th>
-                      <th>Especie</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="surgery in surgeries" :key="surgery.id">
-                      <td class="text-primary">{{ surgery.id }}</td>
-                      <td>{{ surgery.name }}</td>
-                      <td>{{ surgery.species }}</td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </v-card-text>
-            </v-card>
+<v-card>
+  <v-card-title>Mis Casos</v-card-title>
+  <v-card-text>
+    <v-table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Especie</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-if="loading">
+          <td colspan="3" class="text-center">
+            <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          </td>
+        </tr>
+        <tr v-else-if="casosPropios.length === 0" class="text-center">
+          <td colspan="3">No hay casos asignados.</td>
+        </tr>
+        <tr v-for="caso in casosPropios" :key="caso.id">
+          <td>{{ caso.animal.nombre }}</td>
+          <td>{{ caso.animal.especie }}</td>
+          <td>
+            <v-btn
+              color="primary"
+              variant="text"
+              size="small"
+              :to="`/animales/ficha-clinica?fichaClinicaId=${caso.id}&animalId=${caso.animalId}`"
+            >
+              Ver Ficha
+            </v-btn>
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+  </v-card-text>
+</v-card>
           </v-col>
         </v-row>
       </v-container>
@@ -167,6 +180,7 @@
 <script>
 import backend from '@/backend';
 import Swal from 'sweetalert2';
+import { AuthService } from '@/auth/services/AuthService';
 
 export default {
   name: "HomePage",
@@ -178,14 +192,13 @@ export default {
         { title: 'Responsables', icon: 'mdi-account', route: '/responsables' },
         { title: 'Usuarios', icon: 'mdi-account-group', route: '/usuarios' },
         { title: 'Animales', icon: 'mdi-paw', route: '/animales' },
-        { title: 'Laboratorio', icon: 'mdi-flask', route: '/laboratorio' },
         { title: 'Insumos', icon: 'mdi-cube-outline', route: '/articulos' },
         { title: 'Reportes', icon: 'mdi-file-chart', route: '/reportes' },
       ],
       summaryCards: [
         {
           title: 'Administrar tratamientos',
-          count: 35,
+          count: 0,
           icon: 'mdi-medical-bag',
           bgColor: 'bg-light-green',
           borderColor: '#4CAF50',
@@ -201,7 +214,7 @@ export default {
         },
         {
           title: 'Casos asignados a mí',
-          count: 14,
+          count: 0,
           icon: 'mdi-clipboard-text',
           bgColor: 'bg-purple',
           borderColor: '#9C27B0',
@@ -209,12 +222,10 @@ export default {
         }
       ],
       treatments: [],
+      internados: 0,
       loading: false,
-      surgeries: [
-        { id: '2622/22', name: 'Methmat', species: 'Equino' },
-        { id: '2622/22', name: 'Ruth', species: 'Equino' },
-        { id: '2622/22', name: 'Ruth', species: 'Equino' }
-      ]
+      veterinarioId: null,
+      casosPropios: [],
     };
   },
   computed: {
@@ -245,17 +256,47 @@ export default {
     formatTime(time) {
       return time.substring(0, 5);
     },
-    getStatusColor(status) {
-      switch (status) {
-        case 'PENDIENTE':
-          return 'warning';
-        case 'APROBADO':
-          return 'success';
-        case 'RECHAZADO':
-          return 'error';
-        default:
-          return 'grey';
+    isTreatmentOverdue(fecha, hora) {
+    // Crear fecha y hora del tratamiento
+    const treatmentDateTime = new Date(`${fecha}T${hora}`);
+    
+    const now = new Date();
+
+    return treatmentDateTime < now;
+    },
+
+    getStatusText(status, fecha, hora) {
+    switch(status) {
+      case 'APROBADO':
+        return this.isTreatmentOverdue(fecha, hora) ? 'ATRASADO' : 'PENDIENTE ADMINISTRACION';
+      case 'PENDIENTE':
+        return 'PENDIENTE AUTORIZACION';
+      default:
+        return status;
+    }
+    },
+
+    getStatusColor(status, fecha, hora) {
+    if(status === 'RECHAZADO') {
+      return false; // No mostrar rechazados
+    }
+    
+    if(status === 'COMPLETADO') {
+      return 'success'; // Verde
+    }
+    
+    if(status === 'PENDIENTE') {
+      return 'info'; // Azul
+    }
+    
+    if(status === 'APROBADO') {
+      // Si está atrasado
+      if(this.isTreatmentOverdue(fecha, hora)) {
+        return 'error'; // Rojo
       }
+      // Si está en fecha
+      return 'warning'; // Amarillo
+    }
     },
     async fetchTreatments() {
       this.loading = true;
@@ -269,7 +310,21 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        this.treatments = response.data;
+        this.treatments = this.treatments = response.data.filter(t => 
+          t.estadoAutorizacion !== 'RECHAZADO' && 
+          t.estadoAutorizacion !== 'COMPLETADO'
+        );
+
+        //Contabilizar tratamientos
+        this.summaryCards[0].count = this.treatments.length;
+
+        //Contabilizar internados
+        const responseInternados = await backend.get('/internados', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        this.internados = responseInternados.data.internados;
+        this.summaryCards[1].count = this.internados
 
       } catch (error) {
         console.error('Error al obtener tratamientos:', error);
@@ -298,9 +353,37 @@ export default {
       return day === today.getDate() && 
              this.currentDate.getMonth() === today.getMonth() &&
              this.currentDate.getFullYear() === today.getFullYear();
-    }
+    },
+    async checkIfVeterinario() {
+      const user = AuthService.getLoggedUser();
+      try {
+        const response = await backend.get(`/veterinarios/${user.id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.data) {
+          this.veterinarioId = response.data.id;
+          await this.fetchCasosPropios();
+        }
+      } catch (error) {
+        console.error('Error al verificar veterinario:', error);
+      }
+    },
+    async fetchCasosPropios() {
+      if (!this.veterinarioId) return;
+      try {
+        const response = await backend.get(`/veterinarios/${this.veterinarioId}/fichas`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        this.casosPropios = response.data.fichas;
+        // Actualizar contador en summaryCards
+        this.summaryCards[2].count = this.casosPropios.length;
+      } catch (error) {
+        console.error('Error al obtener casos:', error);
+      }
+    },
   },
   async created() {
+    await this.checkIfVeterinario();
     await this.fetchTreatments();
   }
 };
