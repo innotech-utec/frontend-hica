@@ -66,7 +66,7 @@
           label="Localidad"
           :rules="requiredRule"
           item-title="nombre"
-          item-value="nombre"
+          item-value="id"
           :loading="loadingLocalidades"
           :disabled="!selectedDepartamentoId || loadingLocalidades"
           required
@@ -139,7 +139,7 @@ export default {
       ],
       telefonoRules: [
         v => !!v || 'El teléfono es requerido',
-        v => (v && v.length <= 20) || 'El teléfono no puede tener más de 20 caracteres'
+        v => (v && v.toString().length <= 20) || 'El teléfono no puede tener más de 20 caracteres'
       ],
       requiredRule: [
         v => !!v || 'Este campo es requerido',
@@ -171,74 +171,85 @@ export default {
     },
 
     async handleDepartamentoChange(departamentoId) {
-      if (!departamentoId) {
-        this.localidades = [];
-        this.selectedLocalidadId = null;
-        return;
-      }
+  if (!departamentoId) {
+    this.localidades = [];
+    this.selectedLocalidadId = null;
+    return;
+  }
 
-      const departamento = this.departamentos.find(d => d.id === departamentoId);
-      if (!departamento) return;
+  const departamento = this.departamentos.find(d => d.id === departamentoId);
+  if (!departamento) return;
 
+  this.loadingLocalidades = true;
+  try {
+    const localidades = await obtenerLocalidades(departamento.nombre);
+    this.localidades = localidades;
+    this.selectedLocalidadId = null; // Reset localidad al cambiar departamento
+  } catch (error) {
+    console.error("Error al cargar localidades:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se pudieron cargar las localidades.",
+    });
+    this.localidades = [];
+  } finally {
+    this.loadingLocalidades = false;
+  }
+},
+
+    async cargarResponsable() {
+  try {
+    const responsableId = this.$route.params.id;
+    const response = await backend.get(`/responsables/${responsableId}`);
+    
+    // Cargar datos básicos
+    this.responsable = {
+      documento: response.data.documento,
+      nombre: response.data.nombre,
+      apellido: response.data.apellido,
+      domicilio: response.data.domicilio,
+      telefono: response.data.telefono,
+    };
+
+    // Guardar el ID de localidad para usarlo después
+    const localidadIdOriginal = response.data.localidadId;
+
+    // Primero setear el departamento
+    this.selectedDepartamentoId = response.data.departamentoId;
+  
+    // Una vez seteado el departamento, cargar sus localidades
+    
       this.loadingLocalidades = true;
       try {
-        const localidadesResponse = await obtenerLocalidades(departamento.nombre);
+        const departamento = this.departamentos.find(d => d.id === this.selectedDepartamentoId);
+        const localidades = await obtenerLocalidades(departamento.nombre);
+        this.localidades = localidades;
         
-        if (Array.isArray(localidadesResponse)) {
-          this.localidades = localidadesResponse.map(loc => ({
-            id: loc.nombre,
-            nombre: loc.nombre
-          }));
-        }
+        // Ahora que tenemos las localidades, podemos setear la localidad original
+        this.selectedLocalidadId = localidadIdOriginal;
+        
       } catch (error) {
-        console.error("Error al cargar localidades:", error);
+        console.error('Error al cargar localidades:', error);
         Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudieron cargar las localidades.",
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar las localidades.'
         });
-        this.localidades = [];
       } finally {
         this.loadingLocalidades = false;
       }
-    },
+    
 
-    async cargarResponsable() {
-      try {
-        const responsableId = this.$route.params.id;
-        const response = await backend.get(`/responsables/${responsableId}`);
-        
-        // Cargar datos básicos
-        this.responsable = {
-          documento: response.data.documento,
-          nombre: response.data.nombre,
-          apellido: response.data.apellido,
-          domicilio: response.data.domicilio,
-          telefono: response.data.telefono,
-        };
-
-        // Cargar departamento
-        if (response.data.departamento) {
-          this.selectedDepartamentoId = response.data.departamento.id;
-          await this.handleDepartamentoChange(response.data.departamento.id);
-        }
-
-        // Cargar localidad después de que se hayan cargado las localidades
-        if (response.data.localidad) {
-          this.$nextTick(() => {
-            this.selectedLocalidadId = response.data.localidad.nombre;
-          });
-        }
-
-      } catch (error) {
-        console.error("Error al cargar responsable:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo cargar la información del responsable.",
-        });
-      }
-    },
+  } catch (error) {
+    console.error("Error al cargar responsable:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se pudo cargar la información del responsable.",
+    });
+  }
+},
 
     async onSubmit() {
       if (!this.$refs.form.validate()) return;
