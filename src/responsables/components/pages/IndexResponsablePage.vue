@@ -63,7 +63,7 @@
                 <td>{{ responsable.domicilio }}</td>
                 <td>{{ responsable.telefono }}</td>
                 <td>{{ responsable.departamento.nombre }}</td>
-                <td>{{ responsable.localidad }}</td>
+                <td>{{ localidadesNombres[responsable.id] || 'Cargando...' }}</td>
                 <td>
                   <v-card-actions>
                     <v-btn icon color="primary" @click="editResponsable(responsable.id)">
@@ -127,6 +127,7 @@ import backend from '@/backend';
 import Swal from 'sweetalert2';
 import BackButton from '@/shared/components/BackButton.vue';
 import PaginatorComponent from "@/shared/components/PaginatorComponent.vue";
+import { obtenerLocalidades } from '../../services/direccionesService';
 
 export default {
   data() {
@@ -136,6 +137,8 @@ export default {
       currentPage: 1,
       totalPages: 1,
       loading: false,
+      localidades: {},
+      localidadesNombres: {},
       showAnimalesModal: false,
       animalesResponsable: [],
       currentResponsableNombre: '',
@@ -166,6 +169,11 @@ export default {
           params: { page },
         });
         this.responsables = response.data;
+
+        this.responsables.forEach(responsable => {
+          this.getLocalidadNombre(responsable);
+        });
+
         this.currentPage = page;
       } catch (error) {
         console.error('Error al obtener responsables:', error);
@@ -236,6 +244,23 @@ export default {
 
     handlePageChange(newPage) {
       this.fetchResponsables(newPage);
+    },
+    getDepartamentoNombre(responsable) {
+      return responsable.departamento?.nombre || 'No especificado';
+    },
+
+    async getLocalidadNombre(responsable) {
+      if (!this.localidadesNombres[responsable.id]) {
+        try {
+          const localidades = await obtenerLocalidades(responsable.departamento.nombre);
+          const localidad = localidades.find(loc => loc.id === responsable.localidadId);
+          this.localidadesNombres[responsable.id] = localidad ? localidad.nombre : 'No especificada';
+        } catch (error) {
+          console.error('Error al obtener localidad:', error);
+          this.localidadesNombres[responsable.id] = 'No especificada';
+        }
+      }
+      return this.localidadesNombres[responsable.id];
     },
   },
 
