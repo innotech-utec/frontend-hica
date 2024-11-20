@@ -180,7 +180,7 @@ export default {
         { title: 'Animales', icon: 'mdi-paw', route: '/animales' },
         { title: 'Laboratorio', icon: 'mdi-flask', route: '/laboratorio' },
         { title: 'Insumos', icon: 'mdi-cube-outline', route: '/articulos' },
-        { title: 'Reportes', icon: 'mdi-file-chart', route: '/reportes' },
+        { title: 'Reportes', icon: 'mdi-file-chart', route: '/reporte' },
       ],
       summaryCards: [
         {
