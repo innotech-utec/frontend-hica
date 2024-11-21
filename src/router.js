@@ -56,6 +56,7 @@ import AddGastosModal from './facturas/components/pages/AddGastosModal.vue';
 
 import ResenaEquino from './reseña/components/resena.vue';
 
+import ReportesPage from './reporte/components/Pages/ReportesPage.vue';
 const routes = [
   {
     path: '/',
@@ -301,6 +302,12 @@ const routes = [
         component: AddGastosModal,
         meta: { requiresAuth: true },
       },
+      
+        {
+          path: '/reporte',
+          name: 'reportes.index',
+          component: ReportesPage,
+        },
       
     ],
   },
