@@ -88,4 +88,35 @@ export default class ValidationService {
       };
     }
   }
+
+  /**
+   * Valida si un artículo con el mismo nombre ya está registrado
+   * @param {string} nombre - Nombre del artículo a validar
+   * @param {string} articuloId - ID del artículo actual (opcional, para edición)
+   * @returns {Promise<{ isValid: boolean, message: string }>}
+   */
+  static async validarArticuloUnico(nombre, articuloId = null) {
+    try {
+      const response = await backend.get('/articulos');
+      const articulos = response.data;
+      
+      const articuloExistente = articulos.find(articulo => {
+        if (articuloId && articulo.id === articuloId) return false;
+        return articulo.nombre.toLowerCase() === nombre.toLowerCase(); // Comparación case-insensitive
+      });
+
+      return {
+        isValid: !articuloExistente,
+        message: articuloExistente 
+          ? 'Este nombre de artículo ya está registrado en el sistema'
+          : 'Nombre de artículo disponible'
+      };
+    } catch (error) {
+      console.error('Error al validar nombre de artículo:', error);
+      return {
+        isValid: false,
+        message: 'Error al validar el nombre del artículo'
+      };
+    }
+  }
 }
