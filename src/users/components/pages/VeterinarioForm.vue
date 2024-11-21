@@ -30,19 +30,19 @@
   export default {
     data() {
       return {
-        N_de_registro: '',  
+        N_de_registro: '',  // Debería ser una cadena vacía inicialmente, pero se puede convertir a número
         Validado: false,
         Dependencia: '',
-        Foto: null  
+        Foto: null  // Aquí se almacenará el archivo seleccionado
       };
     },
     methods: {
       onFileSelected(event) {
-        this.Foto = event.target.files[0];  
+        this.Foto = event.target.files[0];  // Almacena el archivo seleccionado en la propiedad 'Foto'
       },
   
       onSubmitVeterinario() {
-        
+        // Emitir los datos del veterinario hacia el componente padre
         this.$emit('input', {
           N_de_registro: this.N_de_registro,
           Validado: this.Validado,

@@ -61,7 +61,7 @@ export default {
 
             const result = await Swal.fire({
                 title: '¿Estás seguro?',
-                text: `¿Quieres Inhabilitar al usuario ${this.user.nombre} ${this.user.apellido}?`,
+                text: `¿Quieres eliminar al usuario ${this.user.nombre} ${this.user.apellido}?`,
                 icon: 'warning',
                 showCancelButton: true,
             });
@@ -73,7 +73,7 @@ export default {
             await backend.delete(`usuarios/${this.user.id}`);
             this.display = false;
 
-            Swal.fire('Eliminado', `${this.user.nombre} ${this.user.apellido} ha sido Inhabilitado`);
+            Swal.fire('Eliminado', `${this.user.nombre} ${this.user.apellido} ha sido eliminado`);
         },
 
         async onEditUser() {
