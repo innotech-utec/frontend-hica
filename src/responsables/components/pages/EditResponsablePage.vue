@@ -100,6 +100,7 @@
 import Swal from 'sweetalert2';
 import backend from '@/backend';
 import { obtenerLocalidades } from '../../services/direccionesService';
+import ValidationService from '@/validationService';
 
 export default {
   name: 'ResponsableEdit',
@@ -121,9 +122,12 @@ export default {
         domicilio: '',
         telefono: '',
       },
+      documentoOriginal: '', // Agregar esto
+      documentoError: '', // Agregar esto
       documentoRules: [
         v => !!v || 'El documento es requerido',
-        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres'
+        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
+        v => this.validarDocumentoAsync(v) // Agregar esta validación
       ],
       nombreRules: [
         v => !!v || 'El nombre es requerido',
@@ -198,10 +202,23 @@ export default {
   }
 },
 
-    async cargarResponsable() {
+async validarDocumentoAsync(documento) {
+      try {
+        if (!documento || documento === this.documentoOriginal) return true;
+        const resultado = await ValidationService.validarResponsableUnico(documento, this.$route.params.id);
+        this.documentoError = resultado.isValid ? '' : resultado.message;
+        return resultado.isValid || resultado.message;
+      } catch (error) {
+        console.error('Error en validación de documento:', error);
+        return 'Error al validar el documento';
+      }
+    },
+async cargarResponsable() {
   try {
     const responsableId = this.$route.params.id;
     const response = await backend.get(`/responsables/${responsableId}`);
+
+    this.documentoOriginal = response.data.documento;
     
     // Cargar datos básicos
     this.responsable = {
@@ -253,6 +270,21 @@ export default {
 
     async onSubmit() {
       if (!this.$refs.form.validate()) return;
+
+      if (this.responsable.documento !== this.documentoOriginal) {
+          const documentoResultado = await ValidationService.validarResponsableUnico(
+            this.responsable.documento,
+            this.$route.params.id
+          );
+          
+          if (!documentoResultado.isValid) {
+            return Swal.fire({
+              icon: "error",
+              title: "Documento en uso",
+              text: "El documento ya está registrado en el sistema. Por favor, verifique.",
+            });
+          }
+        }
       
       this.loading = true;
       try {
@@ -314,6 +346,18 @@ export default {
       }
     },
   },
+  watch: {
+    // Agregar este watch para la validación en tiempo real
+    'responsable.documento': {
+      handler: async function(newDocumento) {
+        if (newDocumento && newDocumento !== this.documentoOriginal) {
+          await this.validarDocumentoAsync(newDocumento);
+        } else {
+          this.documentoError = '';
+        }
+      }
+    }
+  }
 };
 </script>
 
