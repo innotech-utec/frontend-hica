@@ -13,6 +13,7 @@
           label="Documento" 
           required
           maxLength="30"
+          :error-messages="documentoError"
         ></v-text-field>
         
         <v-text-field 
@@ -100,6 +101,7 @@
 import Swal from 'sweetalert2';
 import backend from '@/backend';
 import { obtenerLocalidades } from '../../services/direccionesService';
+import ValidationService from '@/validationService';
 
 export default {
   name: 'ResponsableCreate',
@@ -121,9 +123,11 @@ export default {
         departamentoId: null,
         localidadId: null
       },
+      documentoError: '',
       documentoRules: [
         v => !!v || 'El documento es requerido',
-        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres'
+        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
+        v => this.validarDocumentoAsync(v) || 'Validando documento...'
       ],
       nombreRules: [
         v => !!v || 'El nombre es requerido',
@@ -152,6 +156,19 @@ export default {
   },
 
   methods: {
+
+    async validarDocumentoAsync(documento) {
+      try {
+        if (!documento) return true;
+        const resultado = await ValidationService.validarResponsableUnico(documento);
+        this.documentoError = resultado.isValid ? '' : resultado.message;
+        return resultado.isValid || resultado.message;
+      } catch (error) {
+        console.error('Error en validación de documento:', error);
+        return 'Error al validar el documento';
+      }
+    },
+
     async loadDepartamentos() {
       this.loadingDepartamentos = true;
       try {
@@ -211,6 +228,16 @@ export default {
 
     async onSubmit() {
       if (!this.$refs.form.validate()) return;
+
+    const documentoResultado = await ValidationService.validarResponsableUnico(this.responsable.documento);
+    
+    if (!documentoResultado.isValid) {
+      return Swal.fire({
+        icon: "error",
+        title: "Documento en uso",
+        text: "El documento ya está registrado en el sistema. Por favor, verifique.",
+      });
+    }
       
       this.loading = true;
       try {
@@ -258,15 +285,16 @@ export default {
   },
 
   watch: {
-    'responsable.departamentoId': {
+    'responsable.documento': {
       immediate: true,
-      handler(newVal) {
-        if (!newVal) {
-          this.localidades = [];
-          this.responsable.localidadId = null;
+      async handler(newDocumento) {
+        if (newDocumento) {
+          await this.validarDocumentoAsync(newDocumento);
+        } else {
+          this.documentoError = '';
         }
       }
-    }
+    },
   }
 };
 </script>

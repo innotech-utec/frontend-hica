@@ -32,6 +32,32 @@ export default class ValidationService {
     }
   }
 
+  static async validarResponsableUnico(documento, userId = null) {
+    try {
+      const response = await backend.get('/responsables');
+      // Asumimos que la respuesta viene directamente como un array de responsables
+      const responsables = response.data;
+      
+      const responsableExistente = responsables.find(responsable => {
+        if (userId && responsable.id === userId) return false;
+        return responsable.documento === documento;
+      });
+
+      return {
+        isValid: !responsableExistente,
+        message: responsableExistente 
+          ? 'Este documento ya está registrado en el sistema'
+          : 'Documento disponible'
+      };
+    } catch (error) {
+      console.error('Error al validar documento:', error);
+      return {
+        isValid: false,
+        message: 'Error al validar el documento'
+      };
+    }
+  }
+
   /**
    * Valida si un email ya está registrado
    * @param {string} email - Email a validar
