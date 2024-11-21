@@ -27,11 +27,12 @@
       </v-col>
     </v-row>
 
-    <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
+    <v-form ref="form" v-model="valid" @submit.prevent="onSubmit" lazy-validation>
       <v-text-field
         v-model="fichaClinica.motivoConsulta"
         label="Motivo de la Consulta"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('motivoConsulta')"
         required
       ></v-text-field>
 
@@ -40,6 +41,7 @@
         :items="opcionesSanitarias"
         label="Condición Sanitaria"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('sanitaria')"
         required
         background-color="white"
       ></v-select>
@@ -49,6 +51,7 @@
         :items="opcionesAmbientales"
         label="Condición Ambiental"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('ambiental')"
         required
         background-color="white"
       ></v-select>
@@ -57,6 +60,7 @@
         v-model="fichaClinica.remotaFisiologica"
         label="Remota Fisiológica"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('remotaFisiologica')"
         required
       ></v-text-field>
 
@@ -64,6 +68,7 @@
         v-model="fichaClinica.remotaPatologica"
         label="Remota Patológica"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('remotaPatologica')"
         required
       ></v-text-field>
 
@@ -71,6 +76,7 @@
         v-model="fichaClinica.proximaFisiologica"
         label="Próxima Fisiológica"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('proximaFisiologica')"
         required
       ></v-text-field>
 
@@ -78,20 +84,22 @@
         v-model="fichaClinica.proximaPatologica"
         label="Próxima Patológica"
         :rules="requiredRule"
+        :error-messages="getErrorMessages('proximaPatologica')"
         required
       ></v-text-field>
 
-      <!-- Campo para seleccionar el estado de la ficha clínica -->
       <v-select
         v-model="fichaClinica.estadoFichaClinica"
         :items="['Alta', 'Ingresado','Internado', 'Fallecimiento', 'Eutanasia']"
         label="Estado de la Ficha Clínica"
+        :rules="requiredRule"
+        :error-messages="getErrorMessages('estadoFichaClinica')"
         required
         background-color="white"
       ></v-select>
 
       <v-card-actions class="actions-centered">
-        <v-btn rounded color="primary" type="submit">Registrar</v-btn>
+        <v-btn rounded color="primary" type="submit" :disabled="!valid">Registrar</v-btn>
         <v-btn rounded color="secondary" @click="cancel">Cancelar</v-btn>
       </v-card-actions>
     </v-form>
@@ -110,6 +118,7 @@ export default {
   data() {
     return {
       valid: false,
+      formErrors: {},
       fichaClinica: {
         motivoConsulta: '',
         sanitaria: '',
@@ -138,6 +147,34 @@ export default {
     };
   },
   methods: {
+    getErrorMessages(field) {
+      return this.formErrors[field] || [];
+    },
+    validateForm() {
+      this.formErrors = {};
+      let isValid = true;
+
+      // Validar cada campo requerido
+      const requiredFields = [
+        'motivoConsulta',
+        'sanitaria',
+        'ambiental',
+        'remotaFisiologica',
+        'remotaPatologica',
+        'proximaFisiologica',
+        'proximaPatologica',
+        'estadoFichaClinica'
+      ];
+
+      requiredFields.forEach(field => {
+        if (!this.fichaClinica[field]) {
+          this.formErrors[field] = ['Este campo es requerido'];
+          isValid = false;
+        }
+      });
+
+      return isValid;
+    },
     async fetchAnimalDetails() {
       const animalId = this.$route.query.animalId;
       if (!animalId) {
@@ -162,7 +199,18 @@ export default {
       }
     },
     async onSubmit() {
-      if (!this.$refs.form.validate()) return;
+      // Forzar la validación del formulario
+      this.$refs.form.validate();
+      
+      // Si no es válido, detenemos el envío
+      if (!this.valid) {
+        Swal.fire({
+          icon: "error",
+          title: "Error de validación",
+          text: "Por favor, complete todos los campos requeridos.",
+        });
+        return;
+      }
 
       try {
         const response = await backend.post('fichasClinicas', {

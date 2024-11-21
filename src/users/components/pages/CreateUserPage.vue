@@ -12,7 +12,7 @@
         <v-text-field v-model="user.email" :rules="emailRules" label="Correo Electrónico" required></v-text-field>
         <v-text-field v-model="user.nombre" :rules="requiredRule" label="Nombre" required></v-text-field>
         <v-text-field v-model="user.apellido" :rules="requiredRule" label="Apellido" required></v-text-field>
-        <v-text-field v-model="user.documento" :rules="requiredRule" label="Documento de Identidad" required></v-text-field>
+        <v-text-field v-model="user.documento" :rules="documentoRules" label="Documento de Identidad" required></v-text-field>
 
         <!-- Campos de contraseña -->
         <v-text-field
@@ -69,6 +69,7 @@
 <script>
 import backend from "@/backend.js";
 import Swal from "sweetalert2";
+import ValidationService from '@/validationService.js';
 
 export default {
   data() {
@@ -93,12 +94,23 @@ export default {
       emailRules: [
         v => !!v || 'El correo electrónico es requerido',
         v => /.+@.+\..+/.test(v) || 'El correo debe ser válido',
+        v => this.validarEmail(v) || 'Validando email...'
       ],
       requiredRule: [v => !!v || 'Este campo es requerido'],
-      passwordRules: [
-        v => !!v || 'La contraseña es requerida',
-        v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+      documentoRules: [
+        v => !!v || 'El documento es requerido',
+        v => this.validarDocumento(v) || 'Validando documento...'
       ],
+      passwordRules: [
+      v => !!v || 'La contraseña es requerida',
+      v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+      v => /[A-Z]/.test(v) || 'Debe contener al menos una letra mayúscula',
+      v => /[a-z]/.test(v) || 'Debe contener al menos una letra minúscula',
+      v => /[0-9]/.test(v) || 'Debe contener al menos un número',
+      v => /[!@#$%^&*(),.?":{}|<>]/.test(v) || 'Debe contener al menos un carácter especial',
+      ],
+      emailValido: true,
+      documentoValido: true,
     };
   },
   computed: {
@@ -110,7 +122,46 @@ export default {
     }
   },
   methods: {
+
+    async validarEmail(email) {
+      if (!email || !/.+@.+\..+/.test(email)) return true; // Skip validación si está vacío o inválido
+      
+      const resultado = await ValidationService.validarEmailUnico(email);
+      this.emailValido = resultado.isValid;
+      return resultado.isValid || resultado.message;
+    },
+
+    async validarDocumento(documento) {
+      if (!documento) return true; // Skip validación si está vacío
+      
+      const resultado = await ValidationService.validarDocumentoUnico(documento);
+      this.documentoValido = resultado.isValid;
+      return resultado.isValid || resultado.message;
+    },
+
     async onSubmit() {
+
+      if (!this.$refs.form.validate()) return;
+      
+      // Validar email y documento antes de continuar
+      const documentoResultado = await ValidationService.validarDocumentoUnico(this.user.documento);
+        if (!documentoResultado.isValid) {
+          return Swal.fire({
+            icon: "error",
+            title: "Documento en uso",
+            text: "El documento ya está registrado en el sistema. Por favor, verifique.",
+          });
+        }
+
+        const emailResultado = await ValidationService.validarEmailUnico(this.user.email);
+        if (!emailResultado.isValid) {
+          return Swal.fire({
+            icon: "error",
+            title: "Correo en uso",
+            text: "El correo electrónico ya está registrado. Por favor, utilice otro.",
+          });
+        }
+
       if (!this.$refs.form.validate()) return;
 
       if (this.user.password !== this.user.repeatedPassword) {
@@ -243,6 +294,22 @@ export default {
       if (result.isConfirmed) {
         this.resetForm();
         this.$router.push("/usuarios");
+      }
+    }
+  },
+  watch: {
+    'user.email': {
+      handler: async function(newEmail) {
+        if (newEmail) {
+          await this.validarEmail(newEmail);
+        }
+      }
+    },
+    'user.documento': {
+      handler: async function(newDocumento) {
+        if (newDocumento) {
+          await this.validarDocumento(newDocumento);
+        }
       }
     }
   }

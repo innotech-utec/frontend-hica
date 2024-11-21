@@ -7,36 +7,51 @@
         </v-col>
       </v-row>
 
-      <v-form @submit.prevent="onSubmit">
+      <v-form ref="form" @submit.prevent="onSubmit" v-model="valid">
         <!-- Correo electrónico -->
-        <div class="field">
-          <v-icon class="field__icon">mdi-email</v-icon>
-          <input class="field__input" v-model="user.email" type="email" placeholder="Correo electrónico" disabled />
-        </div>
+        <v-text-field
+          v-model="user.email"
+          label="Correo Electrónico"
+          prepend-icon="mdi-email"
+          disabled
+        ></v-text-field>
 
         <!-- Nombre -->
-        <div class="field">
-          <v-icon class="field__icon">mdi-account-circle</v-icon>
-          <input class="field__input" v-model="user.nombre" type="text" placeholder="Nombre" />
-        </div>
+        <v-text-field
+          v-model="user.nombre"
+          :rules="nombreRules"
+          label="Nombre"
+          prepend-icon="mdi-account-circle"
+          required
+        ></v-text-field>
 
-     
-        <div class="field">
-          <v-icon class="field__icon">mdi-account-circle</v-icon>
-          <input class="field__input" v-model="user.apellido" type="text" placeholder="Apellido" />
-        </div>
+        <!-- Apellido -->
+        <v-text-field
+          v-model="user.apellido"
+          :rules="apellidoRules"
+          label="Apellido"
+          prepend-icon="mdi-account-circle"
+          required
+        ></v-text-field>
 
-       
-        <div class="field">
-          <v-icon class="field__icon">mdi-file-document</v-icon>
-          <input class="field__input" v-model="user.documento" type="text" placeholder="Documento de identidad" />
-        </div>
+        <!-- Documento -->
+        <v-text-field
+          v-model="user.documento"
+          :rules="documentoRules"
+          label="Documento de Identidad"
+          prepend-icon="mdi-file-document"
+          required
+          :error-messages="documentoError"
+        ></v-text-field>
 
-        
         <v-checkbox v-model="user.isAdmin" label="Administrador" class="mt-4" />
 
-  
-        <v-checkbox v-model="esVeterinario" label="Es Veterinario" class="mt-4" :disabled="esVeterinario" />
+        <v-checkbox
+          v-model="esVeterinario"
+          label="Es Veterinario"
+          class="mt-4"
+          :disabled="esVeterinario"
+        />
 
         <!-- Si es veterinario, muestra los campos adicionales -->
         <v-row v-if="esVeterinario">
@@ -51,13 +66,18 @@
           <v-col cols="12">
             <v-select
               v-model="veterinario.Dependencia"
-             :items="['Clinica Pequeños Animales', 'Equinos','Endocrinologia y Metabolismo Animal', 'Gestión Hospitalaria', 'Semiología']"
+              :items="[
+                'Clinica Pequeños Animales',
+                'Equinos',
+                'Endocrinologia y Metabolismo Animal',
+                'Gestión Hospitalaria',
+                'Semiología',
+              ]"
               label="Dependencia"
               required
-              ></v-select>
+            ></v-select>
           </v-col>
           <v-col cols="12">
-          
             <v-file-input
               v-model="veterinario.Foto"
               accept="image/png, image/jpeg"
@@ -67,14 +87,13 @@
         </v-row>
 
         <v-card-actions>
-        <v-btn rounded color="primary" type="submit">Guardar</v-btn>
-
-        <!-- Botón de cancelar con confirmación -->
-        <v-btn rounded color="secondary" @click="confirmCancel('edición')">Cancelar</v-btn>
-      </v-card-actions>
-
-
-        
+          <v-btn rounded color="primary" type="submit" :disabled="!valid">
+            Guardar
+          </v-btn>
+          <v-btn rounded color="secondary" @click="confirmCancel('edición')">
+            Cancelar
+          </v-btn>
+        </v-card-actions>
       </v-form>
     </v-container>
   </v-card>
@@ -83,10 +102,12 @@
 <script>
 import backend from "@/backend.js";
 import Swal from "sweetalert2";
+import ValidationService from '@/validationService.js';
 
 export default {
   data() {
     return {
+      valid: true,
       user: {
         email: "",
         nombre: "",
@@ -101,13 +122,31 @@ export default {
       },
       esVeterinario: false,
       requiredRule: [v => !!v || 'Este campo es requerido'],
+      nombreRules: [
+        v => !!v || 'El nombre es requerido',
+        v => v.length >= 2 || 'El nombre debe tener al menos 2 caracteres'
+      ],
+      apellidoRules: [
+        v => !!v || 'El apellido es requerido',
+        v => v.length >= 2 || 'El apellido debe tener al menos 2 caracteres'
+      ],
+      documentoRules: [
+        v => !!v || 'El documento es requerido',
+        v => this.validarDocumento(v) || 'Validando documento...'
+      ],
+      documentoError: '',
+      documentoOriginal: '',
+      originalUser: null,
     };
   },
+
   async mounted() {
     try {
       const userId = this.$route.params.id;
       const response = await backend.get(`usuarios/${userId}`);
       this.user = response.data;
+      this.originalUser = { ...response.data };
+      this.documentoOriginal = response.data.documento;
 
       // Cargar datos del veterinario por userId
       try {
@@ -130,8 +169,54 @@ export default {
   },
 
   methods: {
+    async validarDocumento(documento) {
+      if (!documento || documento === this.documentoOriginal) return true;
+      
+      const resultado = await ValidationService.validarDocumentoUnico(documento, this.$route.params.id);
+      return resultado.isValid || resultado.message;
+    },
+
+    resetForm() {
+      this.$refs.form.reset();
+      this.user = { ...this.originalUser };
+      this.documentoError = '';
+    },
+
     async onSubmit() {
+      if (!this.$refs.form.validate()) {
+        return Swal.fire({
+          icon: "error",
+          title: "Validación",
+          text: "Por favor, complete todos los campos requeridos correctamente.",
+        });
+      }
+
       try {
+        // Validar documento si ha cambiado
+        if (this.user.documento !== this.documentoOriginal) {
+          const documentoResultado = await ValidationService.validarDocumentoUnico(
+            this.user.documento,
+            this.$route.params.id
+          );
+
+          if (!documentoResultado.isValid) {
+            return Swal.fire({
+              icon: "error",
+              title: "Documento en uso",
+              text: "El documento ya está registrado en el sistema. Por favor, verifique.",
+            });
+          }
+        }
+
+        // Verificar campos requeridos
+        if (!this.user.nombre || !this.user.apellido || !this.user.documento) {
+          return Swal.fire({
+            icon: "error",
+            title: "Campos requeridos",
+            text: "Por favor, complete todos los campos requeridos.",
+          });
+        }
+
         // Actualizar los datos del usuario
         await backend.patch(`usuarios/${this.$route.params.id}`, {
           email: this.user.email,
@@ -192,7 +277,7 @@ export default {
                 });
               }
             } else {
-              throw error; // Si es otro error, propagarlo
+              throw error;
             }
           }
         }
@@ -205,10 +290,22 @@ export default {
 
         this.$router.replace("/usuarios");
       } catch (error) {
+        let errorMessage = "No se pudieron actualizar los datos del usuario";
+        
+        if (error.response) {
+          if (error.response.status === 409) {
+            errorMessage = "El documento ya está registrado por otro usuario";
+          } else if (error.response.status === 400) {
+            errorMessage = "Por favor, verifique los datos ingresados";
+          } else {
+            errorMessage = error.response.data.message || errorMessage;
+          }
+        }
+
         Swal.fire({
-          title: "Error al actualizar",
-          text: "No se pudieron actualizar los datos del usuario",
           icon: "error",
+          title: "Error al actualizar",
+          text: errorMessage,
         });
       }
     },
@@ -228,6 +325,19 @@ export default {
       }
     },
   },
+
+  watch: {
+    'user.documento': {
+      handler: async function(newDocumento) {
+        if (newDocumento && newDocumento !== this.documentoOriginal) {
+          const resultado = await ValidationService.validarDocumentoUnico(newDocumento, this.$route.params.id);
+          this.documentoError = resultado.isValid ? '' : resultado.message;
+        } else {
+          this.documentoError = '';
+        }
+      }
+    }
+  }
 };
 </script>
 
@@ -260,4 +370,3 @@ export default {
   background-color: #007460;
 }
 </style>
-
