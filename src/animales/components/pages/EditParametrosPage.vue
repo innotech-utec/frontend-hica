@@ -8,47 +8,53 @@
             v-model="localParametro.fecha"
             label="Fecha"
             type="date"
-            :rules="[rules.required]"
+            :rules="[rules.required, rules.dateFormat]"
             required
+            @input="validateField('fecha')"
           ></v-text-field>
           <v-text-field
             v-model="formattedHora"
             label="Hora"
             type="time"
-            :rules="[rules.required]"
+            :rules="[rules.required, rules.timeFormat]"
             required
-            @input="updateHora"
+            @input="validateField('hora')"
           ></v-text-field>
           <v-text-field
             v-model="localParametro.FC"
             label="Frecuencia Cardíaca (FC)"
-            :rules="[rules.required, rules.numeric]"
+            :rules="[rules.required, rules.numeric, rules.fcRange]"
             required
+            @input="validateField('FC')"
           ></v-text-field>
           <v-text-field
             v-model="localParametro.FR"
             label="Frecuencia Respiratoria (FR)"
-            :rules="[rules.required, rules.numeric]"
+            :rules="[rules.required, rules.numeric, rules.frRange]"
             required
+            @input="validateField('FR')"
           ></v-text-field>
           <v-text-field
             v-model="localParametro.temperatura"
             label="Temperatura (°C)"
-            :rules="[rules.required, rules.numeric]"
+            :rules="[rules.required, rules.numeric, rules.tempRange]"
             required
+            @input="validateField('temperatura')"
           ></v-text-field>
           <v-select
             v-model="localParametro.mucosas"
             label="Tipo de Mucosas"
             :items="['ROSADAS', 'PALIDAS', 'HIPEREMICAS', 'CONGESTIVAS', 'TOXEMICAS', 'HIPOXICAS']"
             :rules="[rules.required]"
+            @change="validateField('mucosas')"
           ></v-select>
           <v-text-field
             v-model="localParametro.TllC"
             label="TllC"
             suffix="seg"
-            :rules="[rules.required, rules.numeric]"
+            :rules="[rules.required, rules.numeric, rules.tllcRange]"
             required
+            @input="validateField('TllC')"
           ></v-text-field>
           <v-textarea
             v-model="localParametro.observaciones"
@@ -57,7 +63,7 @@
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Guardar</v-btn>
+        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!isFormValid">Guardar</v-btn>
         <v-btn color="secondary" @click="closeModal">Cancelar</v-btn>
       </v-card-actions>
     </v-card>
@@ -65,7 +71,7 @@
 </template>
 
 <script>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, watch, onMounted, computed } from 'vue';
 import backend from "@/backend";
 import Swal from 'sweetalert2';
 
@@ -87,26 +93,98 @@ export default {
     const editModal = ref(props.show);
     const loading = ref(false);
     const formattedHora = ref("");
+    const fieldErrors = ref({});
     
     const rules = {
       required: (v) => !!v || "Este campo es requerido",
-      numeric: (v) => !isNaN(v) || "El valor debe ser numérico"
+      numeric: (v) => !isNaN(parseFloat(v)) && isFinite(v) || "El valor debe ser numérico",
+      dateFormat: (v) => {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        return dateRegex.test(v) || "Formato de fecha inválido";
+      },
+      timeFormat: (v) => {
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        return timeRegex.test(v) || "Formato de hora inválido";
+      },
+      fcRange: (v) => {
+        const fc = parseFloat(v);
+        return (fc >= 40 && fc <= 200) || "FC debe estar entre 40 y 200";
+      },
+      frRange: (v) => {
+        const fr = parseFloat(v);
+        return (fr >= 10 && fr <= 60) || "FR debe estar entre 10 y 60";
+      },
+      tempRange: (v) => {
+        const temp = parseFloat(v);
+        return (temp >= 35 && temp <= 42) || "Temperatura debe estar entre 35°C y 42°C";
+      },
+      tllcRange: (v) => {
+        const tllc = parseFloat(v);
+        return (tllc >= 1 && tllc <= 5) || "TllC debe estar entre 1 y 5 segundos";
+      }
     };
 
     const localParametro = reactive({ ...props.parametro });
 
+    const isFormValid = computed(() => {
+      return Object.keys(fieldErrors.value).length === 0 && valid.value;
+    });
+
+    const validateField = (fieldName) => {
+      const value = fieldName === 'hora' ? formattedHora.value : localParametro[fieldName];
+      let fieldRules = [];
+      
+      switch(fieldName) {
+        case 'fecha':
+          fieldRules = [rules.required, rules.dateFormat];
+          break;
+        case 'hora':
+          fieldRules = [rules.required, rules.timeFormat];
+          break;
+        case 'FC':
+          fieldRules = [rules.required, rules.numeric, rules.fcRange];
+          break;
+        case 'FR':
+          fieldRules = [rules.required, rules.numeric, rules.frRange];
+          break;
+        case 'temperatura':
+          fieldRules = [rules.required, rules.numeric, rules.tempRange];
+          break;
+        case 'TllC':
+          fieldRules = [rules.required, rules.numeric, rules.tllcRange];
+          break;
+        default:
+          fieldRules = [rules.required];
+      }
+
+      for (const rule of fieldRules) {
+        const result = rule(value);
+        if (result !== true) {
+          fieldErrors.value = {
+            ...fieldErrors.value,
+            [fieldName]: result
+          };
+          return;
+        }
+      }
+
+      const newErrors = { ...fieldErrors.value };
+      delete newErrors[fieldName];
+      fieldErrors.value = newErrors;
+    };
+
     const formatHora = (hora) => {
       if (!hora) return "";
-     
       if (hora.includes(':')) {
         const parts = hora.split(':');
-        return `${parts[0]}:${parts[1]}`;
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
       }
       return hora;
     };
 
     const updateHora = (newValue) => {
       localParametro.hora = newValue;
+      validateField('hora');
     };
 
     watch(
@@ -126,19 +204,17 @@ export default {
     );
 
     const closeModal = () => {
+      fieldErrors.value = {};
       emit('update:show', false);
       emit('cerrarModal');
     };
 
     const onSubmit = async () => {
-      if (!form.value) return;
+      ['fecha', 'hora', 'FC', 'FR', 'temperatura', 'mucosas', 'TllC'].forEach(validateField);
 
-      const isValid = await form.value.validate();
-      if (isValid) {
+      if (isFormValid.value) {
         try {
           loading.value = true;
-          
-         
           localParametro.hora = formattedHora.value;
           
           await backend.patch(`/registroParametros/${localParametro.id}`, localParametro, {
@@ -181,7 +257,9 @@ export default {
       closeModal,
       onSubmit,
       updateHora,
-      rules
+      rules,
+      validateField,
+      isFormValid
     };
   }
 };
