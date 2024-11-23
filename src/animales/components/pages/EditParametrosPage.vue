@@ -130,6 +130,12 @@ export default {
       return Object.keys(fieldErrors.value).length === 0 && valid.value;
     });
 
+    const formatInputDate = (date) => {
+  if (!date) return '';
+  // Asegurarse de que la fecha esté en formato YYYY-MM-DD
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
+};
     const validateField = (fieldName) => {
       const value = fieldName === 'hora' ? formattedHora.value : localParametro[fieldName];
       let fieldRules = [];
@@ -195,14 +201,16 @@ export default {
     );
 
     watch(
-      () => props.parametro,
-      (newParametro) => {
-        Object.assign(localParametro, { ...newParametro });
-        formattedHora.value = formatHora(newParametro.hora);
-      },
-      { immediate: true }
-    );
-
+  () => props.parametro,
+  (newParametro) => {
+    Object.assign(localParametro, { 
+      ...newParametro,
+      fecha: formatInputDate(newParametro.fecha) 
+    });
+    formattedHora.value = formatHora(newParametro.hora);
+  },
+  { immediate: true }
+);
     const closeModal = () => {
       fieldErrors.value = {};
       emit('update:show', false);
@@ -243,9 +251,12 @@ export default {
     };
 
     onMounted(() => {
-      Object.assign(localParametro, props.parametro);
-      formattedHora.value = formatHora(props.parametro.hora);
-    });
+  Object.assign(localParametro, {
+    ...props.parametro,
+    fecha: formatInputDate(props.parametro.fecha)
+  });
+  formattedHora.value = formatHora(props.parametro.hora);
+});
 
     return {
       form,
