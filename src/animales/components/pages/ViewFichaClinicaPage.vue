@@ -140,18 +140,13 @@
         <!-- Botones -->
         <v-row class="mt-4">
           <v-col cols="12" class="d-flex justify-center">
-          <v-card-actions>
-            <v-btn color="#0046B5" @click="openEditModal" class="text-none">
+            <v-btn color="primary" @click="openEditModal" class="mx-2">
               <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
             </v-btn>
-          </v-card-actions>
-     
-        <v-card-actions>
-            <v-btn color="#0046B5" @click="irAFacturacion" class="text-none">
+            <v-btn color="primary" @click="irAFacturacion" class="mx-2">
               <v-icon left>mdi-currency-usd</v-icon>
               {{ facturaExistente ? 'Visualizar Factura' : 'Nueva Factura' }}
             </v-btn>
-            </v-card-actions>
           </v-col>
         </v-row>
       </v-card-text>
@@ -380,19 +375,17 @@ export default {
 
 <style scoped>
 .ficha-title {
-  font-size: 20px;
-  color: #014582;
+  color: #0F3460;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 15px;
-  text-align: center;
+  margin-bottom: 20px;
 }
 
 .info-title {
-  font-size: 20px;
-  color: #014582;
-  font-weight: 600;
-  margin-bottom: 15px;
-  text-align: center;
+  color: #0F3460;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 12px 16px;
 }
 
 .field-group {
