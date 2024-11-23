@@ -91,7 +91,7 @@
           <v-textarea 
             v-model="localExamenObjetivo.grandesFuncionales" 
             label="Grandes Funcionales"
-            :rules="requiredRule"
+           
           ></v-textarea>
           
           <v-textarea 
