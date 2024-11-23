@@ -8,13 +8,41 @@
       </v-row>
 
       <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
-        <!-- Campos del formulario de usuario -->
-        <v-text-field v-model="user.email" :rules="emailRules" label="Correo Electrónico" required></v-text-field>
-        <v-text-field v-model="user.nombre" :rules="requiredRule" label="Nombre" required></v-text-field>
-        <v-text-field v-model="user.apellido" :rules="requiredRule" label="Apellido" required></v-text-field>
-        <v-text-field v-model="user.documento" :rules="documentoRules" label="Documento de Identidad" required></v-text-field>
+        <v-text-field 
+          v-model="user.email" 
+          :rules="emailRules"
+          label="Correo Electrónico" 
+          required
+          :error-messages="emailError"
+          @input="validateEmail"
+        ></v-text-field>
 
-        <!-- Campos de contraseña -->
+        <v-text-field 
+          v-model="user.nombre" 
+          :rules="nombreRules"
+          label="Nombre" 
+          required
+          maxLength="50"
+        ></v-text-field>
+
+        <v-text-field 
+          v-model="user.apellido" 
+          :rules="apellidoRules"
+          label="Apellido" 
+          required
+          maxLength="50"
+        ></v-text-field>
+
+        <v-text-field 
+          v-model="user.documento" 
+          :rules="documentoRules"
+          label="Documento" 
+          required
+          maxLength="30"
+          :error-messages="documentoError"
+          @input="validateDocumento"
+        ></v-text-field>
+
         <v-text-field
           v-model="user.password"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
@@ -24,6 +52,7 @@
           @click:append="showPassword = !showPassword"
           required
         ></v-text-field>
+
         <v-text-field
           v-model="user.repeatedPassword"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
@@ -34,38 +63,61 @@
           required
         ></v-text-field>
 
-        <!-- Opciones de usuario -->
         <v-checkbox v-model="user.isAdmin" label="Administrador"></v-checkbox>
         <v-checkbox v-model="esVeterinario" label="Veterinario"></v-checkbox>
 
-        <!-- Campos adicionales para veterinario -->
         <v-row v-if="esVeterinario">
           <v-col cols="12">
             <v-text-field 
               v-model="veterinario.N_de_registro"
               :rules="numeroRegistroRules"
-              type="number"
               label="Número de Registro"
               required
-          ></v-text-field>
+              pattern="[0-9]*"
+              inputmode="numeric"
+              @keypress="onlyNumbers"
+              :error-messages="registroError"
+            ></v-text-field>
           </v-col>
+          
           <v-col cols="12">
             <v-select
               v-model="veterinario.Dependencia"
-              :items="['Clinica Pequeños Animales', 'Equinos', 'Endocrinologia y Metabolismo Animal', 'Gestión Hospitalaria', 'Semiología']"
+              :items="dependencias"
               label="Dependencia"
+              :rules="requiredRule"
               required
             ></v-select>
           </v-col>
+          
           <v-col cols="12">
-            <v-file-input v-model="veterinario.Foto" accept="image/png, image/jpeg" label="Subir Foto (JPG, PNG)"></v-file-input>
+            <v-file-input 
+              v-model="veterinario.Foto" 
+              accept="image/png, image/jpeg" 
+              label="Subir Foto (JPG, PNG)"
+              :rules="fotoRules"
+            ></v-file-input>
           </v-col>
         </v-row>
 
-        <!-- Botones de acciones -->
         <v-card-actions>
-          <v-btn rounded color="primary" type="submit">Registrar</v-btn>
-          <v-btn rounded color="secondary" @click="confirmCancel">Cancelar</v-btn>
+          <v-btn 
+            rounded 
+            color="primary" 
+            type="submit"
+            :loading="loading"
+            :disabled="loading || !isValidForm"
+          >
+            Registrar
+          </v-btn>
+          <v-btn 
+            rounded 
+            color="secondary" 
+            @click="confirmCancel"
+            :disabled="loading"
+          >
+            Cancelar
+          </v-btn>
         </v-card-actions>
       </v-form>
     </v-container>
@@ -81,8 +133,14 @@ export default {
   data() {
     return {
       valid: false,
+      loading: false,
       showPassword: false,
       esVeterinario: false,
+      isValidForm: false,
+      emailError: '',
+      documentoError: '',
+      registroError: '',
+      
       user: {
         email: '',
         nombre: '',
@@ -92,127 +150,189 @@ export default {
         repeatedPassword: '',
         isAdmin: false,
       },
+      
       veterinario: {
         N_de_registro: '',
         Dependencia: '',
         Foto: null,
       },
+
+      dependencias: [
+        'Clinica Pequeños Animales',
+        'Equinos',
+        'Endocrinologia y Metabolismo Animal',
+        'Gestión Hospitalaria',
+        'Semiología'
+      ],
+      
       emailRules: [
         v => !!v || 'El correo electrónico es requerido',
-        v => /.+@.+\..+/.test(v) || 'El correo debe ser válido',
-        v => this.validarEmail(v) || 'Validando email...'
+        v => /.+@.+\..+/.test(v) || 'El correo debe ser válido'
       ],
-      requiredRule: [v => !!v || 'Este campo es requerido'],
-      veterinarioRules: {
-        N_de_registro: [v => !this.esVeterinario || !!v || 'El número de registro es requerido'],
-        Dependencia: [v => !this.esVeterinario || !!v || 'La dependencia es requerida'],
-      },
+
+      nombreRules: [
+        v => !!v || 'El nombre es requerido',
+        v => (v && v.length <= 50) || 'El nombre no puede tener más de 50 caracteres'
+      ],
+
+      apellidoRules: [
+        v => !!v || 'El apellido es requerido',
+        v => (v && v.length <= 50) || 'El apellido no puede tener más de 50 caracteres'
+      ],
+
       documentoRules: [
         v => !!v || 'El documento es requerido',
-        v => this.validarDocumento(v) || 'Validando documento...'
+        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
+        v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales'
       ],
+
       passwordRules: [
         v => !!v || 'La contraseña es requerida',
         v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
         v => /[A-Z]/.test(v) || 'Debe contener al menos una letra mayúscula',
         v => /[a-z]/.test(v) || 'Debe contener al menos una letra minúscula',
         v => /[0-9]/.test(v) || 'Debe contener al menos un número',
-        v => /[!@#$%^&*(),.?":{}|<>]/.test(v) || 'Debe contener al menos un carácter especial',
+        v => /[!@#$%^&*(),.?":{}|<>]/.test(v) || 'Debe contener al menos un carácter especial'
       ],
+
       numeroRegistroRules: [
         v => !this.esVeterinario || !!v || 'El número de registro es requerido',
-        v => /^\d+$/.test(v) || 'Solo se permiten números'
+        v => !this.esVeterinario || /^\d+$/.test(v) || 'Solo se permiten números'
       ],
-      emailValido: true,
-      documentoValido: true,
+
+      fotoRules: [
+        v => {
+          if (!v) return true;
+          return v.size <= 5000000 || 'La imagen no debe superar los 5MB';
+        }
+      ],
+
+      requiredRule: [v => !!v || 'Este campo es requerido']
     };
   },
+
   computed: {
     repeatPasswordRule() {
       return [
         v => !!v || 'Por favor, repita la contraseña',
-        v => v === this.user.password || 'Las contraseñas no coinciden',
+        v => v === this.user.password || 'Las contraseñas no coinciden'
       ];
     }
   },
+
   methods: {
+    onlyNumbers(e) {
+      const char = String.fromCharCode(e.keyCode);
+      if (/^[0-9]+$/.test(char)) return true;
+      e.preventDefault();
+    },
 
-    validateVeterinarioFields() {
-      if (!this.esVeterinario) return true;
-      
-      if (!this.veterinario.N_de_registro) {
-        Swal.fire({
-          icon: "error",
-          title: "Campo requerido",
-          text: "El número de registro es obligatorio para veterinarios",
-        });
-        return false;
+    validateEmail(value) {
+      if (!value) {
+        this.emailError = 'El correo electrónico es requerido';
+        this.isValidForm = false;
+        return;
+      }
+
+      if (!/.+@.+\..+/.test(value)) {
+        this.emailError = 'El correo debe ser válido';
+        this.isValidForm = false;
+        return;
+      }
+
+      this.emailError = '';
+      this.checkFormValidity();
+    },
+
+    validateDocumento(value) {
+      if (!value) {
+        this.documentoError = 'El documento es requerido';
+        this.isValidForm = false;
+        return;
       }
       
-      if (!this.veterinario.Dependencia) {
-        Swal.fire({
-          icon: "error",
-          title: "Campo requerido",
-          text: "La dependencia es obligatoria para veterinarios",
-        });
-        return false;
+      if (!/^[a-zA-Z0-9]+$/.test(value)) {
+        this.documentoError = 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales';
+        this.isValidForm = false;
+        return;
       }
       
-      return true;
+      this.documentoError = '';
+      this.checkFormValidity();
     },
 
-    async validarEmail(email) {
-      if (!email || !/.+@.+\..+/.test(email)) return true; // Skip validación si está vacío o inválido
-      
-      const resultado = await ValidationService.validarEmailUnico(email);
-      this.emailValido = resultado.isValid;
-      return resultado.isValid || resultado.message;
+    async validarDocumentoAsync(documento) {
+      try {
+        if (!documento) return true;
+        const resultado = await ValidationService.validarDocumentoUnico(documento);
+        this.documentoError = resultado.isValid ? '' : resultado.message;
+        this.checkFormValidity();
+        return resultado.isValid || resultado.message;
+      } catch (error) {
+        console.error('Error en validación de documento:', error);
+        this.documentoError = 'Error al validar el documento';
+        this.checkFormValidity();
+        return 'Error al validar el documento';
+      }
     },
 
-    async validarDocumento(documento) {
-      if (!documento) return true; // Skip validación si está vacío
-      
-      const resultado = await ValidationService.validarDocumentoUnico(documento);
-      this.documentoValido = resultado.isValid;
-      return resultado.isValid || resultado.message;
+    async validarEmailAsync(email) {
+      try {
+        if (!email) return true;
+        const resultado = await ValidationService.validarEmailUnico(email);
+        this.emailError = resultado.isValid ? '' : resultado.message;
+        this.checkFormValidity();
+        return resultado.isValid || resultado.message;
+      } catch (error) {
+        console.error('Error en validación de email:', error);
+        this.emailError = 'Error al validar el email';
+        this.checkFormValidity();
+        return 'Error al validar el email';
+      }
     },
 
-    async onSubmit() {
+    checkFormValidity() {
+      const baseValidation = (
+        this.user.email &&
+        this.user.nombre &&
+        this.user.apellido &&
+        this.user.documento &&
+        this.user.password &&
+        this.user.repeatedPassword &&
+        !this.emailError &&
+        !this.documentoError
+      );
 
-      if (!this.$refs.form.validate()) return;
-      if (!this.validateVeterinarioFields()) return;
-      
-      // Validar email y documento antes de continuar
-      const documentoResultado = await ValidationService.validarDocumentoUnico(this.user.documento);
+      if (!this.esVeterinario) {
+        this.isValidForm = baseValidation;
+        return;
+      }
+
+      // Validación específica para veterinarios
+      const veterinarioValidation = (
+        this.veterinario.N_de_registro &&
+        this.veterinario.Dependencia &&
+        !this.registroError
+      );
+
+      this.isValidForm = baseValidation && veterinarioValidation;
+    },
+
+    async handleSubmit() {
+      this.loading = true;
+      try {
+        // Validar email y documento antes de continuar
+        const documentoResultado = await ValidationService.validarDocumentoUnico(this.user.documento);
         if (!documentoResultado.isValid) {
-          return Swal.fire({
-            icon: "error",
-            title: "Documento en uso",
-            text: "El documento ya está registrado en el sistema. Por favor, verifique.",
-          });
+          throw new Error("El documento ya está registrado en el sistema");
         }
 
         const emailResultado = await ValidationService.validarEmailUnico(this.user.email);
         if (!emailResultado.isValid) {
-          return Swal.fire({
-            icon: "error",
-            title: "Correo en uso",
-            text: "El correo electrónico ya está registrado. Por favor, utilice otro.",
-          });
+          throw new Error("El correo electrónico ya está registrado");
         }
 
-      if (!this.$refs.form.validate()) return;
-
-      if (this.user.password !== this.user.repeatedPassword) {
-        return Swal.fire({
-          icon: "error",
-          title: "¡Ups!",
-          text: "Las contraseñas no coinciden.",
-        });
-      }
-
-      try {
-        // Crear el usuario
+        // Crear usuario
         const usuarioResponse = await backend.post('usuarios', {
           email: this.user.email,
           nombre: this.user.nombre,
@@ -222,86 +342,85 @@ export default {
           isAdmin: this.user.isAdmin,
         });
 
-        const userId = usuarioResponse.data.id;
-
-        // Si el usuario es veterinario, registrar también como veterinario
+        // Si es veterinario, registrar los datos adicionales
         if (this.esVeterinario) {
-          const formData = new FormData();
-          formData.append('N_de_registro', this.veterinario.N_de_registro);
-          formData.append('Dependencia', this.veterinario.Dependencia);
-          formData.append('userId', userId);
-
-          if (this.veterinario.Foto) {
-            const file = this.veterinario.Foto;
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-              const base64String = reader.result.split(',')[1];
-              formData.append('Foto', base64String);
-
-              try {
-                await backend.post('veterinarios', {
-                  N_de_registro: this.veterinario.N_de_registro,
-                  Dependencia: this.veterinario.Dependencia,
-                  Foto: base64String,
-                  userId: userId,
-                });
-
-                Swal.fire({
-                  title: "Veterinario registrado",
-                  text: "El veterinario ha sido registrado con éxito",
-                  icon: "success",
-                });
-                this.$router.push("/usuarios");
-
-              } catch (error) {
-                console.error("Error al registrar el veterinario con imagen:", error);
-                Swal.fire({
-                  icon: "error",
-                  title: "Error",
-                  text: error.response?.data?.message || "Error al registrar el veterinario con imagen",
-                });
-              }
-            };
-          } else {
-            await backend.post('veterinarios', {
-              N_de_registro: this.veterinario.N_de_registro,
-              Dependencia: this.veterinario.Dependencia,
-              userId: userId,
-            });
-
-            Swal.fire({
-              title: "Veterinario registrado",
-              text: "El veterinario ha sido registrado con éxito",
-              icon: "success",
-            });
-            this.$router.push("/usuarios");
-          }
-        } else {
-          Swal.fire({
-            title: "Usuario registrado",
-            text: "El usuario ha sido registrado con éxito",
-            icon: "success",
-          });
-          this.$router.push("/usuarios");
+          await this.registrarVeterinario(usuarioResponse.data.id);
         }
+
+        Swal.fire({
+          title: this.esVeterinario ? "Veterinario registrado" : "Usuario registrado",
+          text: "El registro se ha completado con éxito",
+          icon: "success",
+        });
+
+        this.$router.push("/usuarios");
       } catch (error) {
-        if (error.response && error.response.data.message === "El correo ya está registrado.") {
-          Swal.fire({
-            icon: "error",
-            title: "Correo en uso",
-            text: "El correo electrónico ya está registrado. Por favor, utilice otro.",
-          });
-        } else {
-          console.error("Error al registrar el usuario o veterinario:", error);
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: error.response?.data?.message || "Error al crear el usuario o veterinario",
-          });
-        }
+        console.error("Error en el registro:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.message || "Error al crear el usuario",
+        });
+      } finally {
+        this.loading = false;
       }
     },
+
+    async registrarVeterinario(userId) {
+      const formData = new FormData();
+      formData.append('N_de_registro', this.veterinario.N_de_registro);
+      formData.append('Dependencia', this.veterinario.Dependencia);
+      formData.append('userId', userId);
+
+      if (this.veterinario.Foto) {
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+          reader.onload = async () => {
+            try {
+              const base64String = reader.result.split(',')[1];
+              await backend.post('veterinarios', {
+                N_de_registro: this.veterinario.N_de_registro,
+                Dependencia: this.veterinario.Dependencia,
+                Foto: base64String,
+                userId: userId,
+              });
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(this.veterinario.Foto);
+        });
+      } else {
+        await backend.post('veterinarios', {
+          N_de_registro: this.veterinario.N_de_registro,
+          Dependencia: this.veterinario.Dependencia,
+          userId: userId,
+        });
+      }
+    },
+
+    async onSubmit() {
+      if (!this.$refs.form.validate()) return;
+      await this.handleSubmit();
+    },
+
+    async confirmCancel() {
+      const result = await Swal.fire({
+        title: "¿Estás seguro?",
+        text: "¿Deseas cancelar el registro del usuario?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cancelar",
+        cancelButtonText: "No",
+      });
+      
+      if (result.isConfirmed) {
+        this.$router.push("/usuarios");
+      }
+    },
+
     resetForm() {
       this.user = {
         email: '',
@@ -318,44 +437,81 @@ export default {
         Foto: null,
       };
       this.esVeterinario = false;
+      this.emailError = '';
+      this.documentoError = '';
+      this.registroError = '';
+      this.isValidForm = false;
       this.$refs.form.reset();
-    },
-    async confirmCancel() {
-      const result = await Swal.fire({
-        title: "¿Estás seguro?",
-        text: "¿Deseas cancelar el registro del usuario?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Sí, cancelar",
-        cancelButtonText: "No",
-      });
-
-      if (result.isConfirmed) {
-        this.resetForm();
-        this.$router.push("/usuarios");
-      }
     }
   },
+  
   watch: {
     'user.email': {
-      handler: async function(newEmail) {
+      immediate: true,
+      async handler(newEmail) {
         if (newEmail) {
-          await this.validarEmail(newEmail);
+          await this.validarEmailAsync(newEmail);
+        } else {
+          this.emailError = '';
+          this.checkFormValidity();
         }
       }
     },
+
     'user.documento': {
-      handler: async function(newDocumento) {
+      immediate: true,
+      async handler(newDocumento) {
         if (newDocumento) {
-          await this.validarDocumento(newDocumento);
+          await this.validarDocumentoAsync(newDocumento);
+        } else {
+          this.documentoError = '';
+          this.checkFormValidity();
         }
       }
     },
+
+    'veterinario.N_de_registro': {
+      handler(newValue) {
+        if (this.esVeterinario && !newValue) {
+          this.registroError = 'El número de registro es requerido';
+        } else if (this.esVeterinario && !/^\d+$/.test(newValue)) {
+          this.registroError = 'Solo se permiten números';
+        } else {
+          this.registroError = '';
+        }
+        this.checkFormValidity();
+      }
+    },
+
     esVeterinario(newValue) {
-      if (newValue) {
-        this.$nextTick(() => {
-          this.$refs.form.validate();
-        });
+      if (!newValue) {
+        // Reset veterinario fields when unchecked
+        this.veterinario = {
+          N_de_registro: '',
+          Dependencia: '',
+          Foto: null
+        };
+        this.registroError = '';
+      }
+      this.$nextTick(() => {
+        this.$refs.form.validate();
+        this.checkFormValidity();
+      });
+    },
+
+    'user': {
+      deep: true,
+      handler() {
+        this.checkFormValidity();
+      }
+    },
+
+    'veterinario': {
+      deep: true,
+      handler() {
+        if (this.esVeterinario) {
+          this.checkFormValidity();
+        }
       }
     }
   }
@@ -368,19 +524,31 @@ export default {
   margin: auto;
   padding: 20px;
 }
-.v-btn {
-  margin-top: 20px;
+
+.form-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #014582;
 }
+
+.v-btn {
+  margin: 8px;
+}
+
 .v-btn.rounded {
   background-color: #014582;
   color: white;
 }
+
 .v-btn.rounded:hover {
   background-color: #013262;
 }
+
 .v-btn.secondary {
   background-color: #008575;
 }
+
 .v-btn.secondary:hover {
   background-color: #007460;
 }
