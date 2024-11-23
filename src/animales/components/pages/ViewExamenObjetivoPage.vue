@@ -4,9 +4,49 @@
       <v-card :class="{ 'disabled-module': isDisabled }">
         <v-card-title class="section-title">Detalle de Examen Objetivo</v-card-title>
         <v-card-text class="justified-text">
-     
+          <!-- Loading state -->
+          <div v-if="loading" class="text-center pa-4">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          </div>
           
-          <div v-if="examen">
+          <!-- No hay examen -->
+          <div v-else-if="!examen">
+            <div class="alert-container mb-4">
+              <v-icon color="info" class="mr-2">mdi-information</v-icon>
+              No hay examen objetivo registrado para esta ficha clínica.
+            </div>
+            
+            <v-row class="mt-4">
+              <v-col cols="12" class="d-flex justify-center">
+                <v-card-actions>
+                  <v-btn
+                    color="#0046B5"
+                    @click="openCreateModal"
+                    :disabled="isDisabled"
+                    class="text-none"
+                  >
+                    <v-icon left class="mr-1">mdi-plus</v-icon>
+                    Registrar Examen Objetivo
+                  </v-btn>
+                </v-card-actions>
+
+                <v-card-actions>
+                  <v-btn
+                    color="#0046B5"
+                    @click="openResena"
+                    :disabled="isDisabled"
+                    class="text-none"
+                  >
+                    <v-icon left class="mr-1">mdi-drawing</v-icon>
+                    Reseña Interactiva
+                  </v-btn>
+                </v-card-actions>
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- Si hay examen, mostrar contenido actual -->
+          <div v-else>
             <v-row>
               <!-- Columna izquierda -->
               <v-col cols="12" md="6">
@@ -148,17 +188,7 @@
       Reseña Interactiva
     </v-btn>
   </v-card-actions>
-<v-card-actions>
-    <v-btn
-      color="#0046B5"
-      @click="openCreateModal"
-      :disabled="isDisabled"   
-      class="text-none"
-    >
-      <v-icon left class="mr-1">mdi-plus</v-icon>
-      Registrar Examen Objetivo
-    </v-btn>
-  </v-card-actions>
+
   </v-col>
 </v-row>
           </div>
@@ -256,41 +286,43 @@ export default {
       }
     };
 
-    // Obtener datos del examen objetivo
     const fetchExamenObjetivo = async () => {
-      if (!fichaClinicaId.value) {
-        console.error("Falta el ID de la ficha clínica");
-        return;
-      }
+  if (!fichaClinicaId.value) {
+    console.error("Falta el ID de la ficha clínica");
+    return;
+  }
 
-      loading.value = true;
-      try {
-        const response = await backend.get(`/examenObjetivo/fichaClinica/${fichaClinicaId.value}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+  loading.value = true;
+  try {
+    const response = await backend.get(`/examenObjetivo/fichaClinica/${fichaClinicaId.value}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
 
-        if (response.data) {
-          examen.value = response.data;
-        } else {
-          examen.value = null;
-        }
-      } catch (error) {
-        console.error("Error al obtener el Examen Objetivo:", error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo cargar el examen objetivo',
-          customClass: { popup: 'swal-popup-zindex' }
-        });
-        examen.value = null;
-      } finally {
-        loading.value = false;
-      }
-    };
+    if (response.data) {
+      examen.value = response.data;
+    } else {
+      examen.value = null;
+    }
+  } catch (error) {
+    console.error("Error al obtener el Examen Objetivo:", error);
+    // Solo mostrar el error si no es un 404
+    if (error.response?.status !== 404) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo cargar el examen objetivo',
+        customClass: { popup: 'swal-popup-zindex' }
+      });
+    }
+    examen.value = null;
+  } finally {
+    loading.value = false;
+  }
+};
 
-    // Manejadores de modales
+    
     const openCreateModal = () => {
       showCreateModal.value = true;
     };

@@ -73,7 +73,7 @@
           <v-textarea v-model="examenObjetivo.actitudesAnomalas" label="Actitudes Anómalas"></v-textarea>
           <v-textarea v-model="examenObjetivo.EOP" label="EOP"></v-textarea>
           <v-textarea v-model="examenObjetivo.paraclinicos" label="Paraclínicos"></v-textarea>
-          <v-textarea v-model="examenObjetivo.diagnostico" label="Diagnóstico"></v-textarea>
+          <v-textarea v-model="examenObjetivo.diagnostico" label="Diagnóstico" :rules="requiredRule"></v-textarea>
           <v-textarea v-model="examenObjetivo.observaciones" label="Observaciones"></v-textarea>
         </v-form>
       </v-card-text>

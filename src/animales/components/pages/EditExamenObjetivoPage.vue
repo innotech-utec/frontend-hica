@@ -85,7 +85,7 @@
           <v-textarea 
             v-model="localExamenObjetivo.pielSubcutaneo" 
             label="Piel y Subcutáneo"
-            :rules="requiredRule"
+            
           ></v-textarea>
           
           <v-textarea 
@@ -97,13 +97,13 @@
           <v-textarea 
             v-model="localExamenObjetivo.actitudesAnomalas" 
             label="Actitudes Anómalas"
-            :rules="requiredRule"
+            
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.EOP" 
             label="EOP"
-            :rules="requiredRule"
+            
           ></v-textarea>
           
           <v-textarea 
@@ -177,28 +177,7 @@ export default {
         return false;
       }
       
-      // Validaciones específicas por campo
-      switch(field) {
-        case 'FC':
-          if (value < 40 || value > 200) {
-            this.errors[field] = "FC debe estar entre 40 y 200";
-            return false;
-          }
-          break;
-        case 'Resp':
-          if (value < 10 || value > 60) {
-            this.errors[field] = "FR debe estar entre 10 y 60";
-            return false;
-          }
-          break;
-        case 'temperatura':
-          if (value < 35 || value > 42) {
-            this.errors[field] = "Temperatura debe estar entre 35°C y 42°C";
-            return false;
-          }
-          break;
-      }
-      
+     
       this.errors[field] = "";
       return true;
     },
