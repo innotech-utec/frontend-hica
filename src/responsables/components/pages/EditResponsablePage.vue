@@ -287,13 +287,7 @@ export default {
       try {
         const responsableId = this.$route.params.id;
         const response = await backend.get(`/responsables/${responsableId}`);
-
-        console.log('Valor original del teléfono:', response.data.telefono);
-        console.log('Tipo original:', typeof response.data.telefono);
-    
-    const telefonoNumber = Number(response.data.telefono);
-    console.log('Teléfono convertido:', telefonoNumber);
-    console.log('Tipo después de conversión:', typeof telefonoNumber);
+   
 
         this.documentoOriginal = response.data.documento;
         
@@ -358,9 +352,13 @@ export default {
       try {
         const responsableId = this.$route.params.id;
         const departamento = this.departamentos.find(d => d.id === this.selectedDepartamentoId);
-
+        
         const dataToSend = {
-          ...this.responsable,
+          documento: this.responsable.documento,
+          nombre: this.responsable.nombre,
+          apellido: this.responsable.apellido,
+          domicilio: this.responsable.domicilio,
+          telefono: String(this.responsable.telefono), // Aseguramos que sea string
           departamentoId: this.selectedDepartamentoId,
           localidadId: this.selectedLocalidadId,
           departamento: departamento,
@@ -438,8 +436,15 @@ export default {
         }
       }
     },
+    
     'responsable': {
       deep: true,
+      handler() {
+        this.checkFormValidity();
+      }
+    },
+    'selectedLocalidadId': {
+      immediate: true,
       handler() {
         this.checkFormValidity();
       }
