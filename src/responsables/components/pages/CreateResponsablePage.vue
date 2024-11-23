@@ -14,6 +14,7 @@
           required
           maxLength="30"
           :error-messages="documentoError"
+          @input="validateDocumento"
         ></v-text-field>
         
         <v-text-field 
@@ -44,9 +45,14 @@
           v-model="responsable.telefono" 
           :rules="telefonoRules"
           label="Teléfono" 
-          type="number"
           required
           maxLength="20"
+          @input="validateTelefono"
+          :error-messages="telefonoError"
+          type="tel"
+          pattern="[0-9]*"
+          inputmode="numeric"
+          @keypress="onlyNumbers"
         ></v-text-field>
         
         <v-select
@@ -79,7 +85,7 @@
             color="primary" 
             type="submit"
             :loading="loading"
-            :disabled="!valid || loading"
+            :disabled="!valid || loading || !isValidForm"
           >
             Registrar
           </v-btn>
@@ -124,9 +130,12 @@ export default {
         localidadId: null
       },
       documentoError: '',
+      telefonoError: '',
+      isValidForm: false,
       documentoRules: [
         v => !!v || 'El documento es requerido',
         v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
+        v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales',
         v => this.validarDocumentoAsync(v) || 'Validando documento...'
       ],
       nombreRules: [
@@ -143,7 +152,8 @@ export default {
       ],
       telefonoRules: [
         v => !!v || 'El teléfono es requerido',
-        v => (v && v.length <= 20) || 'El teléfono no puede tener más de 20 caracteres'
+        v => (v && v.length <= 20) || 'El teléfono no puede tener más de 20 caracteres',
+        v => !v || /^\d+$/.test(v) || 'El teléfono solo puede contener números'
       ],
       requiredRule: [
         v => !!v || 'Este campo es requerido',
@@ -157,14 +167,71 @@ export default {
 
   methods: {
 
+    onlyNumbers(e) {
+      const char = String.fromCharCode(e.keyCode);
+      if (/^[0-9]+$/.test(char)) return true;
+      e.preventDefault();
+    },
+    
+    validateDocumento(value) {
+      if (!value) {
+        this.documentoError = 'El documento es requerido';
+        this.isValidForm = false;
+        return;
+      }
+      
+      if (!/^[a-zA-Z0-9]+$/.test(value)) {
+        this.documentoError = 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales';
+        this.isValidForm = false;
+        return;
+      }
+      
+      this.documentoError = '';
+      this.checkFormValidity();
+    },
+
+    validateTelefono(value) {
+
+      const telefono = String(value || '');
+
+      if (!telefono) {
+        this.telefonoError = 'El teléfono es requerido';
+        this.isValidForm = false;
+        return;
+      }
+      
+    
+      
+      // Si llegamos aquí, el valor es válido
+      this.telefonoError = '';
+      this.checkFormValidity();
+    },
+
+    checkFormValidity() {
+      this.isValidForm = (
+        this.responsable.documento &&
+        this.responsable.nombre &&
+        this.responsable.apellido &&
+        this.responsable.domicilio &&
+        this.responsable.telefono &&
+        this.responsable.departamentoId &&
+        this.responsable.localidadId &&
+        !this.documentoError &&
+        !this.telefonoError
+      );
+    },
+
     async validarDocumentoAsync(documento) {
       try {
         if (!documento) return true;
         const resultado = await ValidationService.validarResponsableUnico(documento);
         this.documentoError = resultado.isValid ? '' : resultado.message;
+        this.checkFormValidity();
         return resultado.isValid || resultado.message;
       } catch (error) {
         console.error('Error en validación de documento:', error);
+        this.documentoError = 'Error al validar el documento';
+        this.checkFormValidity();
         return 'Error al validar el documento';
       }
     },
@@ -190,7 +257,10 @@ export default {
       this.localidades = [];
       this.responsable.localidadId = null;
       
-      if (!newDepartamentoId) return;
+      if (!newDepartamentoId) {
+        this.checkFormValidity();
+        return;
+      }
 
       const departamento = this.departamentos.find(d => d.id === newDepartamentoId);
       if (!departamento) {
@@ -223,21 +293,23 @@ export default {
         this.localidades = [];
       } finally {
         this.loadingLocalidades = false;
+        this.checkFormValidity();
       }
     },
 
     async onSubmit() {
       if (!this.$refs.form.validate()) return;
 
-    const documentoResultado = await ValidationService.validarResponsableUnico(this.responsable.documento);
+      // Validación final del documento
+      const documentoResultado = await ValidationService.validarResponsableUnico(this.responsable.documento);
     
-    if (!documentoResultado.isValid) {
-      return Swal.fire({
-        icon: "error",
-        title: "Documento en uso",
-        text: "El documento ya está registrado en el sistema. Por favor, verifique.",
-      });
-    }
+      if (!documentoResultado.isValid) {
+        return Swal.fire({
+          icon: "error",
+          title: "Documento en uso",
+          text: "El documento ya está registrado en el sistema. Por favor, verifique.",
+        });
+      }
       
       this.loading = true;
       try {
@@ -292,9 +364,27 @@ export default {
           await this.validarDocumentoAsync(newDocumento);
         } else {
           this.documentoError = '';
+          this.checkFormValidity();
         }
       }
     },
+    'responsable.telefono': {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          this.validateTelefono(newValue);
+        } else {
+          this.telefonoError = '';
+          this.checkFormValidity();
+        }
+      }
+    },
+    'responsable': {
+      deep: true,
+      handler() {
+        this.checkFormValidity();
+      }
+    }
   }
 };
 </script>

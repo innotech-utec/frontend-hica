@@ -39,7 +39,7 @@ export default class ValidationService {
       const responsables = response.data;
       
       const responsableExistente = responsables.find(responsable => {
-        if (userId && responsable.id === userId) return false;
+        if (userId && String(responsable.id) === String(userId)) return false;
         return responsable.documento === documento;
       });
 

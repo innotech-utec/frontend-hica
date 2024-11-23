@@ -13,6 +13,8 @@
           label="Documento" 
           required
           maxLength="30"
+          :error-messages="documentoError"
+          @input="validateDocumento"
         ></v-text-field>
         
         <v-text-field 
@@ -43,9 +45,14 @@
           v-model="responsable.telefono" 
           :rules="telefonoRules"
           label="Teléfono" 
-          type="number"
           required
           maxLength="20"
+          @input="validateTelefono"
+          :error-messages="telefonoError"
+          type="tel"
+          pattern="[0-9]*"
+          inputmode="numeric"
+          @keypress="onlyNumbers"
         ></v-text-field>
         
         <v-select
@@ -78,7 +85,7 @@
             color="primary" 
             type="submit"
             :loading="loading"
-            :disabled="!valid || loading"
+            :disabled="!valid || loading || !isValidForm"
           >
             Guardar
           </v-btn>
@@ -115,19 +122,21 @@ export default {
       localidades: [],
       selectedDepartamentoId: null,
       selectedLocalidadId: null,
+      isValidForm: false,
       responsable: {
         documento: '',
         nombre: '',
         apellido: '',
         domicilio: '',
-        telefono: '',
+        telefono: '0',
       },
-      documentoOriginal: '', // Agregar esto
-      documentoError: '', // Agregar esto
+      documentoOriginal: '',
+      documentoError: '',
+      telefonoError: '',
       documentoRules: [
         v => !!v || 'El documento es requerido',
         v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
-        v => this.validarDocumentoAsync(v) // Agregar esta validación
+        v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales'
       ],
       nombreRules: [
         v => !!v || 'El nombre es requerido',
@@ -143,7 +152,8 @@ export default {
       ],
       telefonoRules: [
         v => !!v || 'El teléfono es requerido',
-        v => (v && v.toString().length <= 20) || 'El teléfono no puede tener más de 20 caracteres'
+        v => (v && v.length <= 20) || 'El teléfono no puede tener más de 20 caracteres',
+        v => !v || /^\d+$/.test(v) || 'El teléfono solo puede contener números'
       ],
       requiredRule: [
         v => !!v || 'Este campo es requerido',
@@ -157,6 +167,75 @@ export default {
   },
 
   methods: {
+
+    onlyNumbers(e) {
+      const char = String.fromCharCode(e.keyCode);
+      if (/^[0-9]+$/.test(char)) return true;
+      e.preventDefault();
+    },
+
+    validateDocumento(value) {
+      if (!value) {
+        this.documentoError = 'El documento es requerido';
+        this.isValidForm = false;
+        return;
+      }
+      
+      if (!/^[a-zA-Z0-9]+$/.test(value)) {
+        this.documentoError = 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales';
+        this.isValidForm = false;
+        return;
+      }
+      
+      this.documentoError = '';
+      this.checkFormValidity();
+    },
+
+    validateTelefono(value) {
+
+      const telefono = String(value || '').trim();
+
+      if (!telefono) {
+        this.telefonoError = 'El teléfono es requerido';
+        this.isValidForm = false;
+        return;
+      }
+
+      this.telefonoError = '';
+      this.checkFormValidity();
+      },
+
+    checkFormValidity() {
+      this.isValidForm = (
+        this.responsable.documento &&
+        this.responsable.nombre &&
+        this.responsable.apellido &&
+        this.responsable.domicilio &&
+        this.responsable.telefono &&
+        this.selectedDepartamentoId &&
+        this.selectedLocalidadId &&
+        !this.documentoError &&
+        !this.telefonoError
+      );
+    },
+
+    async validarDocumentoAsync(documento) {
+      const responsableId = this.$route.params.id;
+      console.log(responsableId)
+      try {
+        if (!documento) return true;
+        const resultado = await ValidationService.validarResponsableUnico(documento, responsableId);
+        this.documentoError = resultado.isValid ? '' : resultado.message;
+        this.checkFormValidity();
+        return resultado.isValid || resultado.message;
+      } catch (error) {
+        console.error('Error en validación de documento:', error);
+        this.documentoError = 'Error al validar el documento';
+        this.checkFormValidity();
+        return 'Error al validar el documento';
+      }
+    },
+
     async loadDepartamentos() {
       this.loadingDepartamentos = true;
       try {
@@ -175,123 +254,110 @@ export default {
     },
 
     async handleDepartamentoChange(departamentoId) {
-  if (!departamentoId) {
-    this.localidades = [];
-    this.selectedLocalidadId = null;
-    return;
-  }
-
-  const departamento = this.departamentos.find(d => d.id === departamentoId);
-  if (!departamento) return;
-
-  this.loadingLocalidades = true;
-  try {
-    const localidades = await obtenerLocalidades(departamento.nombre);
-    this.localidades = localidades;
-    this.selectedLocalidadId = null; // Reset localidad al cambiar departamento
-  } catch (error) {
-    console.error("Error al cargar localidades:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "No se pudieron cargar las localidades.",
-    });
-    this.localidades = [];
-  } finally {
-    this.loadingLocalidades = false;
-  }
-},
-
-async validarDocumentoAsync(documento) {
-      try {
-        if (!documento || documento === this.documentoOriginal) return true;
-        const resultado = await ValidationService.validarResponsableUnico(documento, this.$route.params.id);
-        this.documentoError = resultado.isValid ? '' : resultado.message;
-        return resultado.isValid || resultado.message;
-      } catch (error) {
-        console.error('Error en validación de documento:', error);
-        return 'Error al validar el documento';
+      if (!departamentoId) {
+        this.localidades = [];
+        this.selectedLocalidadId = null;
+        this.checkFormValidity();
+        return;
       }
-    },
-async cargarResponsable() {
-  try {
-    const responsableId = this.$route.params.id;
-    const response = await backend.get(`/responsables/${responsableId}`);
 
-    this.documentoOriginal = response.data.documento;
-    
-    // Cargar datos básicos
-    this.responsable = {
-      documento: response.data.documento,
-      nombre: response.data.nombre,
-      apellido: response.data.apellido,
-      domicilio: response.data.domicilio,
-      telefono: response.data.telefono,
-    };
+      const departamento = this.departamentos.find(d => d.id === departamentoId);
+      if (!departamento) return;
 
-    // Guardar el ID de localidad para usarlo después
-    const localidadIdOriginal = response.data.localidadId;
-
-    // Primero setear el departamento
-    this.selectedDepartamentoId = response.data.departamentoId;
-  
-    // Una vez seteado el departamento, cargar sus localidades
-    
       this.loadingLocalidades = true;
       try {
-        const departamento = this.departamentos.find(d => d.id === this.selectedDepartamentoId);
         const localidades = await obtenerLocalidades(departamento.nombre);
         this.localidades = localidades;
-        
-        // Ahora que tenemos las localidades, podemos setear la localidad original
-        this.selectedLocalidadId = localidadIdOriginal;
-        
+        this.selectedLocalidadId = null;
       } catch (error) {
-        console.error('Error al cargar localidades:', error);
+        console.error("Error al cargar localidades:", error);
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudieron cargar las localidades.'
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar las localidades.",
         });
+        this.localidades = [];
       } finally {
         this.loadingLocalidades = false;
+        this.checkFormValidity();
       }
-    
+    },
 
-  } catch (error) {
-    console.error("Error al cargar responsable:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "No se pudo cargar la información del responsable.",
-    });
-  }
-},
+    async cargarResponsable() {
+      try {
+        const responsableId = this.$route.params.id;
+        const response = await backend.get(`/responsables/${responsableId}`);
+
+        console.log('Valor original del teléfono:', response.data.telefono);
+        console.log('Tipo original:', typeof response.data.telefono);
+    
+    const telefonoNumber = Number(response.data.telefono);
+    console.log('Teléfono convertido:', telefonoNumber);
+    console.log('Tipo después de conversión:', typeof telefonoNumber);
+
+        this.documentoOriginal = response.data.documento;
+        
+        this.responsable = {
+          documento: response.data.documento,
+          nombre: response.data.nombre,
+          apellido: response.data.apellido,
+          domicilio: response.data.domicilio,
+          telefono: String(response.data.telefono),
+        };
+
+        const localidadIdOriginal = response.data.localidadId;
+        this.selectedDepartamentoId = response.data.departamentoId;
+      
+        this.loadingLocalidades = true;
+        try {
+          const departamento = this.departamentos.find(d => d.id === this.selectedDepartamentoId);
+          const localidades = await obtenerLocalidades(departamento.nombre);
+          this.localidades = localidades;
+          this.selectedLocalidadId = localidadIdOriginal;
+        } catch (error) {
+          console.error('Error al cargar localidades:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudieron cargar las localidades.'
+          });
+        } finally {
+          this.loadingLocalidades = false;
+          this.checkFormValidity();
+        }
+
+      } catch (error) {
+        console.error("Error al cargar responsable:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo cargar la información del responsable.",
+        });
+      }
+    },
 
     async onSubmit() {
       if (!this.$refs.form.validate()) return;
 
       if (this.responsable.documento !== this.documentoOriginal) {
-          const documentoResultado = await ValidationService.validarResponsableUnico(
-            this.responsable.documento,
-            this.$route.params.id
-          );
-          
-          if (!documentoResultado.isValid) {
-            return Swal.fire({
-              icon: "error",
-              title: "Documento en uso",
-              text: "El documento ya está registrado en el sistema. Por favor, verifique.",
-            });
-          }
+        const documentoResultado = await ValidationService.validarResponsableUnico(
+          this.responsable.documento,
+          this.$route.params.id
+        );
+        
+        if (!documentoResultado.isValid) {
+          return Swal.fire({
+            icon: "error",
+            title: "Documento en uso",
+            text: "El documento ya está registrado en el sistema. Por favor, verifique.",
+          });
         }
+      }
       
       this.loading = true;
       try {
         const responsableId = this.$route.params.id;
-        
         const departamento = this.departamentos.find(d => d.id === this.selectedDepartamentoId);
-        ///const localidad = this.localidades.find(l => l.nombre === this.selectedLocalidadId);
 
         const dataToSend = {
           ...this.responsable,
@@ -299,8 +365,7 @@ async cargarResponsable() {
           localidadId: this.selectedLocalidadId,
           departamento: departamento,
           localidad: {
-            nombre: this.selectedLocalidadId,
-           
+            nombre: this.selectedLocalidadId
           }
         };
 
@@ -346,15 +411,37 @@ async cargarResponsable() {
       }
     },
   },
+
   watch: {
-    // Agregar este watch para la validación en tiempo real
     'responsable.documento': {
-      handler: async function(newDocumento) {
-        if (newDocumento && newDocumento !== this.documentoOriginal) {
-          await this.validarDocumentoAsync(newDocumento);
+      immediate: true,
+      async handler(newDocumento) {
+        if (newDocumento) {
+          this.validateDocumento(newDocumento);
+          if (newDocumento !== this.documentoOriginal) {
+            await this.validarDocumentoAsync(newDocumento);
+          }
         } else {
           this.documentoError = '';
+          this.checkFormValidity();
         }
+      }
+    },
+    'responsable.telefono': {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          this.validateTelefono(newValue);
+        } else {
+          this.telefonoError = '';
+          this.checkFormValidity();
+        }
+      }
+    },
+    'responsable': {
+      deep: true,
+      handler() {
+        this.checkFormValidity();
       }
     }
   }
