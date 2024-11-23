@@ -41,7 +41,13 @@
         <!-- Campos adicionales para veterinario -->
         <v-row v-if="esVeterinario">
           <v-col cols="12">
-            <v-text-field v-model="veterinario.N_de_registro" :rules="requiredRule" label="Número de Registro" required></v-text-field>
+            <v-text-field 
+              v-model="veterinario.N_de_registro"
+              :rules="numeroRegistroRules"
+              type="number"
+              label="Número de Registro"
+              required
+          ></v-text-field>
           </v-col>
           <v-col cols="12">
             <v-select
@@ -97,17 +103,25 @@ export default {
         v => this.validarEmail(v) || 'Validando email...'
       ],
       requiredRule: [v => !!v || 'Este campo es requerido'],
+      veterinarioRules: {
+        N_de_registro: [v => !this.esVeterinario || !!v || 'El número de registro es requerido'],
+        Dependencia: [v => !this.esVeterinario || !!v || 'La dependencia es requerida'],
+      },
       documentoRules: [
         v => !!v || 'El documento es requerido',
         v => this.validarDocumento(v) || 'Validando documento...'
       ],
       passwordRules: [
-      v => !!v || 'La contraseña es requerida',
-      v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
-      v => /[A-Z]/.test(v) || 'Debe contener al menos una letra mayúscula',
-      v => /[a-z]/.test(v) || 'Debe contener al menos una letra minúscula',
-      v => /[0-9]/.test(v) || 'Debe contener al menos un número',
-      v => /[!@#$%^&*(),.?":{}|<>]/.test(v) || 'Debe contener al menos un carácter especial',
+        v => !!v || 'La contraseña es requerida',
+        v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+        v => /[A-Z]/.test(v) || 'Debe contener al menos una letra mayúscula',
+        v => /[a-z]/.test(v) || 'Debe contener al menos una letra minúscula',
+        v => /[0-9]/.test(v) || 'Debe contener al menos un número',
+        v => /[!@#$%^&*(),.?":{}|<>]/.test(v) || 'Debe contener al menos un carácter especial',
+      ],
+      numeroRegistroRules: [
+        v => !this.esVeterinario || !!v || 'El número de registro es requerido',
+        v => /^\d+$/.test(v) || 'Solo se permiten números'
       ],
       emailValido: true,
       documentoValido: true,
@@ -122,6 +136,30 @@ export default {
     }
   },
   methods: {
+
+    validateVeterinarioFields() {
+      if (!this.esVeterinario) return true;
+      
+      if (!this.veterinario.N_de_registro) {
+        Swal.fire({
+          icon: "error",
+          title: "Campo requerido",
+          text: "El número de registro es obligatorio para veterinarios",
+        });
+        return false;
+      }
+      
+      if (!this.veterinario.Dependencia) {
+        Swal.fire({
+          icon: "error",
+          title: "Campo requerido",
+          text: "La dependencia es obligatoria para veterinarios",
+        });
+        return false;
+      }
+      
+      return true;
+    },
 
     async validarEmail(email) {
       if (!email || !/.+@.+\..+/.test(email)) return true; // Skip validación si está vacío o inválido
@@ -142,6 +180,7 @@ export default {
     async onSubmit() {
 
       if (!this.$refs.form.validate()) return;
+      if (!this.validateVeterinarioFields()) return;
       
       // Validar email y documento antes de continuar
       const documentoResultado = await ValidationService.validarDocumentoUnico(this.user.documento);
@@ -310,6 +349,13 @@ export default {
         if (newDocumento) {
           await this.validarDocumento(newDocumento);
         }
+      }
+    },
+    esVeterinario(newValue) {
+      if (newValue) {
+        this.$nextTick(() => {
+          this.$refs.form.validate();
+        });
       }
     }
   }
