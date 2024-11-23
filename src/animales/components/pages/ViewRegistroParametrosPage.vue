@@ -40,11 +40,17 @@
           </v-data-table>
           <p v-else>No hay registros de parámetros disponibles.</p>
 
-          <v-card-actions>
-            <v-btn color="primary" :disabled="isDisabled" @click="openCreateModal" outlined>
-              <v-icon left>mdi-pencil</v-icon> Registrar Parámetros
-            </v-btn>
-          </v-card-actions>
+          <v-card-actions class="justify-center">
+  <v-btn
+    color="#0046B5" 
+    :disabled="isDisabled"
+    @click="openCreateModal"
+    outlined
+    class="text-none"
+  >
+    <v-icon left>mdi-pencil</v-icon> Registrar Parámetros
+  </v-btn>
+</v-card-actions>
         </v-card-text>
 
         <CreateParametrosPage
@@ -228,13 +234,17 @@ export default {
   margin-bottom: 15px;
   text-align: center;
 }
-
 .v-btn {
-  margin-top: 20px;
+  transition: transform 0.2s ease;
+  
+}
+.v-btn:hover {
+  transform: translateY(-2px);
 }
 
 .disabled-module {
   opacity: 0.5;
   pointer-events: none;
 }
+
 </style>

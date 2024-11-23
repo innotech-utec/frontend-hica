@@ -3,47 +3,130 @@
     <v-card class="generic-modal">
       <v-card-title class="section-title">Editar Examen Objetivo</v-card-title>
       <v-card-text class="justified-text">
-        <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
-          <v-text-field
-            v-model="localExamenObjetivo.FC"
-            label="Frecuencia Cardíaca (FC)"
-            type="number"
-            @blur="validateNumber('FC')"
-            :error-messages="errors.FC"
-          ></v-text-field>
-          <v-text-field
-            v-model="localExamenObjetivo.Resp"
-            label="Respiración"
-            type="number"
-            @blur="validateNumber('Resp')"
-            :error-messages="errors.Resp"
-          ></v-text-field>
-          <v-text-field
-            v-model="localExamenObjetivo.temperatura"
-            label="Temperatura (°C)"
-            type="number"
-            @blur="validateNumber('temperatura')"
-            :error-messages="errors.temperatura"
-          ></v-text-field>
-          <!-- Resto de campos de texto -->
-          <v-textarea v-model="localExamenObjetivo.condicionCorporal" label="Condición Corporal"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.sensorio" label="Sensorio"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.fascies" label="Fascies"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.gangliosLinfaticos" label="Ganglios Linfáticos"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.pielSubcutaneo" label="Piel y Subcutáneo"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.mucosasAparentes" label="Mucosas Aparentes"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.grandesFuncionales" label="Grandes Funcionales"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.actitudesAnomalas" label="Actitudes Anómalas"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.EOP" label="EOP"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.paraclinicos" label="Paraclínicos"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.diagnostico" label="Diagnóstico"></v-textarea>
-          <v-textarea v-model="localExamenObjetivo.observaciones" label="Observaciones"></v-textarea>
-          <v-card-actions>
-            <v-btn rounded color="primary" type="submit">Guardar</v-btn>
-            <v-btn rounded color="secondary" @click="cancelarEdicion">Cancelar</v-btn>
-          </v-card-actions>
+        <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="onSubmit">
+          <!-- Columna izquierda -->
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="localExamenObjetivo.FC"
+                label="Frecuencia Cardíaca (FC)"
+                :rules="requiredRule"
+                @blur="validateNumber('FC')"
+                required
+                :error-messages="errors.FC"
+              ></v-text-field>
+              
+              <v-text-field
+                v-model="localExamenObjetivo.Resp"
+                label="Frecuencia Respiratoria (FR)"
+                :rules="requiredRule"
+                @blur="validateNumber('Resp')"
+                required
+                :error-messages="errors.Resp"
+              ></v-text-field>
+              
+              <v-text-field
+                v-model="localExamenObjetivo.temperatura"
+                label="Temperatura (°C)"
+                :rules="requiredRule"
+                @blur="validateNumber('temperatura')"
+                required
+                :error-messages="errors.temperatura"
+              ></v-text-field>
+
+              <v-select
+                v-model="localExamenObjetivo.condicionCorporal"
+                label="Condición Corporal"
+                :items="[1,2,3,4,5,6,7,8,9]"
+                :rules="requiredRule"
+              ></v-select>
+              
+              <v-select
+                v-model="localExamenObjetivo.sensorio"
+                label="Sensorio"
+                :items="['NORMAL', 'ALERTA', 'DEPRIMIDO', 'OTROS']"
+                :rules="requiredRule"
+              ></v-select>
+            </v-col>
+
+            <!-- Columna derecha -->
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="localExamenObjetivo.fascies"
+                label="Fascies"
+                :items="['SP', 'DOLOR', 'ANSIEDAD', 'ANGUSTIA']"
+                :rules="requiredRule"
+              ></v-select>
+              
+              <v-select
+                v-model="localExamenObjetivo.gangliosLinfaticos"
+                label="Ganglios Linfáticos"
+                :items="['SP', 'AUMENTADOS']"
+                :rules="requiredRule"
+              ></v-select>
+
+              <v-select
+                v-model="localExamenObjetivo.mucosasAparentesTipo"
+                label="Tipo de Mucosas"
+                :items="['ROSADAS', 'PALIDAS', 'HIPEREMICAS', 'CONGESTIVAS', 'TOXEMICAS', 'HIPOXICAS']"
+                :rules="requiredRule"
+              ></v-select>
+
+              <v-select
+                v-model="localExamenObjetivo.mucosasAparentesEstado"
+                label="Estado de Mucosas"
+                :items="['HUMEDAS', 'SECAS']"
+                :rules="requiredRule"
+              ></v-select>
+            </v-col>
+          </v-row>
+
+          <!-- Campos de texto largo -->
+          <v-textarea 
+            v-model="localExamenObjetivo.pielSubcutaneo" 
+            label="Piel y Subcutáneo"
+            :rules="requiredRule"
+          ></v-textarea>
+          
+          <v-textarea 
+            v-model="localExamenObjetivo.grandesFuncionales" 
+            label="Grandes Funcionales"
+            :rules="requiredRule"
+          ></v-textarea>
+          
+          <v-textarea 
+            v-model="localExamenObjetivo.actitudesAnomalas" 
+            label="Actitudes Anómalas"
+            :rules="requiredRule"
+          ></v-textarea>
+          
+          <v-textarea 
+            v-model="localExamenObjetivo.EOP" 
+            label="EOP"
+            :rules="requiredRule"
+          ></v-textarea>
+          
+          <v-textarea 
+            v-model="localExamenObjetivo.paraclinicos" 
+            label="Paraclínicos"
+          ></v-textarea>
+          
+          <v-textarea 
+            v-model="localExamenObjetivo.diagnostico" 
+            label="Diagnóstico"
+            :rules="requiredRule"
+          ></v-textarea>
+          
+          <v-textarea 
+            v-model="localExamenObjetivo.observaciones" 
+            label="Observaciones"
+          ></v-textarea>
         </v-form>
       </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn color="primary" @click="onSubmit" :loading="loading" :disabled="!valid">Guardar</v-btn>
+        <v-btn color="secondary" @click="closeModal">Cancelar</v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
@@ -62,14 +145,23 @@ export default {
   data() {
     return {
       valid: false,
+      loading: false,
       localShowModal: this.showModal,
       localExamenObjetivo: { ...this.examenObjetivo },
-      errors: { FC: '', Resp: '', temperatura: '' }
+      errors: { FC: '', Resp: '', temperatura: '' },
+      requiredRule: [(v) => !!v || "Este campo es requerido"]
     };
   },
   watch: {
-    showModal(val) { this.localShowModal = val; },
-    examenObjetivo: { immediate: true, handler(newVal) { this.localExamenObjetivo = { ...newVal }; } },
+    showModal(val) { 
+      this.localShowModal = val; 
+    },
+    examenObjetivo: { 
+      immediate: true, 
+      handler(newVal) { 
+        this.localExamenObjetivo = { ...newVal }; 
+      } 
+    },
     localShowModal(val) { 
       if (!val) {
         this.$emit("closeModal");
@@ -79,21 +171,51 @@ export default {
   },
   methods: {
     validateNumber(field) {
-      if (isNaN(this.localExamenObjetivo[field]) || this.localExamenObjetivo[field] === '') {
-        
-        
+      const value = this.localExamenObjetivo[field];
+      if (isNaN(value) || value === '') {
         this.errors[field] = "El valor debe ser numérico.";
-      } else {
-        this.errors[field] = "";
+        return false;
       }
+      
+      // Validaciones específicas por campo
+      switch(field) {
+        case 'FC':
+          if (value < 40 || value > 200) {
+            this.errors[field] = "FC debe estar entre 40 y 200";
+            return false;
+          }
+          break;
+        case 'Resp':
+          if (value < 10 || value > 60) {
+            this.errors[field] = "FR debe estar entre 10 y 60";
+            return false;
+          }
+          break;
+        case 'temperatura':
+          if (value < 35 || value > 42) {
+            this.errors[field] = "Temperatura debe estar entre 35°C y 42°C";
+            return false;
+          }
+          break;
+      }
+      
+      this.errors[field] = "";
+      return true;
     },
+    
     async onSubmit() {
-      this.validateNumber('FC');
-      this.validateNumber('Resp');
-      this.validateNumber('temperatura');
+      // Validar todos los campos numéricos
+      const isFC = this.validateNumber('FC');
+      const isResp = this.validateNumber('Resp');
+      const isTemp = this.validateNumber('temperatura');
 
-      if (!this.$refs.form.validate() || Object.values(this.errors).some(e => e)) {
-       
+      if (!this.$refs.form.validate() || !isFC || !isResp || !isTemp) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validación",
+          text: "Por favor revise los campos marcados con error.",
+          customClass: { popup: "swal-popup-zindex" }
+        });
         return;
       }
 
@@ -102,21 +224,36 @@ export default {
         return;
       }
 
+      this.loading = true;
       try {
-        await backend.patch(`/examenObjetivo/${this.localExamenObjetivo.id}`, this.localExamenObjetivo);
+        await backend.patch(
+          `/examenObjetivo/${this.localExamenObjetivo.id}`, 
+          this.localExamenObjetivo,
+          {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }
+        );
+        
         this.$emit("examenActualizado");
         Swal.fire("Examen Objetivo Actualizado", "Los cambios han sido guardados.", "success");
-        this.localShowModal = false;
+        this.closeModal();
       } catch (error) {
         Swal.fire({
           title: "Error",
-          text: "No se pudo actualizar el examen objetivo.",
+          text: error.response?.data?.message || "No se pudo actualizar el examen objetivo.",
           icon: "error",
           customClass: { popup: "swal-popup-zindex" }
         });
+      } finally {
+        this.loading = false;
       }
     },
-    cancelarEdicion() { this.localShowModal = false; },
+    
+    closeModal() {
+      this.localShowModal = false;
+      this.$emit("closeModal");
+    },
+    
     resetErrors() {
       this.errors = { FC: '', Resp: '', temperatura: '' };
     }
@@ -125,10 +262,23 @@ export default {
 </script>
 
 <style scoped>
-.page-title { font-size: 28px; color: #014582; font-weight: bold; margin: 10px 0; }
-.add-user-btn { background-color: #014582 !important; color: white !important; }
+.page-title { 
+  font-size: 28px; 
+  color: #014582; 
+  font-weight: bold; 
+  margin: 10px 0; 
+}
+
+.add-user-btn { 
+  background-color: #014582 !important; 
+  color: white !important; 
+}
 
 .swal-popup-zindex {
   z-index: 3000 !important; 
+}
+
+.justified-text {
+  text-align: justify;
 }
 </style>

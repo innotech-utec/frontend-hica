@@ -65,7 +65,7 @@
           background-color="white"
         ></v-select>
 
-        <v-card-actions>
+        <v-card-actions class="justify-end">
           <v-btn rounded color="primary" type="submit" :disabled="!valid">Guardar</v-btn>
           <v-btn rounded color="secondary" @click="cancelarEdicion">Cancelar</v-btn>
         </v-card-actions>
