@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <!-- Botón de regreso -->
+  
     <BackButton />
   
-    <!-- Título del formulario -->
+  
     <v-row>
     </v-row>
 
@@ -33,7 +33,7 @@
       </v-col>
     </v-row>
 
-    <!-- Tabla de animales -->
+
     <v-row>
       <v-col cols="12">
         <div class="table-responsive">
@@ -229,8 +229,8 @@ export default {
     },
 
     openEditModal(animal) {
-      this.animalSeleccionado = animal;  // Asigna el animal a editar
-      this.showEditModal = true;     // Muestra el modal
+      this.animalSeleccionado = animal;  
+      this.showEditModal = true;     
     },
     closeEditModal() {
       this.showEditModal = false;    
