@@ -234,9 +234,8 @@ const routes = [
         path: '/animales/ficha-clinica/parametro/editar/:parametroId',
         name: 'parametro.edit',
         component: EditParametrosPage,
-        meta: {
-          requiresAuth: true,
-        },
+        meta: { requiresAuth: true },
+      
       },
       // Rutas para Examen Objetivo
       {
