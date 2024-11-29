@@ -1,34 +1,31 @@
-import { TokenService } from '../services/TokenService.js';
-import backend from '@/backend.js';
+// auth/middlewares/verifyTokenMiddleware.js
+import { AuthService } from '../services/AuthService';
 
 export const verifyTokenMiddleware = async (to, from, next) => {
-    // Si la ruta no requiere autenticación, continuar.
-    if (!to.meta.requiresAuth) {
-        return next();
-    }
+  console.log('Verificando middleware...');
+  
+  // Si va a login, permitir
+  if (to.path === '/login') {
+    next();
+    return;
+  }
 
-    const token = TokenService.get();
+  const token = localStorage.getItem('token');
+  if (!token) {
+    next('/login');
+    return;
+  }
 
-    // Si no hay token, redirige inmediatamente al login.
-    if (!token) {
-        return next({ name: 'login' });
-    }
+  const user = AuthService.getLoggedUser();
+  console.log('Usuario actual:', user);
+  console.log('Aceptó términos:', user?.aceptoTerminos);
 
-    try {
-        // Verifica el token con el backend
-        const response = await backend.get('token/verify');
+  // Si está logueado pero no aceptó términos
+  if (user && !user.aceptoTerminos && to.path !== '/terminos') {
+    console.log('Redirigiendo a términos...');
+    next('/terminos');
+    return;
+  }
 
-        if (response.data.data.response) {
-            // Si el token es válido, permitir el acceso.
-            return next();
-        } else {
-            // Si el token no es válido, redirigir al login.
-            TokenService.remove();  // Remover token inválido.
-            return next({ name: 'login' });
-        }
-    } catch (error) {
-        // Si ocurre un error en la verificación, redirigir al login.
-        TokenService.remove();  // Remover cualquier token inválido.
-        return next({ name: 'login' });
-    }
+  next();
 };

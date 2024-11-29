@@ -7,14 +7,21 @@
         </v-col>
       </v-row>
 
-      <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
+      <v-form 
+      ref="form" 
+  v-model="valid"
+  lazy-validation
+  validate-on="blur"
+  @submit.prevent="onSubmit"
+>
         <v-text-field 
           v-model="user.email" 
           :rules="emailRules"
           label="Correo Electrónico" 
           required
           :error-messages="emailError"
-          @input="validateEmail"
+          @blur="validateEmail"
+          validate-on-blur
         ></v-text-field>
 
         <v-text-field 
@@ -23,6 +30,7 @@
           label="Nombre" 
           required
           maxLength="50"
+          validate-on-blur
         ></v-text-field>
 
         <v-text-field 
@@ -31,6 +39,7 @@
           label="Apellido" 
           required
           maxLength="50"
+          validate-on-blur
         ></v-text-field>
 
         <v-text-field 
@@ -40,7 +49,8 @@
           required
           maxLength="30"
           :error-messages="documentoError"
-          @input="validateDocumento"
+          @blur="validateDocumento"
+          validate-on-blur
         ></v-text-field>
 
         <v-text-field
@@ -51,6 +61,9 @@
           :rules="passwordRules"
           @click:append="showPassword = !showPassword"
           required
+          autocomplete="new-password"
+          @blur="validatePassword"
+          validate-on-blur
         ></v-text-field>
 
         <v-text-field
@@ -61,6 +74,9 @@
           :rules="repeatPasswordRule"
           @click:append="showPassword = !showPassword"
           required
+          autocomplete="new-password"
+         @blur="validatePassword"
+          validate-on-blur
         ></v-text-field>
 
         <v-checkbox v-model="user.isAdmin" label="Administrador"></v-checkbox>
@@ -76,7 +92,7 @@
               pattern="[0-9]*"
               inputmode="numeric"
               @keypress="onlyNumbers"
-              :error-messages="registroError"
+               validate-on-blur
             ></v-text-field>
           </v-col>
           
@@ -87,47 +103,41 @@
               label="Dependencia"
               :rules="requiredRule"
               required
+              validate-on-blur
             ></v-select>
           </v-col>
           
-          <v-col cols="12">
-            <v-file-input 
-              v-model="veterinario.Foto" 
-              accept="image/png, image/jpeg" 
-              label="Subir Foto (JPG, PNG)"
-              :rules="fotoRules"
-            ></v-file-input>
-          </v-col>
-        </v-row>
+          </v-row>
 
-        <v-card-actions>
-          <v-btn 
-            rounded 
-            color="primary" 
-            type="submit"
-            :loading="loading"
-            :disabled="loading || !isValidForm"
-          >
-            Registrar
-          </v-btn>
-          <v-btn 
-            rounded 
-            color="secondary" 
-            @click="confirmCancel"
-            :disabled="loading"
-          >
-            Cancelar
-          </v-btn>
-        </v-card-actions>
+        <v-card-actions class="justify-end">
+  <v-spacer></v-spacer>  
+  <v-btn 
+    rounded 
+    color="primary" 
+    type="submit"
+    :loading="loading"
+    :disabled="!isFormValid || loading"
+  >
+    Registrar
+  </v-btn>
+  <v-btn 
+    rounded 
+    color="secondary" 
+    @click="confirmCancel"
+    :disabled="loading"
+    class="ml-2" 
+  >
+    Cancelar
+  </v-btn>
+</v-card-actions>
       </v-form>
     </v-container>
   </v-card>
 </template>
-
 <script>
-import backend from "@/backend.js";
+import backend from "@/backend";
 import Swal from "sweetalert2";
-import ValidationService from '@/validationService.js';
+import ValidationService from "@/validationService";
 
 export default {
   data() {
@@ -166,29 +176,41 @@ export default {
       ],
       
       emailRules: [
-        v => !!v || 'El correo electrónico es requerido',
-        v => /.+@.+\..+/.test(v) || 'El correo debe ser válido'
+        v => !!v || 'El email es requerido',
+        v => v && v.trim().length > 0 || 'El email no puede contener solo espacios',
+        v => (v && v.length >= 5 && v.length <= 100) || 'El email debe tener entre 5 y 100 caracteres',
+        v => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v) || 'Debe proporcionar un email válido'
       ],
 
       nombreRules: [
         v => !!v || 'El nombre es requerido',
-        v => (v && v.length <= 50) || 'El nombre no puede tener más de 50 caracteres'
+        v => v && v.trim().length > 0 || 'El nombre no puede contener solo espacios',
+        v => (v && v.length >= 2 && v.length <= 50) || 'El nombre debe tener entre 2 y 50 caracteres',
+        v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v) || 'El nombre solo puede contener letras y espacios',
+        v => !v || !v.includes('  ') || 'El nombre no puede contener espacios dobles'
       ],
 
       apellidoRules: [
         v => !!v || 'El apellido es requerido',
-        v => (v && v.length <= 50) || 'El apellido no puede tener más de 50 caracteres'
+        v => v && v.trim().length > 0 || 'El apellido no puede contener solo espacios',
+        v => (v && v.length >= 2 && v.length <= 50) || 'El apellido debe tener entre 2 y 50 caracteres',
+        v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v) || 'El apellido solo puede contener letras y espacios',
+        v => !v || !v.includes('  ') || 'El apellido no puede contener espacios dobles'
       ],
 
       documentoRules: [
         v => !!v || 'El documento es requerido',
-        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
-        v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales'
+        v => v && v.trim().length > 0 || 'El documento no puede contener solo espacios',
+        v => (v && v.length >= 3 && v.length <= 30) || 'El documento debe tener entre 3 y 30 caracteres',
+        v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números'
       ],
 
       passwordRules: [
         v => !!v || 'La contraseña es requerida',
+        v => v && v.trim().length > 0 || 'La contraseña no puede contener solo espacios',
+        v => !v || !v.includes(' ') || 'La contraseña no puede contener espacios',
         v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+        v => v.length <= 100 || 'La contraseña no puede exceder los 100 caracteres',
         v => /[A-Z]/.test(v) || 'Debe contener al menos una letra mayúscula',
         v => /[a-z]/.test(v) || 'Debe contener al menos una letra minúscula',
         v => /[0-9]/.test(v) || 'Debe contener al menos un número',
@@ -197,21 +219,46 @@ export default {
 
       numeroRegistroRules: [
         v => !this.esVeterinario || !!v || 'El número de registro es requerido',
+        v => !this.esVeterinario || (v && v.trim().length > 0) || 'El número de registro no puede contener solo espacios',
         v => !this.esVeterinario || /^\d+$/.test(v) || 'Solo se permiten números'
       ],
 
-      fotoRules: [
-        v => {
-          if (!v) return true;
-          return v.size <= 5000000 || 'La imagen no debe superar los 5MB';
-        }
-      ],
-
-      requiredRule: [v => !!v || 'Este campo es requerido']
+ 
+      requiredRule: [
+        v => !!v || 'Este campo es requerido',
+        v => v && v.trim().length > 0 || 'Este campo no puede contener solo espacios'
+      ]
     };
   },
 
   computed: {
+    isFormValid() {
+      // Validación base de usuario
+      const baseValidation = (
+        this.valid &&
+        this.user.email &&
+        this.user.nombre &&
+        this.user.apellido &&
+        this.user.documento &&
+        this.user.password &&
+        this.user.repeatedPassword &&
+        this.user.password === this.user.repeatedPassword &&
+        !this.emailError &&
+        !this.documentoError
+      );
+
+      if (!this.esVeterinario) {
+        return baseValidation;
+      }
+
+
+      return baseValidation && (
+        this.veterinario.N_de_registro &&
+        this.veterinario.Dependencia &&
+        !this.registroError
+      );
+    },
+
     repeatPasswordRule() {
       return [
         v => !!v || 'Por favor, repita la contraseña',
@@ -220,45 +267,18 @@ export default {
     }
   },
 
+  mounted() {
+  this.$nextTick(() => {
+    if (this.$refs.form) {
+      this.$refs.form.resetValidation();
+    }
+  });
+},
   methods: {
     onlyNumbers(e) {
       const char = String.fromCharCode(e.keyCode);
       if (/^[0-9]+$/.test(char)) return true;
       e.preventDefault();
-    },
-
-    validateEmail(value) {
-      if (!value) {
-        this.emailError = 'El correo electrónico es requerido';
-        this.isValidForm = false;
-        return;
-      }
-
-      if (!/.+@.+\..+/.test(value)) {
-        this.emailError = 'El correo debe ser válido';
-        this.isValidForm = false;
-        return;
-      }
-
-      this.emailError = '';
-      this.checkFormValidity();
-    },
-
-    validateDocumento(value) {
-      if (!value) {
-        this.documentoError = 'El documento es requerido';
-        this.isValidForm = false;
-        return;
-      }
-      
-      if (!/^[a-zA-Z0-9]+$/.test(value)) {
-        this.documentoError = 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales';
-        this.isValidForm = false;
-        return;
-      }
-      
-      this.documentoError = '';
-      this.checkFormValidity();
     },
 
     async validarDocumentoAsync(documento) {
@@ -277,48 +297,42 @@ export default {
     },
 
     async validarEmailAsync(email) {
-      try {
-        if (!email) return true;
-        const resultado = await ValidationService.validarEmailUnico(email);
-        this.emailError = resultado.isValid ? '' : resultado.message;
-        this.checkFormValidity();
-        return resultado.isValid || resultado.message;
-      } catch (error) {
-        console.error('Error en validación de email:', error);
-        this.emailError = 'Error al validar el email';
-        this.checkFormValidity();
-        return 'Error al validar el email';
-      }
-    },
+  try {
+    const resultado = await ValidationService.validarEmailUnico(email);
+    this.emailError = resultado.isValid ? '' : resultado.message; // Solo actualiza si falla
+  } catch (error) {
+    console.error('Error al validar el correo:', error);
+    this.emailError = 'Error al validar el correo';
+  }
+  this.checkFormValidity(); // Actualiza el estado general del formulario
+},
 
     checkFormValidity() {
-      const baseValidation = (
-        this.user.email &&
-        this.user.nombre &&
-        this.user.apellido &&
-        this.user.documento &&
-        this.user.password &&
-        this.user.repeatedPassword &&
-        !this.emailError &&
-        !this.documentoError
-      );
+  // Aquí solo verificamos campos individuales
+  const baseFieldsValid = 
+    this.user.email &&
+    this.user.nombre &&
+    this.user.apellido &&
+    this.user.documento &&
+    !this.emailError &&
+    !this.documentoError;
 
-      if (!this.esVeterinario) {
-        this.isValidForm = baseValidation;
-        return;
-      }
+  if (!this.esVeterinario) {
+    this.isValidForm = baseFieldsValid;
+    return;
+  }
 
-      // Validación específica para veterinarios
-      const veterinarioValidation = (
-        this.veterinario.N_de_registro &&
-        this.veterinario.Dependencia &&
-        !this.registroError
-      );
+  const veterinarioFieldsValid = 
+    this.veterinario.N_de_registro &&
+    this.veterinario.Dependencia &&
+    !this.registroError;
 
-      this.isValidForm = baseValidation && veterinarioValidation;
-    },
+  this.isValidForm = baseFieldsValid && veterinarioFieldsValid;
+},
 
     async handleSubmit() {
+      if (!this.isFormValid) return;
+      
       this.loading = true;
       try {
         // Validar email y documento antes de continuar
@@ -334,10 +348,10 @@ export default {
 
         // Crear usuario
         const usuarioResponse = await backend.post('usuarios', {
-          email: this.user.email,
-          nombre: this.user.nombre,
-          apellido: this.user.apellido,
-          documento: this.user.documento,
+          email: this.user.email.toLowerCase(),
+          nombre: this.user.nombre.toUpperCase(),
+          apellido: this.user.apellido.toUpperCase(),
+          documento: this.user.documento.toUpperCase(),
           password: this.user.password,
           isAdmin: this.user.isAdmin,
         });
@@ -365,47 +379,26 @@ export default {
         this.loading = false;
       }
     },
-
     async registrarVeterinario(userId) {
-      const formData = new FormData();
-      formData.append('N_de_registro', this.veterinario.N_de_registro);
-      formData.append('Dependencia', this.veterinario.Dependencia);
-      formData.append('userId', userId);
-
-      if (this.veterinario.Foto) {
-        const reader = new FileReader();
-        return new Promise((resolve, reject) => {
-          reader.onload = async () => {
-            try {
-              const base64String = reader.result.split(',')[1];
-              await backend.post('veterinarios', {
-                N_de_registro: this.veterinario.N_de_registro,
-                Dependencia: this.veterinario.Dependencia,
-                Foto: base64String,
-                userId: userId,
-              });
-              resolve();
-            } catch (error) {
-              reject(error);
-            }
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(this.veterinario.Foto);
-        });
-      } else {
-        await backend.post('veterinarios', {
-          N_de_registro: this.veterinario.N_de_registro,
-          Dependencia: this.veterinario.Dependencia,
-          userId: userId,
-        });
-      }
-    },
+  try {
+    await backend.post('veterinarios', {
+      N_de_registro: this.veterinario.N_de_registro,
+      Dependencia: this.veterinario.Dependencia,
+      userId: userId,
+    });
+  } catch (error) {
+    console.error('Error al registrar veterinario:', error);
+    throw error;
+  }
+},
 
     async onSubmit() {
-      if (!this.$refs.form.validate()) return;
-      await this.handleSubmit();
-    },
 
+
+  if (this.$refs.form && !this.$refs.form.validate()) return; 
+
+  await this.handleSubmit(); 
+    },
     async confirmCancel() {
       const result = await Swal.fire({
         title: "¿Estás seguro?",
@@ -441,25 +434,24 @@ export default {
       this.documentoError = '';
       this.registroError = '';
       this.isValidForm = false;
-      this.$refs.form.reset();
+      if (this.$refs.form) {
+    this.$refs.form.reset();
+  }
     }
   },
   
   watch: {
     'user.email': {
-      immediate: true,
-      async handler(newEmail) {
-        if (newEmail) {
-          await this.validarEmailAsync(newEmail);
-        } else {
-          this.emailError = '';
-          this.checkFormValidity();
+     
+      handler: async function(newValue) {
+      if (newValue && this.$refs.form) {
+        await this.validarEmailAsync(newValue);
         }
       }
     },
 
     'user.documento': {
-      immediate: true,
+     
       async handler(newDocumento) {
         if (newDocumento) {
           await this.validarDocumentoAsync(newDocumento);
@@ -470,34 +462,41 @@ export default {
       }
     },
 
+    'user.password': {
+      handler() {
+        this.checkFormValidity();
+      }
+    },
+
+    'user.repeatedPassword': {
+      handler() {
+        this.checkFormValidity();
+      }
+    },
+
     'veterinario.N_de_registro': {
-      handler(newValue) {
-        if (this.esVeterinario && !newValue) {
-          this.registroError = 'El número de registro es requerido';
-        } else if (this.esVeterinario && !/^\d+$/.test(newValue)) {
-          this.registroError = 'Solo se permiten números';
-        } else {
-          this.registroError = '';
-        }
+      handler() {
+       
         this.checkFormValidity();
       }
     },
 
     esVeterinario(newValue) {
       if (!newValue) {
-        // Reset veterinario fields when unchecked
         this.veterinario = {
           N_de_registro: '',
           Dependencia: '',
-          Foto: null
+        
         };
         this.registroError = '';
       }
       this.$nextTick(() => {
-        this.$refs.form.validate();
-        this.checkFormValidity();
-      });
-    },
+        if (this.$refs.form) {
+        this.$refs.form.resetValidation(); 
+      }
+      this.checkFormValidity();
+    });
+  },
 
     'user': {
       deep: true,
@@ -513,43 +512,14 @@ export default {
           this.checkFormValidity();
         }
       }
+    },
+
+    valid(newVal) {
+    if (newVal !== undefined) {  
+      this.checkFormValidity();
     }
   }
+  }
 };
+
 </script>
-
-<style scoped>
-.card {
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-}
-
-.form-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #014582;
-}
-
-.v-btn {
-  margin: 8px;
-}
-
-.v-btn.rounded {
-  background-color: #014582;
-  color: white;
-}
-
-.v-btn.rounded:hover {
-  background-color: #013262;
-}
-
-.v-btn.secondary {
-  background-color: #008575;
-}
-
-.v-btn.secondary:hover {
-  background-color: #007460;
-}
-</style>
