@@ -57,11 +57,25 @@ import AddGastosModal from './facturas/components/pages/AddGastosModal.vue';
 import ResenaEquino from './reseña/components/resena.vue';
 
 import ReportesPage from './reporte/components/Pages/ReportesPage.vue';
+import TerminosCondiciones from './users/components/TerminosCondiciones.vue';
+
+
+
 const routes = [
   {
     path: '/',
     redirect: '/login',
   },
+  {
+    path: '/terminos',
+    name: 'terminos',
+    component: TerminosCondiciones,
+    meta: {
+      requiresAuth: true
+    }
+  },
+
+  
   {
     path: '/login',
     name: 'login',

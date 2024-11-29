@@ -7,7 +7,12 @@
         </v-col>
       </v-row>
 
-      <v-form ref="form" @submit.prevent="onSubmit" v-model="valid">
+      <v-form 
+        ref="form" 
+        @submit.prevent="onSubmit" 
+        v-model="valid"
+        lazy-validation
+      >
         <!-- Correo electrónico -->
         <v-text-field
           v-model="user.email"
@@ -23,6 +28,7 @@
           label="Nombre"
           prepend-icon="mdi-account-circle"
           required
+          maxLength="50"
         ></v-text-field>
 
         <!-- Apellido -->
@@ -32,6 +38,7 @@
           label="Apellido"
           prepend-icon="mdi-account-circle"
           required
+          maxLength="50"
         ></v-text-field>
 
         <!-- Documento -->
@@ -41,7 +48,9 @@
           label="Documento de Identidad"
           prepend-icon="mdi-file-document"
           required
+          maxLength="30"
           :error-messages="documentoError"
+          @blur="validateDocumento"
         ></v-text-field>
 
         <v-checkbox v-model="user.isAdmin" label="Administrador" class="mt-4" />
@@ -53,44 +62,46 @@
           :disabled="esVeterinario"
         />
 
-        <!-- Si es veterinario, muestra los campos adicionales -->
-        <v-row v-if="esVeterinario">
+            <v-row v-if="esVeterinario">
           <v-col cols="12">
             <v-text-field
               v-model="veterinario.N_de_registro"
-              :rules="requiredRule"
+              :rules="numeroRegistroRules"
               label="Número de Registro"
               required
+              pattern="[0-9]*"
+              inputmode="numeric"
+              @keypress="onlyNumbers"
+              :error-messages="registroError"
             ></v-text-field>
           </v-col>
           <v-col cols="12">
             <v-select
               v-model="veterinario.Dependencia"
-              :items="[
-                'Clinica Pequeños Animales',
-                'Equinos',
-                'Endocrinologia y Metabolismo Animal',
-                'Gestión Hospitalaria',
-                'Semiología',
-              ]"
+              :items="dependencias"
               label="Dependencia"
+              :rules="requiredRule"
               required
             ></v-select>
           </v-col>
-          <v-col cols="12">
-            <v-file-input
-              v-model="veterinario.Foto"
-              accept="image/png, image/jpeg"
-              label="Subir Foto (JPG, PNG)"
-            ></v-file-input>
-          </v-col>
         </v-row>
 
-        <v-card-actions>
-          <v-btn rounded color="primary" type="submit" :disabled="!valid">
+        <v-card-actions class="justify-end">
+          <v-btn 
+            rounded 
+            color="primary" 
+            type="submit" 
+            :disabled="!isFormValid"
+            :loading="loading"
+          >
             Guardar
           </v-btn>
-          <v-btn rounded color="secondary" @click="confirmCancel('edición')">
+          <v-btn 
+            rounded 
+            color="secondary" 
+            @click="confirmCancel" 
+            :disabled="loading"
+          >
             Cancelar
           </v-btn>
         </v-card-actions>
@@ -102,12 +113,13 @@
 <script>
 import backend from "@/backend.js";
 import Swal from "sweetalert2";
-import ValidationService from '@/validationService.js';
+import ValidationService from "@/validationService.js";
 
 export default {
   data() {
     return {
       valid: true,
+      loading: false,
       user: {
         email: "",
         nombre: "",
@@ -116,70 +128,165 @@ export default {
         isAdmin: false,
       },
       veterinario: {
-        N_de_registro: '',
-        Dependencia: '',
-        Foto: null,
+        N_de_registro: "",
+        Dependencia: "",
       },
       esVeterinario: false,
-      requiredRule: [v => !!v || 'Este campo es requerido'],
+      documentoError: "",
+      registroError: "",
+      documentoOriginal: "",
+      originalUser: null,
+      dependencias: [
+        'Clinica Pequeños Animales',
+        'Equinos',
+        'Endocrinologia y Metabolismo Animal',
+        'Gestión Hospitalaria',
+        'Semiología'
+      ],
       nombreRules: [
         v => !!v || 'El nombre es requerido',
-        v => v.length >= 2 || 'El nombre debe tener al menos 2 caracteres'
+        v => !!v && v.trim().length > 0 || 'El nombre no puede contener solo espacios',
+        v => !!v && v.length >= 2 && v.length <= 50 || 'El nombre debe tener entre 2 y 50 caracteres',
+        v => !!v && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v) || 'El nombre solo puede contener letras y espacios',
+        v => !v || !v.includes('  ') || 'El nombre no puede contener espacios dobles'
       ],
       apellidoRules: [
         v => !!v || 'El apellido es requerido',
-        v => v.length >= 2 || 'El apellido debe tener al menos 2 caracteres'
+        v => !!v && v.trim().length > 0 || 'El apellido no puede contener solo espacios',
+        v => !!v && v.length >= 2 && v.length <= 50 || 'El apellido debe tener entre 2 y 50 caracteres',
+        v => !!v && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v) || 'El apellido solo puede contener letras y espacios',
+        v => !v || !v.includes('  ') || 'El apellido no puede contener espacios dobles'
       ],
       documentoRules: [
         v => !!v || 'El documento es requerido',
-        v => this.validarDocumento(v) || 'Validando documento...'
+        v => !!v && v.trim().length > 0 || 'El documento no puede contener solo espacios',
+        v => !!v && v.length >= 3 && v.length <= 30 || 'El documento debe tener entre 3 y 30 caracteres',
+        v => !!v && /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números'
       ],
-      documentoError: '',
-      documentoOriginal: '',
-      originalUser: null,
+      numeroRegistroRules: [
+        v => !this.esVeterinario || !!v || 'El número de registro es requerido',
+        v => !this.esVeterinario || (!!v && /^\d+$/.test(v)) || 'Solo se permiten números'
+      ],
+      requiredRule: [
+        v => !!v || 'Este campo es requerido'
+      ]
     };
+  },
+
+  computed: {
+    isFormValid() {
+      const baseValidation = (
+        this.valid &&
+        this.user.nombre &&
+        this.user.apellido &&
+        this.user.documento &&
+        !this.documentoError
+      );
+
+      if (!this.esVeterinario) {
+        return baseValidation;
+      }
+
+      return baseValidation && (
+        this.veterinario.N_de_registro &&
+        this.veterinario.Dependencia &&
+        !this.registroError
+      );
+    }
   },
 
   async mounted() {
     try {
+      this.loading = true;
       const userId = this.$route.params.id;
-      const response = await backend.get(`usuarios/${userId}`);
-      this.user = response.data;
-      this.originalUser = { ...response.data };
-      this.documentoOriginal = response.data.documento;
+      
+      const userResponse = await backend.get(`usuarios/${userId}`);
+      this.user = {
+        email: userResponse.data.email || '',
+        nombre: userResponse.data.nombre || '',
+        apellido: userResponse.data.apellido || '',
+        documento: userResponse.data.documento || '',
+        isAdmin: userResponse.data.isAdmin || false
+      };
+      
+      this.originalUser = { ...this.user };
+      this.documentoOriginal = this.user.documento;
 
-      // Cargar datos del veterinario por userId
       try {
         const veterinarioResponse = await backend.get(`veterinarios/${userId}`);
         if (veterinarioResponse.data) {
           this.esVeterinario = true;
-          this.veterinario = veterinarioResponse.data;
+          this.veterinario = {
+            N_de_registro: veterinarioResponse.data.N_de_registro || '',
+            Dependencia: veterinarioResponse.data.Dependencia || ''
+          };
         }
       } catch (error) {
-        console.log('Este usuario no es veterinario, omitiendo carga de datos del veterinario.');
-        this.esVeterinario = false;
+        if (error.response && error.response.status !== 404) {
+          console.error("Error al cargar datos del veterinario:", error);
+        }
       }
+
     } catch (error) {
+      console.error("Error al cargar datos del usuario:", error);
       Swal.fire({
-        title: "Error al cargar usuario",
+        title: "Error",
         text: "No se pudieron cargar los datos del usuario",
-        icon: "error",
+        icon: "error"
+      });
+    } finally {
+      this.loading = false;
+      this.$nextTick(() => {
+        if (this.$refs.form) {
+          this.$refs.form.resetValidation();
+        }
       });
     }
   },
 
   methods: {
-    async validarDocumento(documento) {
-      if (!documento || documento === this.documentoOriginal) return true;
-      
-      const resultado = await ValidationService.validarDocumentoUnico(documento, this.$route.params.id);
-      return resultado.isValid || resultado.message;
+    onlyNumbers(e) {
+      const char = String.fromCharCode(e.keyCode);
+      if (/^[0-9]+$/.test(char)) return true;
+      e.preventDefault();
     },
 
-    resetForm() {
-      this.$refs.form.reset();
-      this.user = { ...this.originalUser };
-      this.documentoError = '';
+    async validateDocumento() {
+      if (!this.user.documento) {
+        this.documentoError = '';
+        return;
+      }
+      
+      if (this.user.documento === this.documentoOriginal) {
+        this.documentoError = '';
+        return;
+      }
+      
+      const resultado = await ValidationService.validarDocumentoUnico(this.user.documento, this.$route.params.id);
+      this.documentoError = resultado.isValid ? '' : resultado.message;
+      this.checkFormValidity();
+    },
+
+    checkFormValidity() {
+      if (!this.$refs.form) return;
+
+      const baseFieldsValid = 
+        this.user.nombre &&
+        this.user.apellido &&
+        this.user.documento &&
+        !this.documentoError;
+
+      if (!this.esVeterinario) {
+        this.valid = baseFieldsValid;
+        return;
+      }
+
+      const veterinarioFieldsValid = 
+        this.veterinario.N_de_registro &&
+        this.veterinario.Dependencia &&
+        !this.registroError;
+
+      this.valid = baseFieldsValid && veterinarioFieldsValid;
     },
 
     async onSubmit() {
@@ -192,7 +299,6 @@ export default {
       }
 
       try {
-        // Validar documento si ha cambiado
         if (this.user.documento !== this.documentoOriginal) {
           const documentoResultado = await ValidationService.validarDocumentoUnico(
             this.user.documento,
@@ -208,74 +314,27 @@ export default {
           }
         }
 
-        // Verificar campos requeridos
-        if (!this.user.nombre || !this.user.apellido || !this.user.documento) {
-          return Swal.fire({
-            icon: "error",
-            title: "Campos requeridos",
-            text: "Por favor, complete todos los campos requeridos.",
-          });
-        }
-
-        // Actualizar los datos del usuario
         await backend.patch(`usuarios/${this.$route.params.id}`, {
           email: this.user.email,
-          nombre: this.user.nombre,
-          apellido: this.user.apellido,
-          documento: this.user.documento,
+          nombre: this.user.nombre.toUpperCase(),
+          apellido: this.user.apellido.toUpperCase(),
+          documento: this.user.documento.toUpperCase(),
           isAdmin: this.user.isAdmin,
         });
 
-        // Si es veterinario, actualizar o crear los datos adicionales
         if (this.esVeterinario) {
-          const formData = new FormData();
-          formData.append('N_de_registro', this.veterinario.N_de_registro);
-          formData.append('Dependencia', this.veterinario.Dependencia);
-
-          if (this.veterinario.Foto) {
-            formData.append('Foto', this.veterinario.Foto);
-          }
-
           try {
-            await backend.patch(`veterinarios/${this.$route.params.id}`, formData, {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
+            await backend.patch(`veterinarios/${this.$route.params.id}`, {
+              N_de_registro: this.veterinario.N_de_registro,
+              Dependencia: this.veterinario.Dependencia,
             });
           } catch (error) {
-            // Si el veterinario no existe, crear una nueva entrada
             if (error.response && error.response.status === 404) {
-              if (this.veterinario.Foto) {
-                const file = this.veterinario.Foto;
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => {
-                  const base64String = reader.result.split(',')[1];
-                  await backend.post('veterinarios', {
-                    N_de_registro: this.veterinario.N_de_registro,
-                    Dependencia: this.veterinario.Dependencia,
-                    Foto: base64String,
-                    userId: this.$route.params.id
-                  }, {
-                    headers: {
-                      Authorization: `Bearer ${localStorage.getItem('token')}`,
-                      'Content-Type': 'application/json'
-                    },
-                  });
-                };
-              } else {
-                await backend.post('veterinarios', {
-                  N_de_registro: this.veterinario.N_de_registro,
-                  Dependencia: this.veterinario.Dependencia,
-                  userId: this.$route.params.id
-                }, {
-                  headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                  },
-                });
-              }
+              await backend.post('veterinarios', {
+                N_de_registro: this.veterinario.N_de_registro,
+                Dependencia: this.veterinario.Dependencia,
+                userId: this.$route.params.id,
+              });
             } else {
               throw error;
             }
@@ -288,8 +347,9 @@ export default {
           icon: "success",
         });
 
-        this.$router.replace("/usuarios");
+        this.$router.push("/usuarios");
       } catch (error) {
+        console.error("Error en la actualización:", error);
         let errorMessage = "No se pudieron actualizar los datos del usuario";
         
         if (error.response) {
@@ -310,14 +370,14 @@ export default {
       }
     },
 
-    async confirmCancel(action) {
+    async confirmCancel() {
       const result = await Swal.fire({
         title: "¿Estás seguro?",
-        text: `¿Deseas cancelar la ${action} del usuario?`,
+        text: "¿Deseas cancelar la edición del usuario?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Sí, cancelar",
-        cancelButtonText: "Continuar",
+        cancelButtonText: "No",
       });
 
       if (result.isConfirmed) {
@@ -328,45 +388,46 @@ export default {
 
   watch: {
     'user.documento': {
-      handler: async function(newDocumento) {
+      handler(newDocumento) {
         if (newDocumento && newDocumento !== this.documentoOriginal) {
-          const resultado = await ValidationService.validarDocumentoUnico(newDocumento, this.$route.params.id);
-          this.documentoError = resultado.isValid ? '' : resultado.message;
+          this.validateDocumento();
         } else {
           this.documentoError = '';
         }
+        this.checkFormValidity();
       }
+    },
+
+    'veterinario.N_de_registro': {
+      handler(newValue) {
+        if (this.esVeterinario) {
+          if (!newValue) {
+            this.registroError = 'El número de registro es requerido';
+          } else if (!/^\d+$/.test(newValue)) {
+            this.registroError = 'Solo se permiten números';
+          } else {
+            this.registroError = '';
+          }
+          this.checkFormValidity();
+        }
+      }
+    },
+
+    esVeterinario(newValue) {
+      if (!newValue) {
+        this.veterinario = {
+          N_de_registro: '',
+          Dependencia: ''
+        };
+        this.registroError = '';
+      }
+      this.$nextTick(() => {
+        if (this.$refs.form) {
+          this.$refs.form.validate();
+        }
+        this.checkFormValidity();
+      });
     }
   }
 };
 </script>
-
-<style scoped>
-.page-title {
-  font-size: 28px;
-  color: #014582;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-.v-btn {
-  margin-top: 20px;
-}
-
-.v-btn.rounded {
-  background-color: #014582;
-  color: white;
-}
-
-.v-btn.rounded:hover {
-  background-color: #013262;
-}
-
-.v-btn.secondary {
-  background-color: #008575;
-}
-
-.v-btn.secondary:hover {
-  background-color: #007460;
-}
-</style>

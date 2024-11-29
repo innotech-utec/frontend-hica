@@ -25,6 +25,57 @@
 
     <!-- Contenido principal -->
     <v-main class="pl-0">
+      <v-app-bar app elevation="0" class="v-app-bar-transparent">
+  <v-spacer></v-spacer>
+  <v-menu location="bottom end">
+    <template v-slot:activator="{ props }">
+      <v-btn v-bind="props" variant="text" class="d-flex align-center">
+        <!-- Avatar del usuario -->
+        <v-avatar size="40" class="mr-3">
+          <img 
+            v-if="avatarUrl" 
+            :src="avatarUrl" 
+            alt="Avatar generado dinámicamente"
+            style="object-fit: cover; width: 100%; height: 100%; border-radius: 50%;"
+          />
+          <v-icon v-else size="40" color="#014582">mdi-account-circle</v-icon>
+        </v-avatar>
+        <!-- Nombre del usuario -->
+        <span class="text-primary font-weight-bold">{{ userInfo.nombre }} {{ userInfo.apellido }}</span>
+        <v-icon right>mdi-chevron-down</v-icon>
+      </v-btn>
+    </template>
+
+    <v-list>
+      <v-list-item>
+        <v-list-item-content>
+          <v-list-item-title class="text-h6">{{ userInfo.nombre }} {{ userInfo.apellido }}</v-list-item-title>
+          <v-list-item-subtitle>{{ userRole }}</v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+
+      <v-divider></v-divider>
+
+      <v-list-item @click="goToSettings" link>
+        <template v-slot:prepend>
+          <v-icon>mdi-cog</v-icon>
+        </template>
+        <v-list-item-title>Ajustes</v-list-item-title>
+      </v-list-item>
+
+      <v-divider></v-divider>
+
+      <v-list-item @click="logout" link>
+        <template v-slot:prepend>
+          <v-icon>mdi-logout</v-icon>
+        </template>
+        <v-list-item-title>Cerrar Sesión</v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-menu>
+</v-app-bar>
+
+
       <v-container fluid class="pa-6">
         <h2 class="text-h5 mb-4">Panel de tareas del día</h2>
 
@@ -186,6 +237,14 @@ export default {
   name: "HomePage",
   data() {
     return {
+      userInfo: {
+      nombre: '',
+      apellido: '',
+      isAdmin: false,
+    },
+    userRole: '',
+    avatarUrl: null, 
+    gender: null,    
       currentDate: new Date(),
       weekDays: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
       menuItems: [
@@ -245,6 +304,7 @@ export default {
       }));
     }
   },
+
   methods: {
     formatDate(date) {
       return new Date(date).toLocaleDateString('es-ES', {
@@ -253,6 +313,10 @@ export default {
         day: '2-digit'
       });
     },
+   
+    goToSettings() {
+    this.$router.push('/ajustes');
+  },
     formatTime(time) {
       return time.substring(0, 5);
     },
@@ -264,6 +328,56 @@ export default {
 
     return treatmentDateTime < now;
     },
+    logout() {
+      localStorage.clear();
+      this.$router.push('/login');
+    },
+    async fetchGender(name) {
+  try {
+    const response = await fetch(`https://api.genderize.io?name=${name}`);
+    const data = await response.json();
+
+    // Si no hay respuesta o género, establecemos "neutral" como fallback
+    this.gender = data.gender || 'neutral';
+    console.log('Género detectado:', this.gender);
+  } catch (error) {
+    console.error('Error al obtener el género:', error);
+    this.gender = 'neutral'; // Fallback en caso de error
+  }
+},
+generateAvatar() {
+    // Crea la URL para UI Avatars con nombre, iniciales y colores personalizados
+    const name = `${this.userInfo.nombre} ${this.userInfo.apellido}`;
+    this.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=014582&color=ffffff&size=128&bold=true`;
+    console.log('Avatar URL:', this.avatarUrl);
+},
+
+  
+async getUserInfo() {
+  try {
+    const user = AuthService.getLoggedUser();
+    if (user) {
+      const response = await backend.get(`/usuarios/${user.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      this.userInfo = response.data;
+
+      // Verificar si el usuario tiene ambos roles o uno solo
+      if (this.userInfo.isAdmin && this.veterinarioId) {
+        this.userRole = 'Administrador y Veterinario';
+      } else if (this.userInfo.isAdmin) {
+        this.userRole = 'Administrador';
+      } else if (this.veterinarioId) {
+        this.userRole = 'Veterinario';
+      } else {
+        this.userRole = 'Usuario';
+      }
+    }
+  } catch (error) {
+    console.error('Error al obtener información del usuario:', error);
+  }
+},
+
 
     getStatusText(status, fecha, hora) {
     switch(status) {
@@ -385,6 +499,9 @@ export default {
   async created() {
     await this.checkIfVeterinario();
     await this.fetchTreatments();
+    await this.getUserInfo();
+    await this.fetchGender(this.userInfo.nombre);
+    this.generateAvatar();
   }
 };
 </script>
@@ -426,4 +543,38 @@ export default {
   color: white; 
   border-radius: 50%; 
 }
+
+
+
+
+
+.v-btn {
+    padding: 0;
+    margin: 0;
+}
+.main-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 50px); /* Adjust the height as needed */
+}
+
+.v-app-bar-transparent {
+  position: fixed;
+  top: 0;
+  left: 250px; /* Ancho del drawer lateral */
+  right: 0;
+  background-color: transparent; /* Barra transparente */
+  border-bottom: none; /* Elimina bordes */
+  z-index: 10;
+  box-shadow: none; /* Sin sombras */
+  padding: 8px 16px;
+}
+.v-avatar img {
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+}
+
+
 </style>
