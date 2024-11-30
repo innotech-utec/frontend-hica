@@ -17,12 +17,59 @@
       </v-col>
     </v-row>
 
-    <!-- Información del animal y responsable -->
-    <v-card-subtitle v-if="animal && responsable">
-      <span>Animal: {{ animal.nombre }} - {{ animal.especie }} - {{ animal.raza }}</span>
-      <br>
-      <span>Responsable: {{ responsable.nombre || 'Sin responsable' }} {{ responsable.apellido || '' }}</span>
-    </v-card-subtitle>
+    <!-- Información del animal -->
+    <v-card flat class="mb-4" v-if="animal && animal.nombre">
+      <v-card-title class="info-title">Información del Animal</v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Nombre:</label>
+              <div class="field-value">{{ animal.nombre || '-' }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Especie:</label>
+              <div class="field-value">{{ animal.especie || '-' }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Raza:</label>
+              <div class="field-value">{{ animal.raza || '-' }}</div>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+        <!-- Información del responsable -->
+    <v-card flat class="mb-4" v-if="responsable && responsable.id">
+      <v-card-title class="info-title">Información del Responsable</v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Nombre:</label>
+              <div class="field-value">{{ responsable.nombre || '-' }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Apellido:</label>
+              <div class="field-value">{{ responsable.apellido || '-' }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Contacto:</label>
+              <div class="field-value">{{ responsable.telefono || '-' }}</div>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
     <!-- Acciones de facturación -->
     <v-card class="mb-4">
@@ -118,18 +165,10 @@ export default {
     BackButton,
     PaginatorComponent,
   },
-  props: {
-    animal: {
-      type: Object,
-      default: () => ({})
-    },
-    responsable: {
-      type: Object,
-      default: () => ({})
-    },
-  },
   data() {
     return {
+      animal: null,
+      responsable: null,
       articulos: [],
       showAddGastosModal: false,
       articuloSeleccionado: null,
@@ -155,6 +194,32 @@ export default {
     }
   },
   methods: {
+    async fetchData() {
+      try {
+        const fichaClinicaId = this.$route.params.fichaClinicaId;
+        const response = await backend.get(`/fichasClinicas/${fichaClinicaId}`);
+        this.animal = response.data.animal;
+
+        if (this.animal.responsableId) {
+        try {
+          const responsableResponse = await backend.get(`/responsables/${this.animal.responsableId}`);
+          this.responsable = responsableResponse.data;
+        } catch (error) {
+          console.error('Error al obtener responsable:', error);
+        }
+      }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        this.alert = {
+          show: true,
+          type: 'error',
+          message: 'Error al cargar los datos del animal y responsable'
+        };
+      }
+    },
+    closeAlert() {
+      this.alert.show = false;
+    },
     formatPrice(value) {
       const numberValue = parseFloat(value);
       if (isNaN(numberValue)) {
@@ -162,144 +227,151 @@ export default {
       }
       return numberValue.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     },
-
     async fetchArticulos() {
       if (!this.facturaId) return;
-      const response = await backend.get(`/facturas/${this.facturaId}/articulos`);
-      this.articulos = response.data.map(articulo => ({
-        ...articulo,
-        cantidad: articulo.factura_articulos?.cantidad || 0,
-        total: articulo.valor * (articulo.factura_articulos?.cantidad || 0)
-      }));
+      try {
+        const response = await backend.get(`/facturas/${this.facturaId}/articulos`);
+        this.articulos = response.data.map(articulo => ({
+          ...articulo,
+          cantidad: articulo.factura_articulos?.cantidad || 0,
+          total: articulo.valor * (articulo.factura_articulos?.cantidad || 0)
+        }));
+      } catch (error) {
+        console.error('Error fetching articulos:', error);
+        this.alert = {
+          show: true,
+          type: 'error',
+          message: 'Error al cargar los artículos'
+        };
+      }
     },
-
     openAddGastosModal(articulo = null) {
       this.articuloSeleccionado = articulo;
       this.showAddGastosModal = true;
     },
-
-    async generatePDF(factura) {
-      if (!factura || !this.articulos.length) {
-        console.error('Missing required data for PDF generation');
-        return;
-      }
-
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.width;
-      const margin = 20;
-      let yPosition = 20;
-
-      try {
-        const fvetLogo = await this.getBase64Image('/FVET_logo.png');
-        const hicaLogo = await this.getBase64Image('/HICA_logo.png');
-        if (hicaLogo) doc.addImage(hicaLogo, 'PNG', 10, 5, 20, 20);
-        if (fvetLogo) doc.addImage(fvetLogo, 'PNG', 170, 5, 20, 20);
-      } catch (error) {
-        console.error('Error loading logos:', error);
-      }
-
-      yPosition += 30;
-      doc.setFontSize(20);
-      doc.setTextColor(50, 100, 200);
-      doc.text('COMPROBANTE DE GASTOS', pageWidth / 2, yPosition, { align: 'center' });
-
-      doc.setTextColor(0, 0, 0);
-      yPosition += 15;
-      doc.setFontSize(12);
-      doc.text(this.institucionalInfo.nombre, pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 7;
-      doc.text(this.institucionalInfo.universidad, pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 7;
-      doc.text(this.institucionalInfo.direccion, pageWidth / 2, yPosition, { align: 'center' });
-
-      yPosition += 15;
-      doc.setDrawColor(50, 100, 200);
-      doc.setLineWidth(0.3);
-      doc.line(margin, yPosition, pageWidth - margin, yPosition);
-
-      yPosition += 15;
-      doc.setFontSize(11);
-      doc.text(`Comprobante Nº: ${factura.id || 'N/A'}`, margin, yPosition);
-      doc.text(`Fecha: ${new Date().toLocaleDateString()}`, pageWidth - margin - 50, yPosition);
-
-      yPosition += 15;
-      if (this.responsable && this.responsable.nombre) {
-        const responsableText = `Responsable: ${this.responsable.nombre} ${this.responsable.apellido || ''}`;
-        doc.text(responsableText, margin, yPosition);
-        yPosition += 10;
-      }
-
-      if (this.animal) {
-        const animalText = `Animal: ${this.animal.nombre || 'N/A'} - ${this.animal.especie || 'N/A'} - ${this.animal.raza || 'N/A'}`;
-        doc.text(animalText, margin, yPosition);
-        yPosition += 15;
-      }
-
-      const headers = [['Artículo', 'Cantidad', 'Precio Unit.', 'Total']];
-      const data = this.articulos.map(articulo => [
-        articulo.nombre || '',
-        (articulo.factura_articulos?.cantidad || '0').toString(),
-        `$${this.formatPrice(articulo.valor || 0)}`,
-        `$${this.formatPrice((articulo.valor || 0) * (articulo.factura_articulos?.cantidad || 0))}`
-      ]);
-
-      doc.autoTable({
-        startY: yPosition,
-        head: headers,
-        body: data,
-        margin: { left: margin },
-        headStyles: {
-          fillColor: [50, 100, 200],
-          textColor: [255, 255, 255],
-          fontSize: 9,
-          fontStyle: 'normal',
-          cellPadding: 3,
-          minCellHeight: 10
-        },
-        bodyStyles: {
-          textColor: [0, 0, 0],
-          fontSize: 8,
-          cellPadding: 3
-        },
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 40, halign: 'center' },
-          2: { cellWidth: 40, halign: 'center' },
-          3: { cellWidth: 40, halign: 'center' }
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        }
-      });
-
-      yPosition = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Total General: $${this.formatPrice(this.totalGeneral)}`, pageWidth - margin - 40, yPosition);
-
-      yPosition = doc.internal.pageSize.height - 40;
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(70, 70, 70);
-      doc.text(this.institucionalInfo.disclaimer, pageWidth / 2, yPosition, {
-        align: 'center',
-        maxWidth: pageWidth - (margin * 2)
-      });
-
-      yPosition += 10;
-      doc.text(this.institucionalInfo.direccion, pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 5;
-      doc.text(this.institucionalInfo.correo, pageWidth / 2, yPosition, { align: 'center' });
-
-      return doc;
+    closeAddGastosModal() {
+      this.showAddGastosModal = false;
+      this.articuloSeleccionado = null;
     },
+    async generatePDF(factura) {
+  if (!factura || !this.articulos.length) {
+    console.error('Missing required data for PDF generation');
+    return;
+  }
 
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 20;
+  let yPosition = 20;
+
+  // Header y Logos
+  try {
+    const fvetLogo = await this.getBase64Image('/FVET_logo.png');
+    const hicaLogo = await this.getBase64Image('/HICA_logo.png');
+    if (hicaLogo) doc.addImage(hicaLogo, 'PNG', 10, 5, 20, 20);
+    if (fvetLogo) doc.addImage(fvetLogo, 'PNG', 170, 5, 20, 20);
+  } catch (error) {
+    console.error('Error loading logos:', error);
+  }
+
+  // Título principal
+  yPosition = 40;
+  doc.setFontSize(24);
+  doc.setTextColor(1, 69, 130); // Color #014582
+  doc.text('COMPROBANTE DE GASTOS', pageWidth / 2, yPosition, { align: 'center' });
+
+  // Información institucional
+  yPosition += 20;
+  doc.setFontSize(12);
+  doc.setTextColor(0);
+  doc.text(this.institucionalInfo.nombre, pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 8;
+  doc.text(this.institucionalInfo.universidad, pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 8;
+  doc.text(this.institucionalInfo.direccion, pageWidth / 2, yPosition, { align: 'center' });
+
+  // Información del Animal
+  yPosition += 10;
+
+  // Crear contenedor con fondo suave
+  doc.setFillColor(246, 249, 252);
+  doc.roundedRect(margin, yPosition, pageWidth - (margin * 2), 50, 3, 3, 'F');
+
+  // Título
+  doc.setFontSize(11);
+  doc.setTextColor(1, 69, 130);
+  doc.text('Información del Animal', margin + 5, yPosition + 12);
+
+  // Configurar estilo para los datos
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60);
+
+  // Definir posiciones de columnas
+  let col1 = margin + 5;
+  let col2 = margin + 85;
+  let textY = yPosition + 25;
+
+  // Datos del animal
+  doc.text(`Nombre: ${this.animal.nombre || '-'}`, col1, textY);
+  doc.text(`Especie: ${this.animal.especie || '-'}`, col2, textY);
+
+  // Datos del responsable
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Responsable: ${this.responsable?.nombre || '-'} ${this.responsable?.apellido || '-'}`, col1, textY + 12);
+  doc.text(`Contacto: ${this.responsable?.telefono || '-'}`, col2, textY + 12);
+
+  // Actualizar posición Y
+  yPosition += 40;
+
+  // Línea separadora
+  yPosition += 15;
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+
+  // Número de comprobante y fecha
+  yPosition += 10;
+  doc.text(`Comprobante Nº: ${factura.id}`, margin, yPosition);
+  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, pageWidth - 70, yPosition);
+
+  // Tabla de artículos
+  yPosition += 10;
+  doc.autoTable({
+    startY: yPosition,
+    head: [['Artículo', 'Cantidad', 'Precio Unit.', 'Total']],
+    body: this.articulos.map(articulo => [
+      articulo.nombre,
+      articulo.factura_articulos?.cantidad || 0,
+      `$${this.formatPrice(articulo.valor)}`,
+      `$${this.formatPrice(articulo.valor * (articulo.factura_articulos?.cantidad || 0))}`
+    ]),
+    headStyles: {
+      fillColor: [1, 69, 130],
+      textColor: [255, 255, 255],
+      fontSize: 12,
+      cellPadding: 6
+    },
+    bodyStyles: {
+      fontSize: 11,
+      cellPadding: 6
+    },
+    alternateRowStyles: {
+      fillColor: [248, 249, 250]
+    }
+  });
+
+  // Total
+  yPosition = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(12);
+  doc.text(`Total General: $${this.formatPrice(this.totalGeneral)}`, pageWidth - 60, yPosition);
+
+  return doc;
+},
     async imprimirFactura() {
       if (!this.facturaId) return;
 
       try {
         const result = await Swal.fire({
-          
           text: "¿Desea generar la descarga de su comprobante?",
           icon: 'warning',
           showCancelButton: true,
@@ -347,7 +419,6 @@ export default {
         });
       }
     },
-
     async getBase64Image(url) {
       try {
         const response = await fetch(url);
@@ -363,10 +434,11 @@ export default {
       }
     }
   },
-  mounted() {
+  async mounted() {
     this.facturaId = this.$route.params.facturaId;
     this.fichaClinicaId = this.$route.params.fichaClinicaId;
-    this.fetchArticulos();
+    await this.fetchData();
+    await this.fetchArticulos();
   }
 };
 </script>
@@ -404,5 +476,61 @@ export default {
 }
 .mt-4 {
   margin-top: 16px;
+}
+.info-card {
+  background-color: #f8f9fa !important;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.animal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.animal-details, .responsable-details {
+  display: inline-flex;
+  align-items: center;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.v-divider.vertical {
+  height: 20px;
+  border-color: #dee2e6;
+}
+
+.mx-2 {
+  margin: 0 8px;
+}
+
+.info-title {
+  color: #0F3460;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 12px 16px;
+}
+
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.field-value {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  background-color: white;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
 }
 </style>

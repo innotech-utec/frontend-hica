@@ -134,10 +134,36 @@ export default {
 
     const fetchFichasClinicas = async () => {
       try {
+        // Obtener las fichas clínicas básicas
         const response = await backend.get(`/fichasClinicas/animal/${props.animalId}`);
-        fichasClinicas.value = response.data;
+        
+        // Para cada ficha, obtener la información adicional
+        const fichasCompletas = await Promise.all(
+          response.data.map(async (ficha) => {
+            // Obtener toda la información adicional en paralelo
+            const [examenObjetivo, tratamientos, registroParametros] = await Promise.all([
+              fetchExamenObjetivo(ficha.id),
+              fetchTratamientos(ficha.id),
+              fetchRegistroParametros(ficha.id)
+            ]);
+
+            // Retornar la ficha con toda la información anexada
+            return {
+              ...ficha,
+              examenObjetivo,
+              tratamientos,
+              registroParametros
+            };
+          })
+        );
+
+        fichasClinicas.value = fichasCompletas;
       } catch (error) {
-        Swal.fire({ icon: "error", title: "Error", text: "No se pudo obtener las fichas clínicas." });
+        Swal.fire({ 
+          icon: "error", 
+          title: "Error", 
+          text: "No se pudo obtener las fichas clínicas." 
+        });
       }
     };
 
@@ -278,7 +304,7 @@ export default {
           head: [['Fecha Tratamiento', 'Medicación', 'Observaciones']],
           body: tratamientos.length > 0
             ? tratamientos.map(tratamiento => [
-                formatFecha(tratamiento.fechaTratamiento) || 'Sin fecha',
+                formatFecha(tratamiento.fecha) || 'Sin fecha',
                 tratamiento.medicacion || 'Sin medicación',
                 tratamiento.observaciones || 'Sin observaciones'
               ])
@@ -289,10 +315,10 @@ export default {
         const parametros = await fetchRegistroParametros(ficha.id);
         doc.autoTable({
           startY: yPosition,
-          head: [['Fecha', 'FC', 'FR', 'Temperatura']],
+          head: [['Fecha Parámetro', 'FC', 'FR', 'Temperatura']],
           body: parametros.length > 0
             ? parametros.map(parametro => [
-                formatFecha(parametro.fechaParametro) || 'Sin fecha',
+                formatFecha(parametro.fecha) || 'Sin fecha',
                 parametro.FC || 'N/A',
                 parametro.FR || 'N/A',
                 parametro.temperatura || 'N/A'
