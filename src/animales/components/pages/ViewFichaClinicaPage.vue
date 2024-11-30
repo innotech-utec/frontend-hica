@@ -284,16 +284,24 @@ export default {
     },
     async irAFacturacion() {
       if (this.facturaExistente) {
+        console.log("HOLAAAAAAAAA 2");
+        console.log(this.animal);
         // Redirige a la factura existente
         this.$router.push({
           name: 'IndexFacturaPage',
-          params: { fichaClinicaId: this.fichaClinicaId, facturaId: this.facturaId }
+          params: { fichaClinicaId: this.fichaClinicaId, facturaId: this.facturaId },
+          props: {
+            animal: this.animal,
+            // Nota: falta el responsable, necesitarías agregarlo al estado y obtenerlo 
+          }
         });
       } else {
         // Crea una nueva factura si no existe
         try {
           const response = await backend.post('/facturas/createOrGet', { fichaClinicaId: this.fichaClinicaId });
           this.facturaId = response.data.id;
+          console.log("HOLAAAAAAAAA");
+          console.log(this.animal);
           this.facturaExistente = true;
           this.$router.push({
             name: 'IndexFacturaPage',
