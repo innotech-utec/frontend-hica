@@ -14,7 +14,14 @@
           <v-text-field v-model="animal.raza" label="Raza" :rules="requiredRule" required></v-text-field>
 
           <!-- Edad del Animal -->
-          <v-text-field v-model="animal.edad" label="Edad" type="number" :rules="requiredRule" required></v-text-field>
+          <v-text-field
+            v-model="animal.edad"
+            label="Edad"
+            :rules="requiredRule"
+            @blur="validateNumber('edad')"
+            required
+            :error-messages="errors.edad"
+          ></v-text-field>
 
           <!-- Sexo del Animal -->
           <v-select v-model="animal.sexo" :items="['HEMBRA', 'MACHO']" label="Sexo" :rules="requiredRule" required></v-select>
@@ -23,14 +30,23 @@
           <v-text-field
             v-model="animal.peso"
             label="Peso (kg)"
-            type="number"
             step="0.01"
-            :rules="[...requiredRule, v => v > 0 || 'El peso debe ser mayor que 0']"
+            :rules="requiredRule"
+            @blur="validateNumber('peso')"
             required
+            :error-messages="errors.peso"
           ></v-text-field>
 
           <v-card-actions>
-            <v-btn rounded color="primary" type="submit">Guardar Cambios</v-btn>
+            <v-btn
+              rounded
+              color="primary"
+              type="submit"
+              :loading="loading"
+              :disabled="!valid || hasNumericErrors || loading"
+            >
+              Guardar Cambios
+            </v-btn>
             <v-btn rounded color="secondary" @click="confirmCancel">Cancelar</v-btn>
           </v-card-actions>
         </v-form>
@@ -59,7 +75,13 @@ export default {
       valid: false,
       localShowModal: this.showModal, // Copia local de showModal
       animal: {}, // Inicializar objeto animal vacío
-      requiredRule: [v => !!v || 'Este campo es requerido']
+      requiredRule: [v => !!v || 'Este campo es requerido'],
+      numericRule: v => !isNaN(parseFloat(v)) && isFinite(v) || 'Este campo solo permite números',
+      errors: {
+      edad: '',
+      peso: ''
+    },
+    hasNumericErrors: false,
     };
   },
   watch: {
@@ -74,10 +96,52 @@ export default {
       handler(newVal) {
         this.animal = { ...newVal }; // Actualizar los datos del animal cuando cambien
       }
+    },
+    'animal.edad'() {
+      // Validar inmediatamente al cambiar el valor
+      this.validateNumber('edad');
+    },
+    'animal.peso'() {
+      // Validar inmediatamente al cambiar el valor
+      this.validateNumber('peso');
     }
   },
   methods: {
-    async onSubmit() {
+
+    validateNumber(field) {
+      const value = this.animal[field];
+      if (isNaN(value) || value === '') {
+        this.errors[field] = "El valor debe ser numérico";
+        this.hasNumericErrors = true;
+        return false;
+      }
+      
+      if (field === 'peso' && value <= 0) {
+        this.errors[field] = "El peso debe ser mayor a 0";
+        this.hasNumericErrors = true;
+        return false;
+      }
+      
+      this.errors[field] = "";
+      // Verificar si ya no hay errores en ningún campo numérico
+      this.hasNumericErrors = Object.values(this.errors).some(error => error !== '');
+      return true;
+    },
+
+      async onSubmit() {
+
+      const isEdadValid = this.validateNumber('edad');
+      const isPesoValid = this.validateNumber('peso');
+
+      if (!this.$refs.form.validate() || !isEdadValid || !isPesoValid) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validación",
+          text: "Por favor revise los campos marcados con error"
+        });
+        return;
+      }
+
       if (!this.$refs.form.validate()) return;
 
       try {

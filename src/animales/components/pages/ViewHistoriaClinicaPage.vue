@@ -1,12 +1,38 @@
 <template>
+  <v-row>
+      <v-col cols="12" class="text-center">
+        <h2 class="page-title">Historia Clínica</h2>
+      </v-col>
+    </v-row>
   <v-card>
-    <v-card-title class="section-title">Historia Clínica</v-card-title>
-    <v-card-subtitle v-if="animal">
-      <span>Animal: {{ animal.nombre }} - {{ animal.especie }} - {{ animal.raza }}</span>
-      <br>
-      <span>Responsable: {{ responsable.nombre || 'Sin responsable' }} {{ responsable.apellido || '' }}</span>
-    </v-card-subtitle>
     <v-card-text>
+
+         <!-- Información del animal -->
+    <v-card flat class="mb-4" v-if="animal && animal.nombre">
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Nombre:</label>
+              <div class="field-value">{{ animal.nombre || '-' }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Especie:</label>
+              <div class="field-value">{{ animal.especie || '-' }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="field-group">
+              <label class="field-label">Raza:</label>
+              <div class="field-value">{{ animal.raza || '-' }}</div>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
       <!-- Filtros -->
       <v-row class="filter-row" justify="center">
         <v-col cols="12" md="4">
@@ -418,5 +444,33 @@ export default {
 }
 .mt-4 {
   margin-top: 16px;
+}
+.info-title {
+  color: #0F3460;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 12px 16px;
+}
+
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.field-value {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  background-color: white;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
 }
 </style>
