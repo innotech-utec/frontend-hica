@@ -180,7 +180,7 @@
                           :class="{ 'grey lighten-4': index % 2 === 0 }"
                       >
                       <td>{{ formatDate(selectedReportType === '/veterinarios-tratamientos' ? item.fechaTratamiento : item.fechaModificacion) }}</td>
-              <td v-if="isAnimalReport">{{ item.edad }}</td>
+                      <td v-if="isAnimalReport">{{ item.edad_valor }} {{ item.edad_unidad }}</td>
               <td v-if="isAnimalReport">{{ item.especie }}</td>
               <td v-if="isAnimalReport">{{ item.raza }}</td>
               <td v-if="isAnimalReport">{{ item.motivoConsulta }}</td>
