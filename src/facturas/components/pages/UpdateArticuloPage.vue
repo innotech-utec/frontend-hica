@@ -1,8 +1,14 @@
 <template>
-  <v-dialog v-model="localShowModal" max-width="600px" @click:outside="closeModal">
-    <v-card>
-      <v-card-title>Editar Artículo</v-card-title>
-      <v-card-text>
+  <v-dialog 
+    v-model="localShowModal" 
+    max-width="600px" 
+    persistent
+  >
+    <v-card class="pa-0">
+      <v-card-title class="primary-title text-center">
+        Editar Artículo
+      </v-card-title>
+      <v-card-text class="pt-6">
         <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
           <!-- Nombre del Artículo -->
           <v-text-field 
@@ -10,6 +16,7 @@
             label="Nombre" 
             :rules="nombreRules"
             :error-messages="nombreError" 
+            @blur="normalizeText('nombre')"
             required
           ></v-text-field>
 
@@ -17,13 +24,15 @@
           <v-textarea 
             v-model="articulo.descripcion" 
             label="Descripción"
+            @blur="normalizeText('descripcion')"
           ></v-textarea>
 
           <!-- Valor del Artículo -->
           <v-text-field
             v-model="articulo.valor"
             label="Valor ($)"
-            type="number"
+             inputmode="numeric"
+            @keypress="onlyNumbers"
             :rules="valorRules"
             required
           ></v-text-field>
@@ -32,11 +41,12 @@
           <v-text-field
             v-model="articulo.stock"
             label="Stock"
-            type="number"
+             inputmode="numeric"
+            @keypress="onlyNumbers"
             :rules="stockRules"
             required
           ></v-text-field>
-
+          <div class="button-container">
           <v-card-actions>
             <v-btn 
               rounded 
@@ -45,7 +55,7 @@
               :loading="loading"
               :disabled="!valid || loading"
             >
-              Guardar Cambios
+              Guardar
             </v-btn>
             <v-btn 
               rounded 
@@ -56,6 +66,7 @@
               Cancelar
             </v-btn>
           </v-card-actions>
+        </div>
         </v-form>
       </v-card-text>
     </v-card>
@@ -89,16 +100,22 @@ data() {
     nombreError: '',
     nombreRules: [
       v => !!v || 'El nombre es requerido',
-      v => (v && v.length <= 50) || 'El nombre no puede tener más de 50 caracteres',
+      v => !v || !v.includes('  ') || 'El nombre no puede contener espacios dobles',
+      v => v && v.trim().length > 0 || 'El nombre no puede contener solo espacios',
+      v => (v && v.length >= 2 && v.length <= 50) || 'El nombre debe tener entre 2 y 50 caracteres',
       v => this.validarNombreAsync(v)
     ],
     valorRules: [
       v => !!v || 'El valor es requerido',
-      v => v > 0 || 'El valor debe ser mayor que 0'
+      v => !v || /^\d+$/.test(v) || 'El valor solo puede contener números',
+      v => v >= 0 || 'El valor debe ser mayor o igual a 0'
+      
     ],
     stockRules: [
       v => !!v || 'El stock es requerido',
-      v => v >= 0 || 'El stock no puede ser negativo'
+      v => !v || /^\d+$/.test(v) || 'El stock solo puede contener números',
+      v => v >= 0 || 'El stock debe ser mayor o igual a 0',
+      
     ]
   };
 },
@@ -129,6 +146,18 @@ watch: {
 },
 
 methods: {
+
+  normalizeText(field) {
+    if (this.articulo[field]) {  
+      this.articulo[field] = this.articulo[field].toUpperCase().trim();
+    }
+  },
+    onlyNumbers(e) {
+    const char = String.fromCharCode(e.keyCode);
+    if (!/^[0-9]+$/.test(char)) {
+      e.preventDefault();
+    }
+  },
   async validarNombreAsync(nombre) {
     try {
       if (!nombre || nombre === this.nombreOriginal) return true;
@@ -147,10 +176,10 @@ methods: {
     try {
       this.loading = true;
 
-      // Validar nombre si ha cambiado
-      if (this.articulo.nombre !== this.nombreOriginal) {
+      
+      if (this.articulo.nombre.toUpperCase() !== this.nombreOriginal.toUpperCase()) {
         const nombreResultado = await ValidationService.validarArticuloUnico(
-          this.articulo.nombre,
+          this.articulo.nombre.toUpperCase(),
           this.articulo.id
         );
         
@@ -234,12 +263,40 @@ methods: {
 </script>
 
 <style scoped>
-.v-btn.rounded {
-background-color: #014582;
-color: white;
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
+}
+
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.action-button {
+  min-width: 100px;
+}
+
+.v-btn.primary {
+  background-color: #014582 !important;
+  color: white;
+}
+
+.v-btn.primary:hover {
+  background-color: #013262 !important;
 }
 
 .v-btn.secondary {
-background-color: #008575;
+  background-color: #008575 !important;
+}
+
+.v-btn.secondary:hover {
+  background-color: #007460 !important;
 }
 </style>
+

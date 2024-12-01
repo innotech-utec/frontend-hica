@@ -1,34 +1,47 @@
 <template>
-  <v-dialog v-model="localShowModal" max-width="600px" @click:outside="closeModal">
-    <v-card>
-      <v-card-title>Crear Artículo</v-card-title>
-      <v-card-text>
+  <v-dialog 
+    v-model="localShowModal" 
+    max-width="600px" 
+    persistent
+  >
+    <v-card class="pa-0">
+      <v-card-title class="primary-title text-center">
+        Crear Artículo
+      </v-card-title>
+      <v-card-text class="pt-6">
         <v-form ref="form" v-model="valid" @submit.prevent="createArticulo">
+
+          
           <v-text-field 
             v-model="nombre" 
             :rules="nombreRules"
             label="Nombre" 
             required
             :error-messages="nombreError"
+            @blur="normalizeText('nombre')"
           ></v-text-field>
           <v-textarea 
             v-model="descripcion" 
             label="Descripción"
+            @blur="normalizeText('descripcion')"
           ></v-textarea>
           <v-text-field 
             v-model="valor" 
             label="Valor" 
             required 
-            type="number"
+            inputmode="numeric"
+            @keypress="onlyNumbers"
             :rules="valorRules"
           ></v-text-field>
           <v-text-field 
             v-model="stock" 
             label="Stock" 
             required 
-            type="number"
+             inputmode="numeric"
+            @keypress="onlyNumbers"
             :rules="stockRules"
           ></v-text-field>
+          <div class="button-container">
           <v-card-actions>
             <v-btn 
               rounded 
@@ -48,6 +61,7 @@
               Cancelar
             </v-btn>
           </v-card-actions>
+        </div>
         </v-form>
       </v-card-text>
     </v-card>
@@ -77,18 +91,24 @@ data() {
     valor: null,
     stock: null,
     nombreError: '',
-    nombreRules: [
+      nombreRules: [
       v => !!v || 'El nombre es requerido',
-      v => (v && v.length <= 50) || 'El nombre no puede tener más de 50 caracteres',
+      v => !v || !v.includes('  ') || 'El nombre no puede contener espacios dobles',
+      v => v && v.trim().length > 0 || 'El nombre no puede contener solo espacios',
+      v => (v && v.length >= 2 && v.length <= 50) || 'El nombre debe tener entre 2 y 50 caracteres',
       v => this.validarNombreAsync(v)
     ],
     valorRules: [
       v => !!v || 'El valor es requerido',
+      v => !v || /^\d+$/.test(v) || 'El valor solo puede contener números',
       v => v >= 0 || 'El valor debe ser mayor o igual a 0'
+      
     ],
     stockRules: [
       v => !!v || 'El stock es requerido',
-      v => v >= 0 || 'El stock debe ser mayor o igual a 0'
+      v => !v || /^\d+$/.test(v) || 'El stock solo puede contener números',
+      v => v >= 0 || 'El stock debe ser mayor o igual a 0',
+      
     ]
   };
 },
@@ -112,6 +132,18 @@ watch: {
 },
 
 methods: {
+  normalizeText(field) {
+    if (this[field]) {
+      this[field] = this[field].toUpperCase().trim();
+    }
+  },
+    onlyNumbers(e) {
+    const char = String.fromCharCode(e.keyCode);
+    if (!/^[0-9]+$/.test(char)) {
+      e.preventDefault();
+    }
+  },
+
   async validarNombreAsync(nombre) {
     try {
       if (!nombre) return true;
@@ -141,8 +173,8 @@ methods: {
       }
 
       await backend.post("/articulos", {
-        nombre: this.nombre,
-        descripcion: this.descripcion,
+        nombre: this.nombre.toUpperCase(),
+        descripcion: this.descripcion.toUpperCase(),
         valor: this.valor,
         stock: this.stock
       });
@@ -188,3 +220,50 @@ methods: {
 }
 };
 </script>
+<style scoped>
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
+}
+
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.action-button {
+  min-width: 100px;
+}
+
+.v-btn.primary {
+  background-color: #014582 !important;
+  color: white;
+}
+
+.v-btn.primary:hover {
+  background-color: #013262 !important;
+}
+
+.v-btn.secondary {
+  background-color: #008575 !important;
+}
+
+.v-btn.secondary:hover {
+  background-color: #007460 !important;
+}
+</style>
+
+<style>
+.swal2-container {
+  z-index: 9999 !important;
+}
+
+.swal2-popup {
+  z-index: 10000 !important;
+}
+</style>

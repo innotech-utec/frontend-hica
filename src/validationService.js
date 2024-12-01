@@ -10,17 +10,16 @@ export default class ValidationService {
   static async validarDocumentoUnico(documento, userId = null) {
     try {
       const response = await backend.get('/usuarios');
-      const usuarios = response.data.data;
-       
-      const documentoUpperCase = documento.toUpperCase();
+      const usuarios = response.data.data; // Accedemos al array de usuarios dentro de data
+      
       const usuarioExistente = usuarios.find(usuario => {
         if (userId && usuario.id === userId) return false;
-        return usuario.documento.toUpperCase() === documentoUpperCase; // Agregados los paréntesis
+        return usuario.documento === documento;
       });
-      
+
       return {
         isValid: !usuarioExistente,
-        message: usuarioExistente
+        message: usuarioExistente 
           ? 'Este documento ya está registrado en el sistema'
           : 'Documento disponible'
       };
@@ -32,12 +31,11 @@ export default class ValidationService {
       };
     }
   }
-  
 
   static async validarResponsableUnico(documento, userId = null) {
     try {
       const response = await backend.get('/responsables');
-      
+      // Asumimos que la respuesta viene directamente como un array de responsables
       const responsables = response.data;
       
       const responsableExistente = responsables.find(responsable => {

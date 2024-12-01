@@ -107,20 +107,29 @@
     data() {
       return {
         articulos: [],
+        filtroNombre: '',
         showCreateModal: false,
         showEditModal: false,
         selectedArticulo: {},
-        filtroNombre: '',
+        iltroNombre: null,
         loading: false,
       };
     },
     computed: {
       articulosFiltrados() {
-        return this.articulos.filter(articulo =>
-          articulo.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase())
-        );
-      }
-    },
+    if (!this.articulos || this.articulos.length === 0) {
+      return [];
+    }
+
+    if (!this.filtroNombre || this.filtroNombre.trim() === '') {
+      return this.articulos;
+    }
+
+    return this.articulos.filter((articulo) =>
+      articulo.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase())
+    );
+  },
+},
     methods: {
       async fetchArticulos() {
         this.loading = true;
@@ -135,6 +144,21 @@
           this.loading = false;
         }
       },
+      handleClearFilter(filterType) {
+    filterType === 'nombre'
+    this.filtronombre = '';
+    
+    this.fetchArticulos(); 
+  },
+
+  filtrarArticulos() {
+    
+    if (!this.filtronombre) {
+      this.fetchArticulos();
+      return;
+    }
+    this.currentPage = 1;
+  },
       openCreateModal() {
         this.showCreateModal = true;
       },
@@ -142,9 +166,7 @@
         this.selectedArticulo = articulo;
         this.showEditModal = true;
       },
-      filtrarArticulos() {
-        this.fetchArticulos();
-      }
+     
     },
     created() {
       this.fetchArticulos();
@@ -201,7 +223,7 @@
       padding: 8px;
     }
   }
-  /* Estilo para el logo */
+
   .logo {
     width: 150px;
     display: block;
