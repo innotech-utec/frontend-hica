@@ -9,27 +9,29 @@
 
     <!-- Filtros de búsqueda -->
     <v-row class="filter-row" justify="center">
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="filtroDocumento"
-          label="Documento Responsable"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-magnify"
-          @click:append="filtrarAnimales"
-        ></v-text-field>
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="filtroNombre"
-          label="Nombre del Paciente"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-magnify"
-          @click:append="filtrarAnimales"
-        ></v-text-field>
+      <v-col cols="6" md="4">  
+    <v-text-field
+      v-model="filtroDocumento"
+      label="Documento Responsable"
+      clearable
+      outlined
+      dense
+      prepend-inner-icon="mdi-magnify"
+      @input="filtrarAnimales"
+      @click:clear="handleClearFilter('documento')"
+    ></v-text-field>
+  </v-col>
+  <v-col cols="6" md="4">  
+    <v-text-field
+      v-model="filtroNombre"
+      label="Nombre del Paciente"
+      clearable
+      outlined
+      dense
+      prepend-inner-icon="mdi-magnify"
+      @input="filtrarAnimales"
+      @click:clear="handleClearFilter('nombre')"
+    ></v-text-field>
       </v-col>
     </v-row>
 
@@ -59,13 +61,14 @@
                 <td>{{ animal.nombre }}</td>
                 <td>{{ animal.especie }}</td>
                 <td>{{ animal.raza }}</td>
-                <td>{{ animal.edad }}</td>
+                <td>{{ formatearEdad(animal.edadValor, animal.edadUnidad) }}</td>
                 <td>{{ animal.sexo }}</td>
                 <td>{{ animal.peso }}</td>
                 <td>
                   <v-card-actions>
                     <v-btn icon @click="openEditModal(animal)" title="Editar animal">
-                      <v-icon>mdi-pencil-outline</v-icon>
+                        <v-icon left>mdi-pencil-outline</v-icon>
+  <v-icon>mdi-paw</v-icon>
                     </v-btn>
                     <v-btn icon color="success" @click="checkOpenFichas(animal.id)" title="Crear ficha clínica">
                       <v-icon>mdi-file-plus-outline</v-icon>
@@ -132,13 +135,19 @@ export default {
   },
   computed: {
     animalesFiltrados() {
-      return this.animales.filter(animal => {
-        const matchesDocumento = animal.responsable?.documento.includes(this.filtroDocumento);
-        const matchesNombre = animal.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase());
-        return matchesDocumento && matchesNombre;
-      });
-    }
-  },
+    return this.animales.filter(animal => {
+      const documentoFilter = this.filtroDocumento || '';
+      const nombreFilter = this.filtroNombre || '';
+
+      const matchesDocumento = animal.responsable?.documento?.toLowerCase()
+        .includes(documentoFilter.toLowerCase());
+      const matchesNombre = animal.nombre?.toLowerCase()
+        .includes(nombreFilter.toLowerCase());
+
+      return matchesDocumento && matchesNombre;
+    });
+  }
+},
   methods: {
     async fetchAnimales() {
       this.loading = true;
@@ -167,6 +176,11 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    formatearEdad(valor, unidad) {
+      // Convertir a número entero y formatear
+      const edadEntera = Math.floor(Number(valor));
+      return `${edadEntera} ${unidad.toLowerCase()}`;
     },
 
     filtrarAnimales() {
@@ -243,6 +257,14 @@ export default {
       this.currentPage = newPage;
       this.fetchAnimales();
     },
+    handleClearFilter(type) {
+  if (type === 'documento') {
+    this.filtroDocumento = '';
+  } else if (type === 'nombre') {
+    this.filtroNombre = '';
+  }
+  this.fetchAnimales();
+},
     
   },
   created() {

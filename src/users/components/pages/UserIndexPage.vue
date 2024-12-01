@@ -39,7 +39,13 @@
       <v-col cols="12" class="text-right">
         
         <v-card-actions>
-          <v-btn rounded color="primary" class="add-user-btn" dark @click="$router.push({ name: 'users.create' })">
+          <v-btn 
+            rounded 
+            color="primary" 
+            class="add-user-btn" 
+            dark 
+            @click="showCreateModal = true"
+          >
             <v-icon left>mdi-plus</v-icon>
             Añadir Usuario
           </v-btn>
@@ -80,9 +86,9 @@
                 </td>
                 <td>
                   <v-card-actions>
-                    <v-btn icon color="primary" @click="$router.push({ name: 'users.edit', params: { id: user.id } })">
-                      <v-icon>mdi mdi-account-edit-outline</v-icon>
-                    </v-btn>
+                    <v-btn icon color="primary" @click="openEditModal(user)">
+  <v-icon>mdi mdi-account-edit-outline</v-icon>
+</v-btn>
                     <v-btn icon color="success" @click="confirmDeleteUser(user.id, !!user.veterinario)">
                       <v-icon>mdi mdi-delete-outline</v-icon>
                     </v-btn>
@@ -94,7 +100,17 @@
         </div>
       </v-col>
     </v-row>
-
+    <EditUserPage
+      v-if="showEditModal && selectedUser"
+      :showModal="showEditModal"
+      :UserData="selectedUser"
+      @close="handleClose"
+    />
+    <CreateUserPage
+  v-if="showCreateModal"
+  v-model:value="showCreateModal"
+  @created="handleCreateSuccess"
+/>
     <!-- Paginación -->
     <div class="pagination-container">
       <PaginatorComponent
@@ -111,12 +127,18 @@ import backend from '@/backend';
 import Swal from 'sweetalert2';
 import PaginatorComponent from "@/shared/components/PaginatorComponent.vue";
 import BackButton from '@/shared/components/BackButton.vue';
+import EditUserPage from "@/users/components/pages/EditUserPage.vue";
+import CreateUserPage from './CreateUserPage.vue';
 
 export default {
   components: {
     BackButton,
     PaginatorComponent,
+    EditUserPage,
+    CreateUserPage,
   },
+   
+  
   data() {
     return {
       users: [],
@@ -125,18 +147,71 @@ export default {
       currentPage: 1,
       totalPages: 1,
       loading: false,
+      showEditModal: false,
+      selectedUser: null, 
+      showCreateModal: false,
     };
   },
   computed: {
     usuariosFiltrados() {
-      return this.users.filter(user => {
-        const matchesDocumento = user.documento.includes(this.filtroDocumento);
-        const matchesApellido = user.apellido.toLowerCase().includes(this.filtroApellido.toLowerCase());
-        return matchesDocumento && matchesApellido;
+    return this.users.filter(user => {
+      // Manejar caso donde filtroDocumento es null o undefined
+      const documentoFilter = this.filtroDocumento || '';
+      // Manejar caso donde filtroApellido es null o undefined
+      const apellidoFilter = this.filtroApellido || '';
+
+      const matchesDocumento = user.documento.toLowerCase()
+        .includes(documentoFilter.toLowerCase());
+      const matchesApellido = user.apellido.toLowerCase()
+        .includes(apellidoFilter.toLowerCase());
+
+      return matchesDocumento && matchesApellido;
       });
     }
   },
   methods: {
+    handleCreateSuccess() {
+    this.fetchUsers(); 
+    this.showCreateModal = false; 
+  },
+
+    handleCreateClose() {
+      this.showCreateModal = false;
+      this.fetchUsers(); 
+    },
+    async openEditModal(user) {
+      try {
+        // Cargar datos completos del usuario antes de abrir el modal
+        const [userResponse, veterinarioResponse] = await Promise.all([
+          backend.get(`/usuarios/${user.id}`),
+          backend.get(`/veterinarios/${user.id}`).catch(err => {
+            if (err.response && err.response.status === 404) return { data: null };
+            throw err;
+          })
+        ]);
+
+        this.selectedUser = {
+          ...userResponse.data,
+          veterinario: veterinarioResponse.data
+        };
+        
+        this.showEditModal = true;
+      } catch (error) {
+        console.error('Error al cargar datos del usuario:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudieron cargar los datos del usuario',
+          icon: 'error'
+        });
+      }
+    },
+
+    handleClose() {
+      this.showEditModal = false;
+      this.selectedUser = null;
+      this.fetchUsers();
+    },
+
     async fetchUsers(page = 1) {
       this.loading = true;
       try {
@@ -170,72 +245,98 @@ export default {
     },
 
     async confirmDeleteUser(id, isVeterinario) {
-      // Verificación de eliminación de veterinario con tratamientos asignados
-      const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: '¡No podrás revertir esto!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, inhabilitar',
-        cancelButtonText: 'Cancelar',
-      });
+  const result = await Swal.fire({
+    title: '¿Estás seguro?',
+    text: '¡No podrás revertir esto!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sí, inhabilitar',
+    cancelButtonText: 'Cancelar',
+  });
 
-      if (result.isConfirmed) {
-        if (isVeterinario) {
-          try {
-            // Verificar si el veterinario tiene tratamientos asignados
-            const tratamientosResponse = await backend.get(`/veterinarios/${id}/tratamientos`, {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-            });
+  if (result.isConfirmed) {
+    try {
+      // Si es veterinario, verificar tratamientos antes de intentar eliminar
+      if (isVeterinario) {
+        const tratamientosResponse = await backend.get(`/veterinarios/${id}/tratamientos`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
 
-            if (tratamientosResponse.data.length > 0) {
-              Swal.fire({
-                icon: 'warning',
-                title: 'Tratamientos asignados',
-                text: 'Este veterinario tiene tratamientos asignados. Debes reasignar los tratamientos antes de inhabilitar al veterinario.',
-              });
-              return; // Detener la eliminación si hay tratamientos asignados
-            }
-          } catch (error) {
-            console.error('Error al verificar tratamientos:', error);
-            Swal.fire('Error', 'No se pudo verificar los tratamientos del veterinario.', 'error');
-            return;
-          }
+        if (tratamientosResponse.data && tratamientosResponse.data.length > 0) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'No se puede inhabilitar',
+            text: 'El veterinario tiene tratamientos asignados. Debe reasignar los tratamientos antes de inhabilitar al veterinario.',
+          });
+          return;
         }
-        
-        // Proceder con la eliminación si no tiene tratamientos asignados
-        this.deleteUser(id);
       }
-    },
-
-    async deleteUser(id) {
-  try {
-    await backend.delete(`/usuarios/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-    this.fetchUsers(); // Refresca la lista después de eliminar
-    Swal.fire('Inhabilitado!', 'El usuario ha sido inhabilitado.', 'success');
-  } catch (error) {
-    if (error.response && error.response.status === 400) {
-      // Verifica si el error proviene de la relación de tratamientos asignados
-      const errorMessage = error.response.data.message;
-      if (errorMessage.includes('tratamientos asignados')) {
-        Swal.fire('Error', 'Este veterinario tiene tratamientos asignados. Debes reasignar los tratamientos antes de inhabilitar al veterinario.', 'warning');
-      } else {
-        Swal.fire('Error', errorMessage || 'No se pudo inhabilitar el usuario', 'error');
-      }
-    } else {
-      // Mensaje genérico para otros errores
-      Swal.fire('Error', 'No se pudo inhabilitar el usuario', 'error');
+      
+      // Si no es veterinario o no tiene tratamientos, proceder con la eliminación
+      await this.deleteUser(id);
+    } catch (error) {
+      console.error('Error al verificar tratamientos:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo verificar los tratamientos del veterinario.',
+      });
     }
   }
 },
 
-    filtrarUsuarios() {
-      this.currentPage = 1; // Reinicia la paginación al aplicar filtros
-    },
+async deleteUser(id) {
+  try {
+    await backend.delete(`/usuarios/${id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    
+    await this.fetchUsers();
+    await Swal.fire({
+      icon: 'success',
+      title: 'Éxito',
+      text: 'El usuario ha sido inhabilitado correctamente.',
+    });
+  } catch (error) {
+    console.error('Error al inhabilitar usuario:', error);
+    
+    // Manejar el error específico de tratamientos asignados
+    if (error.response?.data?.message?.includes('tratamientos')) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se puede inhabilitar',
+        text: 'El veterinario tiene tratamientos asignados. Debe reasignar los tratamientos antes de inhabilitar al veterinario.',
+      });
+    } else {
+      // Mensaje genérico para otros errores
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo inhabilitar el usuario. Por favor, intente nuevamente.',
+      });
+    }
+  }
+},
+
+handleClearFilter(filterType) {
+    if (filterType === 'documento') {
+      this.filtroDocumento = '';
+    } else if (filterType === 'apellido') {
+      this.filtroApellido = '';
+    }
+    this.fetchUsers(); 
+  },
+
+  filtrarUsuarios() {
+    
+    if (!this.filtroDocumento && !this.filtroApellido) {
+      this.fetchUsers();
+      return;
+    }
+    this.currentPage = 1;
+  },
 
     handlePageChange(newPage) {
       this.fetchUsers(newPage);

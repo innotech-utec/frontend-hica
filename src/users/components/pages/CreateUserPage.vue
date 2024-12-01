@@ -1,138 +1,166 @@
 <template>
-  <v-card class="card">
-    <v-container>
-      <v-row>
-        <v-col cols="12" class="text-center">
-          <h2 class="form-title">Registro de Usuarios</h2>
-        </v-col>
-      </v-row>
-
-      <v-form 
-      ref="form" 
-  v-model="valid"
-  lazy-validation
-  validate-on="blur"
-  @submit.prevent="onSubmit"
+ <v-dialog 
+  v-model="localDialog"
+  max-width="600px" 
+  persistent
 >
-        <v-text-field 
-          v-model="user.email" 
-          :rules="emailRules"
-          label="Correo Electrónico" 
-          required
-          :error-messages="emailError"
-          @blur="validateEmail"
-          validate-on-blur
-        ></v-text-field>
+    <v-card class="pa-0">
+      <v-card-title class="primary-title">
+        Registro de Usuario
+      </v-card-title>
+      <v-card-text class="pt-6">
+        <v-form 
+          ref="form" 
+          v-model="valid"
+          lazy-validation
+          validate-on="blur"
+          @submit.prevent="onSubmit"
+        >
+          <!-- Correo electrónico -->
+          <v-text-field 
+            v-model="user.email" 
+            :rules="emailRules"
+            label="Correo Electrónico" 
+            prepend-icon="mdi-email"
+            required
+            :error-messages="emailError"
+            @blur="validateEmail"
+            validate-on-blur
+          ></v-text-field>
 
-        <v-text-field 
-          v-model="user.nombre" 
-          :rules="nombreRules"
-          label="Nombre" 
-          required
-          maxLength="50"
-          validate-on-blur
-        ></v-text-field>
+          <v-text-field 
+  v-model="user.nombre" 
+  :rules="nombreRules"
+  label="Nombre" 
+  prepend-icon="mdi-account-circle"
+  required
+  maxLength="50"
+  validate-on-blur
+  @blur="normalizeText('nombre')"
+></v-text-field>
 
-        <v-text-field 
-          v-model="user.apellido" 
-          :rules="apellidoRules"
-          label="Apellido" 
-          required
-          maxLength="50"
-          validate-on-blur
-        ></v-text-field>
+<!-- Apellido -->
+<v-text-field 
+  v-model="user.apellido" 
+  :rules="apellidoRules"
+  label="Apellido" 
+  prepend-icon="mdi-account-circle"
+  required
+  maxLength="50"
+  validate-on-blur
+  @blur="normalizeText('apellido')"
+></v-text-field>
 
-        <v-text-field 
-          v-model="user.documento" 
-          :rules="documentoRules"
-          label="Documento" 
-          required
-          maxLength="30"
-          :error-messages="documentoError"
-          @blur="validateDocumento"
-          validate-on-blur
-        ></v-text-field>
+<!-- Documento -->
+<v-text-field 
+  v-model="user.documento" 
+  :rules="documentoRules"
+  label="Documento" 
+  prepend-icon="mdi-file-document"
+  required
+  maxLength="30"
+  :error-messages="documentoError"
+  @blur="validateDocumento; normalizeText('documento')"
+  validate-on-blur
+></v-text-field>
 
-        <v-text-field
-          v-model="user.password"
-          :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="showPassword ? 'text' : 'password'"
-          label="Contraseña"
-          :rules="passwordRules"
-          @click:append="showPassword = !showPassword"
-          required
-          autocomplete="new-password"
-          @blur="validatePassword"
-          validate-on-blur
-        ></v-text-field>
+          <!-- Contraseña -->
+          <v-text-field
+            v-model="user.password"
+            :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+            :type="showPassword ? 'text' : 'password'"
+            label="Contraseña"
+            prepend-icon="mdi-lock"
+            :rules="passwordRules"
+            @click:append="showPassword = !showPassword"
+            required
+            autocomplete="new-password"
+            @blur="validatePassword"
+            validate-on-blur
+          ></v-text-field>
 
-        <v-text-field
-          v-model="user.repeatedPassword"
-          :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="showPassword ? 'text' : 'password'"
-          label="Repetir Contraseña"
-          :rules="repeatPasswordRule"
-          @click:append="showPassword = !showPassword"
-          required
-          autocomplete="new-password"
-         @blur="validatePassword"
-          validate-on-blur
-        ></v-text-field>
+          <!-- Repetir Contraseña -->
+          <v-text-field
+            v-model="user.repeatedPassword"
+            :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+            :type="showPassword ? 'text' : 'password'"
+            label="Repetir Contraseña"
+            prepend-icon="mdi-lock-check"
+            :rules="repeatPasswordRule"
+            @click:append="showPassword = !showPassword"
+            required
+            autocomplete="new-password"
+            @blur="validatePassword"
+            validate-on-blur
+          ></v-text-field>
 
-        <v-checkbox v-model="user.isAdmin" label="Administrador"></v-checkbox>
-        <v-checkbox v-model="esVeterinario" label="Veterinario"></v-checkbox>
-
-        <v-row v-if="esVeterinario">
-          <v-col cols="12">
-            <v-text-field 
-              v-model="veterinario.N_de_registro"
-              :rules="numeroRegistroRules"
-              label="Número de Registro"
-              required
-              pattern="[0-9]*"
-              inputmode="numeric"
-              @keypress="onlyNumbers"
-               validate-on-blur
-            ></v-text-field>
-          </v-col>
+          <v-checkbox 
+            v-model="user.isAdmin" 
+            label="Administrador"
+            class="mt-4"
+          ></v-checkbox>
           
-          <v-col cols="12">
-            <v-select
-              v-model="veterinario.Dependencia"
-              :items="dependencias"
-              label="Dependencia"
-              :rules="requiredRule"
-              required
-              validate-on-blur
-            ></v-select>
-          </v-col>
-          
+          <v-checkbox 
+            v-model="esVeterinario" 
+            label="Veterinario"
+            class="mt-4"
+          ></v-checkbox>
+
+          <!-- Campos de Veterinario -->
+          <v-row v-if="esVeterinario">
+            <v-col cols="12">
+              <v-text-field 
+                v-model="veterinario.N_de_registro"
+                :rules="numeroRegistroRules"
+                label="Número de Registro"
+                prepend-icon="mdi-card-account-details"
+                required
+                pattern="[0-9]*"
+                inputmode="numeric"
+                @keypress="onlyNumbers"
+                validate-on-blur
+              ></v-text-field>
+            </v-col>
+            
+            <v-col cols="12">
+              <v-select
+                v-model="veterinario.Dependencia"
+                :items="dependencias"
+                label="Dependencia"
+                prepend-icon="mdi-hospital-building"
+                :rules="requiredRule"
+                required
+                validate-on-blur
+              ></v-select>
+            </v-col>
           </v-row>
 
-        <v-card-actions class="justify-end">
-  <v-spacer></v-spacer>  
-  <v-btn 
-    rounded 
-    color="primary" 
-    type="submit"
-    :loading="loading"
-    :disabled="!isFormValid || loading"
-  >
-    Registrar
-  </v-btn>
-  <v-btn 
-    rounded 
-    color="secondary" 
-    @click="confirmCancel"
-    :disabled="loading"
-    class="ml-2" 
-  >
-    Cancelar
-  </v-btn>
-</v-card-actions>
-      </v-form>
-    </v-container>
-  </v-card>
+          <div class="button-container">
+            <v-card-actions>
+              <v-btn 
+                rounded 
+                color="primary" 
+                type="submit"
+                :loading="loading"
+                :disabled="!isFormValid || loading"
+              >
+                Registrar
+              </v-btn>
+              <v-btn 
+                rounded 
+                color="secondary" 
+                @click="confirmCancel"
+                :disabled="loading"
+                class="ml-2"
+              >
+                Cancelar
+              </v-btn>
+            </v-card-actions>
+          </div>
+        </v-form>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 <script>
 import backend from "@/backend";
@@ -140,6 +168,13 @@ import Swal from "sweetalert2";
 import ValidationService from "@/validationService";
 
 export default {
+  name: 'CreateUserPage',
+  props: {
+    value: {
+      type: Boolean,
+      required: true
+    }
+  },
   data() {
     return {
       valid: false,
@@ -168,13 +203,12 @@ export default {
       },
 
       dependencias: [
-        'Clinica Pequeños Animales',
-        'Equinos',
-        'Endocrinologia y Metabolismo Animal',
-        'Gestión Hospitalaria',
-        'Semiología'
+        "CLÍNICA PEQUEÑOS ANIMALES",
+        "EQUINOS",
+        "ENDOCRINOLOGÍA y METABOLISMO ANIMAL",
+        "GESTIÓN HOSPITALARIA",
+        "SEMIOLOGÍA",
       ],
-      
       emailRules: [
         v => !!v || 'El email es requerido',
         v => v && v.trim().length > 0 || 'El email no puede contener solo espacios',
@@ -232,6 +266,15 @@ export default {
   },
 
   computed: {
+    localDialog: {
+      get() {
+        return this.value;
+      },
+      set(value) {
+        this.$emit('update:value', value);
+      }
+    },
+   
     isFormValid() {
       // Validación base de usuario
       const baseValidation = (
@@ -275,6 +318,15 @@ export default {
   });
 },
   methods: {
+
+    normalizeText(field) {
+  if (this.user[field]) {
+    this.user[field] = this.user[field].toUpperCase().trim();
+  }
+  if (this.veterinario[field]) {
+    this.veterinario[field] = this.veterinario[field].toUpperCase().trim();
+  }
+},
     onlyNumbers(e) {
       const char = String.fromCharCode(e.keyCode);
       if (/^[0-9]+$/.test(char)) return true;
@@ -330,10 +382,10 @@ export default {
   this.isValidForm = baseFieldsValid && veterinarioFieldsValid;
 },
 
-    async handleSubmit() {
-      if (!this.isFormValid) return;
-      
-      this.loading = true;
+async handleSubmit() {
+  if (!this.isFormValid) return;
+  
+  this.loading = true;
       try {
         // Validar email y documento antes de continuar
         const documentoResultado = await ValidationService.validarDocumentoUnico(this.user.documento);
@@ -360,25 +412,26 @@ export default {
         if (this.esVeterinario) {
           await this.registrarVeterinario(usuarioResponse.data.id);
         }
+        await Swal.fire({
+      title: this.esVeterinario ? "Veterinario registrado" : "Usuario registrado",
+      text: "El registro se ha completado con éxito",
+      icon: "success",
+    });
 
-        Swal.fire({
-          title: this.esVeterinario ? "Veterinario registrado" : "Usuario registrado",
-          text: "El registro se ha completado con éxito",
-          icon: "success",
-        });
-
-        this.$router.push("/usuarios");
-      } catch (error) {
-        console.error("Error en el registro:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.message || "Error al crear el usuario",
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
+    this.resetForm();
+    this.$emit('update:value', false);
+    this.$emit('created');
+  } catch (error) {
+    console.error("Error en el registro:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.message || "Error al crear el usuario",
+    });
+  } finally {
+    this.loading = false;
+  }
+},
     async registrarVeterinario(userId) {
   try {
     await backend.post('veterinarios', {
@@ -400,20 +453,20 @@ export default {
   await this.handleSubmit(); 
     },
     async confirmCancel() {
-      const result = await Swal.fire({
-        title: "¿Estás seguro?",
-        text: "¿Deseas cancelar el registro del usuario?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Sí, cancelar",
-        cancelButtonText: "No",
-      });
-      
-      if (result.isConfirmed) {
-        this.$router.push("/usuarios");
-      }
-    },
-
+  const result = await Swal.fire({
+    title: "¿Estás seguro?",
+    text: "¿Deseas cancelar el registro del usuario?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sí, cancelar",
+    cancelButtonText: "No",
+  });
+  
+  if (result.isConfirmed) {
+    this.resetForm();
+    this.$emit('update:value', false);
+  }
+},
     resetForm() {
       this.user = {
         email: '',
@@ -523,3 +576,48 @@ export default {
 };
 
 </script>
+<style scoped>
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.v-card {
+  padding: 0 !important;
+}
+
+.v-card-text {
+  padding: 24px 16px !important;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.v-btn.primary {
+  background-color: #014582 !important;
+  color: white;
+}
+
+.v-btn.primary:hover {
+  background-color: #013262 !important;
+}
+
+.v-btn.secondary {
+  background-color: #008575 !important;
+}
+
+.v-btn.secondary:hover {
+  background-color: #007460 !important;
+}
+</style>

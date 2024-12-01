@@ -1,106 +1,125 @@
 <template>
-  <v-card class="card">
-    <v-container>
-      <v-row>
-        <v-col cols="12" class="text-center">
-          <h2 class="form-title">Crear Responsable</h2>
-        </v-col>
-      </v-row>
-      <v-form ref="form" v-model="valid" @submit.prevent="onSubmit">
-        <v-text-field 
-          v-model="responsable.documento" 
-          :rules="documentoRules"
-          label="Documento" 
-          required
-          maxLength="30"
-          :error-messages="documentoError"
-          @input="validateDocumento"
-        ></v-text-field>
-        
-        <v-text-field 
-          v-model="responsable.nombre" 
-          :rules="nombreRules"
-          label="Nombre" 
-          required
-          maxLength="50"
-        ></v-text-field>
-        
-        <v-text-field 
-          v-model="responsable.apellido" 
-          :rules="apellidoRules"
-          label="Apellido" 
-          required
-          maxLength="50"
-        ></v-text-field>
-        
-        <v-text-field 
-          v-model="responsable.domicilio" 
-          :rules="domicilioRules"
-          label="Domicilio" 
-          required
-          maxLength="50"
-        ></v-text-field>
+  <v-dialog 
+    v-model="localDialog"
+    max-width="600px" 
+    persistent
+  >
+    <v-card class="pa-0">
+      <v-card-title class="primary-title text-center">
+        Registro de Propietarios
+      </v-card-title>
+      <v-card-text class="pt-6">
+        <v-form 
+          ref="form" 
+          v-model="valid"
+          lazy-validation
+          validate-on="blur"
+          @submit.prevent="onSubmit"
+        >
+          <v-text-field 
+            v-model="responsable.documento" 
+            :rules="documentoRules"
+            label="Documento" 
+            required
+            maxLength="30"
+            :error-messages="documentoError"
+            @blur="validateDocumento; normalizeText('documento')"
+            validate-on-blur
+          ></v-text-field>
+          
+          <v-text-field 
+            v-model="responsable.nombre" 
+            :rules="nombreRules"
+            label="Nombre" 
+            required
+            maxLength="50"
+            validate-on-blur
+            @blur="normalizeText('nombre')"
+          ></v-text-field>
+          
+          <v-text-field 
+            v-model="responsable.apellido" 
+            :rules="apellidoRules"
+            label="Apellido" 
+            required
+            maxLength="50"
+            validate-on-blur
+            @blur="normalizeText('apellido')"
+          ></v-text-field>
+          
+          <v-text-field 
+            v-model="responsable.domicilio" 
+            :rules="domicilioRules"
+            label="Domicilio" 
+            required
+            maxLength="50"
+            validate-on-blur
+            @blur="normalizeText('domicilio')"
+          ></v-text-field>
 
-        <v-text-field
-          v-model="responsable.telefono" 
-          :rules="telefonoRules"
-          label="Teléfono" 
-          required
-          maxLength="20"
-          @input="validateTelefono"
-          :error-messages="telefonoError"
-          type="tel"
-          pattern="[0-9]*"
-          inputmode="numeric"
-          @keypress="onlyNumbers"
-        ></v-text-field>
-        
-        <v-select
-          v-model="responsable.departamentoId"
-          :items="departamentos"
-          label="Departamento"
-          :rules="requiredRule"
-          item-title="nombre"
-          item-value="id"
-          @update:model-value="handleDepartamentoChange"
-          :loading="loadingDepartamentos"
-          required
-        ></v-select>
-        
-        <v-select
-          v-model="responsable.localidadId"
-          :items="localidades"
-          label="Localidad"
-          :rules="requiredRule"
-          item-title="nombre"
-          item-value="id"
-          :loading="loadingLocalidades"
-          :disabled="!responsable.departamentoId || loadingLocalidades"
-          required
-        ></v-select>
+          <v-text-field
+            v-model="responsable.telefono" 
+            :rules="telefonoRules"
+            label="Teléfono" 
+            required
+            maxLength="20"
+            :error-messages="telefonoError"
+            type="tel"
+            pattern="[0-9]*"
+            inputmode="numeric"
+            @keypress="onlyNumbers"
+            validate-on-blur
+          ></v-text-field>
+          
+          <v-select
+            v-model="responsable.departamentoId"
+            :items="departamentos"
+            label="Departamento"
+            :rules="requiredRule"
+            item-title="nombre"
+            item-value="id"
+            @update:model-value="handleDepartamentoChange"
+            :loading="loadingDepartamentos"
+            required
+          ></v-select>
+          
+          <v-select
+            v-model="responsable.localidadId"
+            :items="localidades"
+            label="Localidad"
+            :rules="requiredRule"
+            item-title="nombre"
+            item-value="id"
+            :loading="loadingLocalidades"
+            :disabled="!responsable.departamentoId || loadingLocalidades"
+            required
+          ></v-select>
 
-        <v-card-actions>
-          <v-btn 
-            rounded 
-            color="primary" 
-            type="submit"
-            :loading="loading"
-            :disabled="!valid || loading || !isValidForm"
-          >
-            Registrar
-          </v-btn>
-          <v-btn 
-            rounded 
-            color="secondary" 
-            @click="confirmCancel"
-            :disabled="loading"
-          >
-            Cancelar
-          </v-btn>
-        </v-card-actions>
-      </v-form>
-    </v-container>
-  </v-card>
+          <div class="button-container">
+            <v-card-actions>
+              <v-btn 
+                rounded 
+                color="primary" 
+                type="submit"
+                :loading="loading"
+                :disabled="!isFormValid || loading"
+              >
+                Registrar
+              </v-btn>
+              <v-btn 
+                rounded 
+                color="secondary" 
+                @click="confirmCancel"
+                :disabled="loading"
+              >
+                Cancelar
+              </v-btn>
+            </v-card-actions>
+          </div>
+        </v-form>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -112,6 +131,13 @@ import ValidationService from '@/validationService';
 export default {
   name: 'ResponsableCreate',
   
+  props: {
+    value: {
+      type: Boolean,
+      required: true
+    }
+  },
+
   data() {
     return {
       valid: false,
@@ -120,6 +146,10 @@ export default {
       loadingLocalidades: false,
       departamentos: [],
       localidades: [],
+      isValidForm: false,
+      documentoError: '',
+      telefonoError: '',
+      
       responsable: {
         documento: '',
         nombre: '',
@@ -129,80 +159,127 @@ export default {
         departamentoId: null,
         localidadId: null
       },
-      documentoError: '',
-      telefonoError: '',
-      isValidForm: false,
-      documentoRules: [
-        v => !!v || 'El documento es requerido',
-        v => (v && v.length <= 30) || 'El documento no puede tener más de 30 caracteres',
-        v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales',
-        v => this.validarDocumentoAsync(v) || 'Validando documento...'
-      ],
-      nombreRules: [
-        v => !!v || 'El nombre es requerido',
-        v => (v && v.length <= 50) || 'El nombre no puede tener más de 50 caracteres'
-      ],
-      apellidoRules: [
-        v => !!v || 'El apellido es requerido',
-        v => (v && v.length <= 50) || 'El apellido no puede tener más de 50 caracteres'
-      ],
-      domicilioRules: [
-        v => !!v || 'El domicilio es requerido',
-        v => (v && v.length <= 50) || 'El domicilio no puede tener más de 50 caracteres'
-      ],
-      telefonoRules: [
-        v => !!v || 'El teléfono es requerido',
-        v => (v && v.length <= 20) || 'El teléfono no puede tener más de 20 caracteres',
-        v => !v || /^\d+$/.test(v) || 'El teléfono solo puede contener números'
-      ],
       requiredRule: [
-        v => !!v || 'Este campo es requerido',
-      ],
+    v => !!v || 'Este campo es requerido',
+    v => (v && String(v).trim().length > 0) || 'Este campo no puede contener solo espacios'
+  ],
+
+  nombreRules: [
+    v => !!v || 'El nombre es requerido',
+    v => (v && String(v).trim().length > 0) || 'El nombre no puede contener solo espacios',
+    v => (v && v.length >= 2 && v.length <= 50) || 'El nombre debe tener entre 2 y 50 caracteres',
+    v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v) || 'El nombre solo puede contener letras y espacios',
+    v => !v || !String(v).includes('  ') || 'El nombre no puede contener espacios dobles'
+  ],
+
+  apellidoRules: [
+    v => !!v || 'El apellido es requerido',
+    v => (v && String(v).trim().length > 0) || 'El apellido no puede contener solo espacios',
+    v => (v && v.length >= 2 && v.length <= 50) || 'El apellido debe tener entre 2 y 50 caracteres',
+    v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v) || 'El apellido solo puede contener letras y espacios',
+    v => !v || !String(v).includes('  ') || 'El apellido no puede contener espacios dobles'
+  ],
+
+  documentoRules: [
+    v => !!v || 'El documento es requerido',
+    v => (v && String(v).trim().length > 0) || 'El documento no puede contener solo espacios',
+    v => (v && v.length >= 3 && v.length <= 30) || 'El documento debe tener entre 3 y 30 caracteres',
+    v => /^[a-zA-Z0-9]+$/.test(v) || 'El documento solo puede contener letras y números'
+  ],
+
+  domicilioRules: [
+    v => !!v || 'El domicilio es requerido',
+    v => (v && String(v).trim().length > 0) || 'El domicilio no puede contener solo espacios',
+    v => (v && v.length <= 50) || 'El domicilio no puede exceder los 50 caracteres',
+    v => !v || !String(v).includes('  ') || 'El domicilio no puede contener espacios dobles'
+  ],
+
+  telefonoRules: [
+    v => !!v || 'El teléfono es requerido',
+    v => (v && v.length <= 15) || 'El teléfono no puede tener más de 15 caracteres',
+    v => !v || /^\d+$/.test(v) || 'El teléfono solo puede contener números'
+  ]
     };
   },
-  
+
+  computed: {
+    localDialog: {
+      get() {
+        return this.value;
+      },
+      set(value) {
+        this.$emit('update:value', value);
+      }
+    },
+
+    isFormValid() {
+      return (
+        this.valid &&
+        this.responsable.documento &&
+        this.responsable.nombre &&
+        this.responsable.apellido &&
+        this.responsable.domicilio &&
+        this.responsable.telefono &&
+        this.responsable.departamentoId &&
+        this.responsable.localidadId &&
+        !this.documentoError &&
+        !this.telefonoError
+      );
+    }
+  },
+
   async created() {
     await this.loadDepartamentos();
   },
 
+  mounted() {
+    this.$nextTick(() => {
+      if (this.$refs.form) {
+        this.$refs.form.resetValidation();
+      }
+    });
+  },
+
   methods: {
+    normalizeText(field) {
+      if (this.responsable[field]) {
+        this.responsable[field] = this.responsable[field].toUpperCase().trim();
+      }
+    },
+    closeDialog() {
+      this.$emit('close');
+    },
 
     onlyNumbers(e) {
       const char = String.fromCharCode(e.keyCode);
       if (/^[0-9]+$/.test(char)) return true;
       e.preventDefault();
     },
-    
-    validateDocumento(value) {
-      if (!value) {
+
+    async validateDocumento() {
+      if (!this.responsable.documento) {
         this.documentoError = 'El documento es requerido';
-        this.isValidForm = false;
+        this.checkFormValidity();
         return;
       }
-      
-      if (!/^[a-zA-Z0-9]+$/.test(value)) {
-        this.documentoError = 'El documento solo puede contener letras y números, sin espacios ni caracteres especiales';
-        this.isValidForm = false;
-        return;
+
+      try {
+        const resultado = await ValidationService.validarResponsableUnico(this.responsable.documento);
+        this.documentoError = resultado.isValid ? '' : resultado.message;
+      } catch (error) {
+        console.error('Error en validación de documento:', error);
+        this.documentoError = 'Error al validar el documento';
       }
-      
-      this.documentoError = '';
       this.checkFormValidity();
     },
 
     validateTelefono(value) {
-
       const telefono = String(value || '');
-
       if (!telefono) {
         this.telefonoError = 'El teléfono es requerido';
         this.isValidForm = false;
         return;
       }
-      
-    
-      
-      // Si llegamos aquí, el valor es válido
       this.telefonoError = '';
       this.checkFormValidity();
     },
@@ -219,21 +296,6 @@ export default {
         !this.documentoError &&
         !this.telefonoError
       );
-    },
-
-    async validarDocumentoAsync(documento) {
-      try {
-        if (!documento) return true;
-        const resultado = await ValidationService.validarResponsableUnico(documento);
-        this.documentoError = resultado.isValid ? '' : resultado.message;
-        this.checkFormValidity();
-        return resultado.isValid || resultado.message;
-      } catch (error) {
-        console.error('Error en validación de documento:', error);
-        this.documentoError = 'Error al validar el documento';
-        this.checkFormValidity();
-        return 'Error al validar el documento';
-      }
     },
 
     async loadDepartamentos() {
@@ -270,9 +332,7 @@ export default {
 
       this.loadingLocalidades = true;
       try {
-        console.log("Buscando localidades para departamento:", departamento.nombre);
         const localidadesResponse = await obtenerLocalidades(departamento.nombre);
-        
         if (Array.isArray(localidadesResponse)) {
           this.localidades = localidadesResponse.map(loc => ({
             id: loc.id || loc.nombre,
@@ -281,8 +341,6 @@ export default {
         } else {
           throw new Error('La respuesta de localidades no es válida');
         }
-        
-        console.log("Localidades cargadas:", this.localidades);
       } catch (error) {
         console.error("Error al cargar localidades:", error);
         Swal.fire({
@@ -297,79 +355,88 @@ export default {
       }
     },
 
-    async onSubmit() {
-      if (!this.$refs.form.validate()) return;
-
-      // Validación final del documento
-      const documentoResultado = await ValidationService.validarResponsableUnico(this.responsable.documento);
-    
-      if (!documentoResultado.isValid) {
-        return Swal.fire({
-          icon: "error",
-          title: "Documento en uso",
-          text: "El documento ya está registrado en el sistema. Por favor, verifique.",
-        });
-      }
+    async handleSubmit() {
+      if (!this.isFormValid) return;
       
       this.loading = true;
       try {
-        const response = await backend.post('/responsables', this.responsable, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const documentoResultado = await ValidationService.validarResponsableUnico(this.responsable.documento);
+        if (!documentoResultado.isValid) {
+          throw new Error("El documento ya está registrado en el sistema");
+        }
 
-        Swal.fire({
+        const response = await backend.post('/responsables', this.responsable);
+        
+        await Swal.fire({
           icon: 'success',
           title: 'Éxito',
-          text: response.data.message || 'Responsable creado correctamente',
+          text: response.data.message || 'Propietario registrado correctamente',
         });
-        
-        this.$router.push({ name: 'responsables.index' });
+
+        this.resetForm();
+        this.$emit('update:value', false);
+        this.$emit('created');
       } catch (error) {
-        console.error('Error al crear responsable:', error);
-        
+        console.error('Error al crear propietario:', error);
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: error.response?.data?.message || 'No se pudo crear el responsable. Por favor, intente nuevamente.',
+          text: error.message || 'No se pudo crear el propietario. Por favor, intente nuevamente.',
         });
       } finally {
         this.loading = false;
       }
     },
 
-    async confirmCancel() {
-      const result = await Swal.fire({
-        title: "¿Estás seguro?",
-        text: "¿Deseas cancelar la creación del responsable?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Sí, cancelar",
-        cancelButtonText: "No",
-      });
-      
-      if (result.isConfirmed) {
-        this.$router.push({ name: 'responsables.index' });
-      }
+    async onSubmit() {
+      if (this.$refs.form && !this.$refs.form.validate()) return;
+      await this.handleSubmit();
     },
+    async confirmCancel() {
+  const result = await Swal.fire({
+    title: "¿Estás seguro?",
+    text: "¿Deseas cancelar el registro del usuario?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sí, cancelar",
+    cancelButtonText: "No",
+  });
+  
+  if (result.isConfirmed) {
+    this.resetForm();
+    this.$emit('update:value', false);
+  }
+},
+resetForm() {
+      this.responsable = {
+        documento: '',
+        nombre: '',
+        apellido: '',
+        domicilio: '',
+        telefono: '',
+        departamento: '',
+        localidad:'',
+       
+      };
+      if (this.$refs.form) {
+    this.$refs.form.reset();
+  }
+    }
   },
 
   watch: {
     'responsable.documento': {
-      immediate: true,
       async handler(newDocumento) {
         if (newDocumento) {
-          await this.validarDocumentoAsync(newDocumento);
+          await this.validateDocumento();
         } else {
           this.documentoError = '';
           this.checkFormValidity();
         }
       }
     },
+
     'responsable.telefono': {
-      immediate: true,
       handler(newValue) {
         if (newValue) {
           this.validateTelefono(newValue);
@@ -379,6 +446,7 @@ export default {
         }
       }
     },
+
     'responsable': {
       deep: true,
       handler() {
@@ -390,37 +458,49 @@ export default {
 </script>
 
 <style scoped>
-.card {
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-}
-
-.form-title {
-  font-size: 24px;
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
   font-weight: bold;
-  margin-bottom: 20px;
-  color: #014582;
+  padding: 16px;
 }
 
-.v-btn {
-  margin: 8px;
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-.v-btn.rounded {
-  background-color: #014582;
+.action-button {
+  min-width: 100px;
+}
+
+.v-btn.primary {
+  background-color: #014582 !important;
   color: white;
 }
 
-.v-btn.rounded:hover {
-  background-color: #013262;
+.v-btn.primary:hover {
+  background-color: #013262 !important;
 }
 
 .v-btn.secondary {
-  background-color: #008575;
+  background-color: #008575 !important;
 }
 
 .v-btn.secondary:hover {
-  background-color: #007460;
+  background-color: #007460 !important;
+}
+</style>
+
+<style>
+.swal2-container {
+  z-index: 9999 !important;
+}
+
+.swal2-popup {
+  z-index: 10000 !important;
 }
 </style>

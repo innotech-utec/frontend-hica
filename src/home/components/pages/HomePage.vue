@@ -248,7 +248,7 @@ export default {
       currentDate: new Date(),
       weekDays: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
       menuItems: [
-        { title: 'Responsables', icon: 'mdi-account', route: '/responsables' },
+        { title: 'Propietarios', icon: 'mdi-account', route: '/responsables' },
         { title: 'Usuarios', icon: 'mdi-account-group', route: '/usuarios' },
         { title: 'Animales', icon: 'mdi-paw', route: '/animales' },
         { title: 'Insumos', icon: 'mdi-cube-outline', route: '/articulos' },
