@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title>Editar Ficha Clínica</v-card-title>
+    <v-card-title class="primary-title text-center">Editar Ficha Clínica</v-card-title>
     <v-card-text>
       <v-form ref="form" v-model="valid" @submit.prevent="onSubmit" lazy-validation>
         <v-text-field 
@@ -177,5 +177,12 @@ export default {
 }
 .v-btn.secondary:hover {
   background-color: #007460;
+}
+
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
 }
 </style>
