@@ -299,9 +299,7 @@ async deleteUser(id) {
       title: 'Éxito',
       text: 'El usuario ha sido inhabilitado correctamente.',
     });
-  } catch (error) {
-    console.error('Error al inhabilitar usuario:', error);
-    
+  } catch (error) {  
     // Manejar el error específico de tratamientos asignados
     if (error.response?.data?.message?.includes('tratamientos')) {
       await Swal.fire({
@@ -309,7 +307,15 @@ async deleteUser(id) {
         title: 'No se puede inhabilitar',
         text: 'El veterinario tiene tratamientos asignados. Debe reasignar los tratamientos antes de inhabilitar al veterinario.',
       });
-    } else {
+    } 
+    if (error.response?.data?.message?.includes('fichas')) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se puede inhabilitar',
+        text: 'Este veterinario tiene fichas de animales asignadas. Debes reasignarlas antes de eliminarlo.',
+      });
+    }
+    else {
       // Mensaje genérico para otros errores
       await Swal.fire({
         icon: 'error',
