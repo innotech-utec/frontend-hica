@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="editModal" max-width="600px">
     <v-card>
-      <v-card-title>Editar Tratamiento</v-card-title>
+      <v-card-title class="primary-title text-center">Editar Tratamiento</v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="onSubmit">
           <!-- Campo de fecha -->
@@ -189,5 +189,11 @@ export default {
 <style scoped>
 .v-btn {
   margin-top: 20px;
+}
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
 }
 </style>

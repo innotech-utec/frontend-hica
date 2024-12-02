@@ -42,13 +42,13 @@
 
           <v-card-actions class="justify-center">
   <v-btn
-    color="#0046B5" 
+    color="#38A169" 
     :disabled="isDisabled"
     @click="openCreateModal"
     outlined
     class="text-none"
   >
-    <v-icon left>mdi-pencil</v-icon> Registrar Parámetros
+    <v-icon left>mdi-plus</v-icon> Registrar Parámetros
   </v-btn>
 </v-card-actions>
         </v-card-text>

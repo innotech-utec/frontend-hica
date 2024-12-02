@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="isModalOpen" max-width="600" content-class="custom-dialog">
     <v-card>
-      <v-card-title>Registrar Parámetros</v-card-title>
+      <v-card-title class="primary-title text-center">Registrar Parámetros</v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="createParametros">
           <v-text-field
@@ -263,5 +263,12 @@ export default {
 
 .v-btn {
   margin-top: 20px;
+}
+
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
 }
 </style>

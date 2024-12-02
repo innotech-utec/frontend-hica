@@ -6,8 +6,8 @@
     persistent
   >
     <v-card>
-      <v-card-title>
-        <span class="text-h5">{{ articuloSeleccionado ? 'Editar' : 'Agregar' }} Gasto a Factura</span>
+      <v-card-title class="primary-title text-center">
+        <span class="text-h5">{{ articuloSeleccionado ? 'Editar' : 'Agregar' }} Gasto en Factura</span>
       </v-card-title>
 
       <v-card-text>
@@ -294,5 +294,12 @@ export default {
 
 .v-text-field[readonly] {
   color: #000;
+}
+
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
 }
 </style>

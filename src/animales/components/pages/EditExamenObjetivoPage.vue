@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="localShowModal" max-width="600px">
     <v-card class="generic-modal">
-      <v-card-title class="section-title">Editar Examen Objetivo</v-card-title>
+      <v-card-title class="primary-title text-center">Editar Examen Objetivo</v-card-title>
       <v-card-text class="justified-text">
         <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="onSubmit">
           <!-- Columna izquierda -->
@@ -259,5 +259,12 @@ export default {
 
 .justified-text {
   text-align: justify;
+}
+
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
 }
 </style>

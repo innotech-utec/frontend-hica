@@ -2,11 +2,11 @@
   <v-container>
     <BackButton />
 
-    <!-- <v-row>
+     <v-row>
       <v-col cols="12" class="text-center">
         <h1 class="ficha-title">Ficha Clínica del Animal</h1>
       </v-col>
-    </v-row> -->
+    </v-row>
 
     <!-- Información básica del animal -->
     <v-card class="mb-4" flat>
@@ -51,13 +51,17 @@
     <v-card class="mb-4" flat>
     <v-card-title class="info-title d-flex justify-space-between align-center">
       Veterinarios Asignados
-      <v-btn 
-        color="primary"
-        @click="openVeterinarioModal"
-        :disabled="isFichaClosed"
-      >
-        <v-icon>mdi-plus</v-icon> Agregar Veterinario
-      </v-btn>
+      <v-card-actions>
+          <v-btn
+              color="#38A169"
+              @click="openVeterinarioModal"
+              :disabled="isFichaClosed"
+              class="text-none"
+            >
+            <v-icon left class="mr-1">mdi-plus</v-icon>
+              Agregar Veterinario
+            </v-btn>
+      </v-card-actions>
     </v-card-title>
     <v-card-text>
       <v-row v-if="veterinariosAsignados.length > 0">
@@ -82,7 +86,7 @@
   <!-- Modal para seleccionar veterinario -->
   <v-dialog v-model="showVeterinarioModal" max-width="500px">
     <v-card>
-      <v-card-title>Seleccionar Veterinario</v-card-title>
+      <v-card-title class="primary-title text-center">Seleccionar Veterinario</v-card-title>
       <v-card-text>
         <v-select
           v-if="!loadingVeterinarios"
@@ -140,13 +144,30 @@
         <!-- Botones -->
         <v-row class="mt-4">
           <v-col cols="12" class="d-flex justify-center">
-            <v-btn color="primary" @click="openEditModal" class="mx-2">
-              <v-icon left>mdi-pencil</v-icon> Editar Ficha Clínica
-            </v-btn>
-            <v-btn color="primary" @click="irAFacturacion" class="mx-2">
-              <v-icon left>mdi-currency-usd</v-icon>
-              {{ facturaExistente ? 'Visualizar Factura' : 'Nueva Factura' }}
-            </v-btn>
+            <v-card-actions>
+                  <v-btn
+                    color="#0046B5"
+                    @click="openEditModal"
+                    :disabled="isDisabled"
+                    class="text-none"
+                  >
+                    <v-icon left class="mr-1">mdi-pencil</v-icon>
+                    Editar Ficha Clínica
+                  </v-btn>
+              </v-card-actions>
+
+              <v-card-actions>
+                  <v-btn
+                    color="#FB923C"
+                    @click="irAFacturacion"
+                    :disabled="isDisabled"
+                    class="text-none"
+                  >
+                    <v-icon left class="mr-1">mdi-currency-usd</v-icon>
+                    {{ facturaExistente ? 'Visualizar Factura' : 'Nueva Factura' }}
+                  </v-btn>
+              </v-card-actions>
+
           </v-col>
         </v-row>
       </v-card-text>
@@ -429,5 +450,12 @@ export default {
 
 .v-btn.primary:hover {
   background-color: #013262;
+}
+
+.primary-title {
+  background-color: #014582 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 16px;
 }
 </style>

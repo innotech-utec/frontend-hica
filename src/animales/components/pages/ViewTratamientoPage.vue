@@ -51,12 +51,21 @@
 
       <p v-else>No hay tratamientos registrados.</p>
 
-      <v-card-actions>
-        <v-btn color="primary" @click="openCreateModal" outlined :disabled="disabled">
-          <v-icon left>mdi-pencil</v-icon> Registrar Tratamiento
-        </v-btn>
-      </v-card-actions>
+
+      <v-card-actions class="justify-center">
+          <v-btn
+              color="#38A169"
+              @click="openCreateModal"
+              outlined
+              :disabled="disabled"
+              class="text-none"
+          >
+          <v-icon left class="mr-1">mdi-plus</v-icon>
+            Registrar Tratamiento
+          </v-btn>
+    </v-card-actions>
     </v-card-text>
+
 
     <!-- Modales para crear y editar tratamientos -->
     <create-tratamiento
