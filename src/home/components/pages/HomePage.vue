@@ -119,11 +119,13 @@
                   <table class="table">
                     <thead>
                       <tr>
+                        <th>Animal</th>
                         <th>Fecha</th>
                         <th>Hora</th>
                         <th>Medicación</th>
                         <th>Observaciones</th>
                         <th>Estado</th>
+                        <th>Ficha</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -136,6 +138,7 @@
                         <td colspan="5">No hay tratamientos disponibles.</td>
                       </tr>
                       <tr v-for="treatment in treatments" :key="treatment.id">
+                        <td>{{ treatment.fichaClinica.animal.nombre }}</td>
                         <td>{{ formatDate(treatment.fecha) }}</td>
                         <td>{{ formatTime(treatment.hora) }}</td>
                         <td>{{ treatment.medicacion }}</td>
@@ -144,6 +147,16 @@
                           <v-chip :color="getStatusColor(treatment.estadoAutorizacion, treatment.fecha, treatment.hora)" text-color="white" size="small">
                             {{ getStatusText(treatment.estadoAutorizacion, treatment.fecha, treatment.hora) }}
                           </v-chip>
+                        </td>
+                        <td>
+                          <v-btn
+                            color="primary"
+                            variant="text"
+                            size="small"
+                            :to="`/animales/ficha-clinica?fichaClinicaId=${treatment.fichaClinicaId}&animalId=${treatment.fichaClinica.animal.id}`"
+                          >
+                            Ver Ficha
+                          </v-btn>
                         </td>
                       </tr>
                     </tbody>
@@ -473,10 +486,32 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        this.treatments = response.data.filter(t => 
+        // Primero filtramos los tratamientos
+        const filteredTreatments = response.data.filter(t => 
           t.estadoAutorizacion !== 'RECHAZADO' && 
           t.estadoAutorizacion !== 'COMPLETADO'
         );
+
+        // Obtenemos las fichas clínicas para cada tratamiento
+        const treatmentsWithFichas = await Promise.all(
+          filteredTreatments.map(async (treatment) => {
+            const fichaClinica = await this.fetchFichaClinica(treatment.fichaClinicaId);
+            return {
+              ...treatment,
+              fichaClinica
+            };
+          })
+        );
+
+        // Ordenamos por fecha y hora
+        this.treatments = treatmentsWithFichas.sort((a, b) => {
+          // Primero comparamos las fechas
+          const dateComparison = new Date(a.fecha) - new Date(b.fecha);
+          if (dateComparison !== 0) return dateComparison;
+          
+          // Si las fechas son iguales, comparamos las horas
+          return a.hora.localeCompare(b.hora);
+        });
 
         this.summaryCards[0].count = this.treatments.length;
 
@@ -497,6 +532,18 @@ export default {
         });
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchFichaClinica(fichaClinicaId) {
+      try {
+        const response = await backend.get(`/fichasClinicas/${fichaClinicaId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        return response.data;
+      } catch (error) {
+        console.error(`Error al obtener ficha clínica ${fichaClinicaId}:`, error);
+        return null;
       }
     },
 
