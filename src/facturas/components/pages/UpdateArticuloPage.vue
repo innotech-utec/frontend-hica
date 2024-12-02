@@ -107,7 +107,7 @@ data() {
     ],
     valorRules: [
       v => !!v || 'El valor es requerido',
-      v => !v || /^\d+$/.test(v) || 'El valor solo puede contener números',
+      v => !v || /^\d*\.?\d*$/.test(v) || 'El valor solo puede contener números decimales',
       v => v >= 0 || 'El valor debe ser mayor o igual a 0'
       
     ],
@@ -154,7 +154,7 @@ methods: {
   },
     onlyNumbers(e) {
     const char = String.fromCharCode(e.keyCode);
-    if (!/^[0-9]+$/.test(char)) {
+    if (!/^[0-9.]+$/.test(char)) {
       e.preventDefault();
     }
   },
