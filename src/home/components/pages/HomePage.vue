@@ -25,11 +25,11 @@
 
     <!-- Contenido principal -->
     <v-main class="pl-0">
-      <v-app-bar app elevation="0" class="v-app-bar-transparent">
+      <v-app-bar class="v-app-bar-transparent" elevation="0" app>
   <v-spacer></v-spacer>
   <v-menu location="bottom end">
     <template v-slot:activator="{ props }">
-      <v-btn v-bind="props" variant="text" class="d-flex align-center">
+      <v-btn v-bind="props" variant="text" class="user-info-btn d-flex align-center">
         <!-- Avatar del usuario -->
         <v-avatar size="40" class="mr-3">
           <img 
@@ -41,7 +41,7 @@
           <v-icon v-else size="40" color="#014582">mdi-account-circle</v-icon>
         </v-avatar>
         <!-- Nombre del usuario -->
-        <span class="text-primary font-weight-bold">{{ userInfo.nombre }} {{ userInfo.apellido }}</span>
+        <span class="text-primary font-weight-bold user-name">{{ userInfo.nombre }} {{ userInfo.apellido }}</span>
         <v-icon right>mdi-chevron-down</v-icon>
       </v-btn>
     </template>
@@ -156,31 +156,62 @@
           <!-- Calendario y Cirugías -->
           <v-col cols="4">
             <!-- Calendario -->
-            <v-card class="mb-4">
-              <v-card-title class="d-flex justify-space-between align-center">
-                <v-btn icon="mdi-chevron-left" variant="text" @click="previousMonth"></v-btn>
-                {{ currentMonthYear }}
-                <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth"></v-btn>
-              </v-card-title>
-              <v-card-text>
-                <v-row class="text-center">
-                  <v-col v-for="day in weekDays" :key="day" cols="12" sm="auto">
-                    {{ day }}
-                  </v-col>
-                </v-row>
-                <v-row class="text-center">
-                  <v-col 
-                    v-for="date in monthDates" 
-                    :key="date.day"
-                    cols="12" 
-                    sm="auto"
-                    :class="{'current-day': isCurrentDay(date.day)}"
-                  >
-                    {{ date.day }}
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
+            <v-card class="mb-4 calendar-card">
+    <v-card-title class="calendar-header d-flex justify-space-between align-center px-4">
+      <v-btn icon="mdi-chevron-left" variant="text" @click="previousMonth"></v-btn>
+      <span class="month-title">{{ currentMonthYear }}</span>
+      <v-btn icon="mdi-chevron-right" variant="text" @click="nextMonth"></v-btn>
+    </v-card-title>
+    <v-card-text>
+      <v-container class="pa-0">
+        <!-- Días de la semana -->
+        <v-row no-gutters class="calendar-week text-center">
+          <v-col 
+            v-for="day in weekDays" 
+            :key="day" 
+            cols="12" 
+            sm="auto" 
+            class="flex-grow-1"
+          >
+            <div class="day-header">{{ day }}</div>
+          </v-col>
+        </v-row>
+
+        <!-- Días del mes -->
+        <v-row no-gutters class="calendar-days text-center">
+          <!-- Espaciadores para alinear el primer día -->
+          <v-col 
+            v-for="n in getFirstDayOffset()"
+            :key="`empty-${n}`"
+            cols="12"
+            sm="auto"
+            class="flex-grow-1"
+          >
+            <div class="calendar-day empty"></div>
+          </v-col>
+
+          <!-- Días del mes -->
+          <v-col 
+            v-for="date in monthDates" 
+            :key="date.day"
+            cols="12"
+            sm="auto"
+            class="flex-grow-1"
+          >
+            <div 
+              class="calendar-day"
+              :class="{
+                'current-day': isCurrentDay(date.day),
+                'different-month': !isCurrentMonth(date.date)
+              }"
+            >
+              {{ date.day }}
+            </div>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-card-text>
+  </v-card>
 
             <!-- Tabla de Mis casos -->
 <v-card>
@@ -227,7 +258,6 @@
     </v-main>
   </v-container>
 </template>
-
 <script>
 import backend from '@/backend';
 import Swal from 'sweetalert2';
@@ -235,16 +265,17 @@ import { AuthService } from '@/auth/services/AuthService';
 
 export default {
   name: "HomePage",
+  
   data() {
     return {
       userInfo: {
-      nombre: '',
-      apellido: '',
-      isAdmin: false,
-    },
-    userRole: '',
-    avatarUrl: null, 
-    gender: null,    
+        nombre: '',
+        apellido: '',
+        isAdmin: false,
+      },
+      userRole: '',
+      avatarUrl: null, 
+      gender: null,    
       currentDate: new Date(),
       weekDays: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
       menuItems: [
@@ -287,6 +318,7 @@ export default {
       casosPropios: [],
     };
   },
+
   computed: {
     currentMonthYear() {
       const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -313,105 +345,122 @@ export default {
         day: '2-digit'
       });
     },
-   
+    
     goToSettings() {
-    this.$router.push('/ajustes');
-  },
+      this.$router.push('/ajustes');
+    },
+
     formatTime(time) {
       return time.substring(0, 5);
     },
-    isTreatmentOverdue(fecha, hora) {
-    // Crear fecha y hora del tratamiento
-    const treatmentDateTime = new Date(`${fecha}T${hora}`);
-    
-    const now = new Date();
 
-    return treatmentDateTime < now;
+    isTreatmentOverdue(fecha, hora) {
+      const treatmentDateTime = new Date(`${fecha}T${hora}`);
+      const now = new Date();
+      return treatmentDateTime < now;
     },
+
     logout() {
       localStorage.clear();
       this.$router.push('/login');
     },
+
     async fetchGender(name) {
-  try {
-    const response = await fetch(`https://api.genderize.io?name=${name}`);
-    const data = await response.json();
-
-    // Si no hay respuesta o género, establecemos "neutral" como fallback
-    this.gender = data.gender || 'neutral';
-    console.log('Género detectado:', this.gender);
-  } catch (error) {
-    console.error('Error al obtener el género:', error);
-    this.gender = 'neutral'; // Fallback en caso de error
-  }
-},
-generateAvatar() {
-    // Crea la URL para UI Avatars con nombre, iniciales y colores personalizados
-    const name = `${this.userInfo.nombre} ${this.userInfo.apellido}`;
-    this.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=014582&color=ffffff&size=128&bold=true`;
-    console.log('Avatar URL:', this.avatarUrl);
-},
-
-  
-async getUserInfo() {
-  try {
-    const user = AuthService.getLoggedUser();
-    if (user) {
-      const response = await backend.get(`/usuarios/${user.id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      this.userInfo = response.data;
-
-      // Verificar si el usuario tiene ambos roles o uno solo
-      if (this.userInfo.isAdmin && this.veterinarioId) {
-        this.userRole = 'Administrador y Veterinario';
-      } else if (this.userInfo.isAdmin) {
-        this.userRole = 'Administrador';
-      } else if (this.veterinarioId) {
-        this.userRole = 'Veterinario';
-      } else {
-        this.userRole = 'Usuario';
+      try {
+        const response = await fetch(`https://api.genderize.io?name=${name}`);
+        const data = await response.json();
+        this.gender = data.gender || 'neutral';
+      } catch (error) {
+        console.error('Error al obtener el género:', error);
+        this.gender = 'neutral';
       }
-    }
-  } catch (error) {
-    console.error('Error al obtener información del usuario:', error);
-  }
-},
+    },
 
+    generateAvatar() {
+      const name = `${this.userInfo.nombre} ${this.userInfo.apellido}`;
+      this.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=014582&color=ffffff&size=128&bold=true`;
+    },
+
+    async getUserInfo() {
+      try {
+        const user = AuthService.getLoggedUser();
+        if (user) {
+          const response = await backend.get(`/usuarios/${user.id}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          this.userInfo = response.data;
+
+          if (this.userInfo.isAdmin && this.veterinarioId) {
+            this.userRole = 'Administrador y Veterinario';
+          } else if (this.userInfo.isAdmin) {
+            this.userRole = 'Administrador';
+          } else if (this.veterinarioId) {
+            this.userRole = 'Veterinario';
+          } else {
+            this.userRole = 'Usuario';
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener información del usuario:', error);
+      }
+    },
 
     getStatusText(status, fecha, hora) {
-    switch(status) {
-      case 'APROBADO':
-        return this.isTreatmentOverdue(fecha, hora) ? 'ATRASADO' : 'PENDIENTE ADMINISTRACION';
-      case 'PENDIENTE':
-        return 'PENDIENTE AUTORIZACION';
-      default:
-        return status;
-    }
+      switch(status) {
+        case 'APROBADO':
+          return this.isTreatmentOverdue(fecha, hora) ? 'ATRASADO' : 'PENDIENTE ADMINISTRACION';
+        case 'PENDIENTE':
+          return 'PENDIENTE AUTORIZACION';
+        default:
+          return status;
+      }
     },
 
     getStatusColor(status, fecha, hora) {
-    if(status === 'RECHAZADO') {
-      return false; // No mostrar rechazados
-    }
-    
-    if(status === 'COMPLETADO') {
-      return 'success'; // Verde
-    }
-    
-    if(status === 'PENDIENTE') {
-      return 'info'; // Azul
-    }
-    
-    if(status === 'APROBADO') {
-      // Si está atrasado
-      if(this.isTreatmentOverdue(fecha, hora)) {
-        return 'error'; // Rojo
+      if(status === 'RECHAZADO') return false;
+      if(status === 'COMPLETADO') return 'success';
+      if(status === 'PENDIENTE') return 'info';
+      if(status === 'APROBADO') {
+        return this.isTreatmentOverdue(fecha, hora) ? 'error' : 'warning';
       }
-      // Si está en fecha
-      return 'warning'; // Amarillo
-    }
     },
+
+    getFirstDayOffset() {
+      const firstDay = new Date(
+        this.currentDate.getFullYear(),
+        this.currentDate.getMonth(),
+        1
+      ).getDay();
+      return firstDay === 0 ? 6 : firstDay - 1;
+    },
+
+    previousMonth() {
+      this.currentDate = new Date(
+        this.currentDate.getFullYear(),
+        this.currentDate.getMonth() - 1,
+        1
+      );
+    },
+
+    nextMonth() {
+      this.currentDate = new Date(
+        this.currentDate.getFullYear(),
+        this.currentDate.getMonth() + 1,
+        1
+      );
+    },
+
+    isCurrentDay(day) {
+      const today = new Date();
+      return day === today.getDate() &&
+             this.currentDate.getMonth() === today.getMonth() &&
+             this.currentDate.getFullYear() === today.getFullYear();
+    },
+
+    isCurrentMonth(date) {
+      return date.getMonth() === this.currentDate.getMonth();
+    },
+
     async fetchTreatments() {
       this.loading = true;
       try {
@@ -424,21 +473,19 @@ async getUserInfo() {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        this.treatments = this.treatments = response.data.filter(t => 
+        this.treatments = response.data.filter(t => 
           t.estadoAutorizacion !== 'RECHAZADO' && 
           t.estadoAutorizacion !== 'COMPLETADO'
         );
 
-        //Contabilizar tratamientos
         this.summaryCards[0].count = this.treatments.length;
 
-        //Contabilizar internados
         const responseInternados = await backend.get('/internados', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
         this.internados = responseInternados.data.internados;
-        this.summaryCards[1].count = this.internados
+        this.summaryCards[1].count = this.internados;
 
       } catch (error) {
         console.error('Error al obtener tratamientos:', error);
@@ -452,22 +499,7 @@ async getUserInfo() {
         this.loading = false;
       }
     },
-    previousMonth() {
-      this.currentDate = new Date(this.currentDate.getFullYear(), 
-                                this.currentDate.getMonth() - 1, 
-                                1);
-    },
-    nextMonth() {
-      this.currentDate = new Date(this.currentDate.getFullYear(), 
-                                this.currentDate.getMonth() + 1, 
-                                1);
-    },
-    isCurrentDay(day) {
-      const today = new Date();
-      return day === today.getDate() && 
-             this.currentDate.getMonth() === today.getMonth() &&
-             this.currentDate.getFullYear() === today.getFullYear();
-    },
+
     async checkIfVeterinario() {
       const user = AuthService.getLoggedUser();
       try {
@@ -482,6 +514,7 @@ async getUserInfo() {
         console.error('Error al verificar veterinario:', error);
       }
     },
+
     async fetchCasosPropios() {
       if (!this.veterinarioId) return;
       try {
@@ -489,24 +522,45 @@ async getUserInfo() {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.casosPropios = response.data.fichas;
-        // Actualizar contador en summaryCards
         this.summaryCards[2].count = this.casosPropios.length;
       } catch (error) {
         console.error('Error al obtener casos:', error);
       }
-    },
+    }
   },
+
   async created() {
-    await this.checkIfVeterinario();
-    await this.fetchTreatments();
-    await this.getUserInfo();
-    await this.fetchGender(this.userInfo.nombre);
-    this.generateAvatar();
+    try {
+      await this.checkIfVeterinario();
+      await this.fetchTreatments();
+      await this.getUserInfo();
+      if (this.userInfo.nombre) {
+        await this.fetchGender(this.userInfo.nombre);
+        this.generateAvatar();
+      }
+    } catch (error) {
+      console.error('Error durante la inicialización:', error);
+    }
   }
 };
 </script>
 
 <style scoped>
+.v-main {
+  padding-top: 64px !important; 
+}
+.v-app-bar-transparent {
+  position: fixed;
+  top: 0;
+  left: 250px; 
+  right: 0;
+  background-color: rgb(244, 246, 250) !important; 
+  border: none;
+  z-index: 100;
+  padding: 8px 16px;
+  box-shadow: none !important;
+}
+
 .summary-card {
   border-radius: 8px;
 }
@@ -544,10 +598,6 @@ async getUserInfo() {
   border-radius: 50%; 
 }
 
-
-
-
-
 .v-btn {
     padding: 0;
     margin: 0;
@@ -558,23 +608,133 @@ async getUserInfo() {
   align-items: center;
   height: calc(100vh - 50px); /* Adjust the height as needed */
 }
+.user-info-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.user-info-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.user-name {
+  margin: 0 8px;
+  font-size: 1rem;
+}
 
 .v-app-bar-transparent {
   position: fixed;
   top: 0;
-  left: 250px; /* Ancho del drawer lateral */
+  left: 250px;
   right: 0;
-  background-color: transparent; /* Barra transparente */
-  border-bottom: none; /* Elimina bordes */
-  z-index: 10;
-  box-shadow: none; /* Sin sombras */
+  background-color:#ecf0f8 !important; 
+  border: none;
+  z-index: 100;
   padding: 8px 16px;
+  box-shadow: none !important;
 }
 .v-avatar img {
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+}
+.calendar-card {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
+.calendar-header {
+  background-color: #f5f5f5;
+  padding: 12px;
+}
 
+.month-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.calendar-week {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.day-header {
+  padding: 8px;
+  font-weight: 500;
+  color: #666;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.calendar-day:hover {
+  background-color: #f5f5f5;
+}
+
+.calendar-day.empty {
+  background-color: #fafafa;
+}
+
+.current-day {
+  color: white;
+  font-weight: bold;
+  position: relative;
+}
+
+.current-day::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  background-color: #1976d2;
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.different-month {
+  color: #bdbdbd;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .calendar-day {
+    padding: 4px;
+    font-size: 0.9rem;
+  }
+
+  .day-header {
+    padding: 4px;
+    font-size: 0.9rem;
+  }
+  .v-app-bar-transparent {
+    left: 0;
+  }
+  
+  .user-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .current-day::after {
+    width: 28px;
+    height: 28px;
+  }
+}
 </style>
