@@ -475,65 +475,65 @@ export default {
     },
 
     async fetchTreatments() {
-      this.loading = true;
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No se encontró el token de autenticación');
-        }
+  this.loading = true;
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No se encontró el token de autenticación');
+    }
 
-        const response = await backend.get('/tratamientos', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+    const response = await backend.get('/tratamientos', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        // Primero filtramos los tratamientos
-        const filteredTreatments = response.data.filter(t => 
-          t.estadoAutorizacion !== 'RECHAZADO' && 
-          t.estadoAutorizacion !== 'COMPLETADO'
-        );
+    // Primero filtramos los tratamientos
+    const filteredTreatments = response.data.filter(t => 
+      t.estadoAutorizacion !== 'RECHAZADO' && 
+      t.estadoAutorizacion !== 'COMPLETADO'
+    );
 
-        // Obtenemos las fichas clínicas para cada tratamiento
-        const treatmentsWithFichas = await Promise.all(
-          filteredTreatments.map(async (treatment) => {
-            const fichaClinica = await this.fetchFichaClinica(treatment.fichaClinicaId);
-            return {
-              ...treatment,
-              fichaClinica
-            };
-          })
-        );
+    // Obtenemos las fichas clínicas para cada tratamiento
+    const treatmentsWithFichas = await Promise.all(
+      filteredTreatments.map(async (treatment) => {
+        const fichaClinica = await this.fetchFichaClinica(treatment.fichaClinicaId);
+        return {
+          ...treatment,
+          fichaClinica
+        };
+      })
+    );
 
-        // Ordenamos por fecha y hora
-        this.treatments = treatmentsWithFichas.sort((a, b) => {
-          // Primero comparamos las fechas
-          const dateComparison = new Date(a.fecha) - new Date(b.fecha);
-          if (dateComparison !== 0) return dateComparison;
-          
-          // Si las fechas son iguales, comparamos las horas
-          return a.hora.localeCompare(b.hora);
-        });
+    // Ordenamos por fecha y hora en orden inverso (más recientes primero)
+    this.treatments = treatmentsWithFichas.sort((a, b) => {
+      // Primero comparamos las fechas (orden inverso)
+      const dateComparison = new Date(b.fecha) - new Date(a.fecha);
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Si las fechas son iguales, comparamos las horas (orden inverso)
+      return b.hora.localeCompare(a.hora);
+    });
 
-        this.summaryCards[0].count = this.treatments.length;
+    this.summaryCards[0].count = this.treatments.length;
 
-        const responseInternados = await backend.get('/internados', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+    const responseInternados = await backend.get('/internados', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        this.internados = responseInternados.data.internados;
-        this.summaryCards[1].count = this.internados;
+    this.internados = responseInternados.data.internados;
+    this.summaryCards[1].count = this.internados;
 
-      } catch (error) {
-        console.error('Error al obtener tratamientos:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudieron cargar los tratamientos',
-          confirmButtonColor: '#3085d6'
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
+  } catch (error) {
+    console.error('Error al obtener tratamientos:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudieron cargar los tratamientos',
+      confirmButtonColor: '#3085d6'
+    });
+  } finally {
+    this.loading = false;
+  }
+},
 
     async fetchFichaClinica(fichaClinicaId) {
       try {
