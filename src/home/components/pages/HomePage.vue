@@ -119,11 +119,13 @@
                   <table class="table">
                     <thead>
                       <tr>
+                        <th>Animal</th>
                         <th>Fecha</th>
                         <th>Hora</th>
                         <th>Medicación</th>
                         <th>Observaciones</th>
                         <th>Estado</th>
+                        <th>Ficha</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -136,6 +138,7 @@
                         <td colspan="5">No hay tratamientos disponibles.</td>
                       </tr>
                       <tr v-for="treatment in treatments" :key="treatment.id">
+                        <td>{{ treatment.fichaClinica.animal.nombre }}</td>
                         <td>{{ formatDate(treatment.fecha) }}</td>
                         <td>{{ formatTime(treatment.hora) }}</td>
                         <td>{{ treatment.medicacion }}</td>
@@ -144,6 +147,16 @@
                           <v-chip :color="getStatusColor(treatment.estadoAutorizacion, treatment.fecha, treatment.hora)" text-color="white" size="small">
                             {{ getStatusText(treatment.estadoAutorizacion, treatment.fecha, treatment.hora) }}
                           </v-chip>
+                        </td>
+                        <td>
+                          <v-btn
+                            color="primary"
+                            variant="text"
+                            size="small"
+                            :to="`/animales/ficha-clinica?fichaClinicaId=${treatment.fichaClinicaId}&animalId=${treatment.fichaClinica.animal.id}`"
+                          >
+                            Ver Ficha
+                          </v-btn>
                         </td>
                       </tr>
                     </tbody>
@@ -462,41 +475,75 @@ export default {
     },
 
     async fetchTreatments() {
-      this.loading = true;
+  this.loading = true;
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No se encontró el token de autenticación');
+    }
+
+    const response = await backend.get('/tratamientos', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // Primero filtramos los tratamientos
+    const filteredTreatments = response.data.filter(t => 
+      t.estadoAutorizacion !== 'RECHAZADO' && 
+      t.estadoAutorizacion !== 'COMPLETADO'
+    );
+
+    // Obtenemos las fichas clínicas para cada tratamiento
+    const treatmentsWithFichas = await Promise.all(
+      filteredTreatments.map(async (treatment) => {
+        const fichaClinica = await this.fetchFichaClinica(treatment.fichaClinicaId);
+        return {
+          ...treatment,
+          fichaClinica
+        };
+      })
+    );
+
+    // Ordenamos por fecha y hora en orden inverso (más recientes primero)
+    this.treatments = treatmentsWithFichas.sort((a, b) => {
+      // Primero comparamos las fechas (orden inverso)
+      const dateComparison = new Date(b.fecha) - new Date(a.fecha);
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Si las fechas son iguales, comparamos las horas (orden inverso)
+      return b.hora.localeCompare(a.hora);
+    });
+
+    this.summaryCards[0].count = this.treatments.length;
+
+    const responseInternados = await backend.get('/internados', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    this.internados = responseInternados.data.internados;
+    this.summaryCards[1].count = this.internados;
+
+  } catch (error) {
+    console.error('Error al obtener tratamientos:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudieron cargar los tratamientos',
+      confirmButtonColor: '#3085d6'
+    });
+  } finally {
+    this.loading = false;
+  }
+},
+
+    async fetchFichaClinica(fichaClinicaId) {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No se encontró el token de autenticación');
-        }
-
-        const response = await backend.get('/tratamientos', {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await backend.get(`/fichasClinicas/${fichaClinicaId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-
-        this.treatments = response.data.filter(t => 
-          t.estadoAutorizacion !== 'RECHAZADO' && 
-          t.estadoAutorizacion !== 'COMPLETADO'
-        );
-
-        this.summaryCards[0].count = this.treatments.length;
-
-        const responseInternados = await backend.get('/internados', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        this.internados = responseInternados.data.internados;
-        this.summaryCards[1].count = this.internados;
-
+        return response.data;
       } catch (error) {
-        console.error('Error al obtener tratamientos:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudieron cargar los tratamientos',
-          confirmButtonColor: '#3085d6'
-        });
-      } finally {
-        this.loading = false;
+        console.error(`Error al obtener ficha clínica ${fichaClinicaId}:`, error);
+        return null;
       }
     },
 
