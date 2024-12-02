@@ -178,9 +178,19 @@ export default {
       }
     },
     formatearEdad(valor, unidad) {
-      // Convertir a número entero y formatear
-      const edadEntera = Math.floor(Number(valor));
-      return `${edadEntera} ${unidad.toLowerCase()}`;
+      // Validar que tanto valor como unidad existan
+      if (!valor || !unidad) {
+          return 'No especificado';
+      }
+      
+      try {
+          const edadEntera = Math.floor(Number(valor));
+          const unidadFormateada = unidad.toLowerCase();
+          return `${edadEntera} ${unidadFormateada}`;
+      } catch (error) {
+          console.error('Error al formatear edad:', error);
+          return 'No especificado';
+      }
     },
 
     filtrarAnimales() {
