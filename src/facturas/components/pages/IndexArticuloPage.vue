@@ -10,20 +10,28 @@
       </v-col>
     </v-row>
 
-    <!-- Filtro por nombre -->
     <v-row>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="filtroNombre"
-          label="Nombre"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-magnify"
-          @input="filtrarArticulos"
-        ></v-text-field>
-      </v-col>
-    </v-row>
+  <v-col cols="12" md="4">
+    <v-text-field
+      v-model="filtroNombre"
+      label="Nombre"
+      clearable
+      outlined
+      dense
+      prepend-inner-icon="mdi-magnify"
+    ></v-text-field>
+  </v-col>
+  <v-col cols="12" md="4">
+    <v-select
+      v-model="filtroCategoria"
+      :items="categorias"
+      label="Filtrar por categoría"
+      clearable
+      outlined
+      dense
+    ></v-select>
+  </v-col>
+</v-row>
 
     <!-- Botón para crear artículo -->
     <v-row>
@@ -44,6 +52,7 @@
             <thead>
               <tr>
                 <th></th>
+                <th>Categoría</th> 
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Valor</th>
@@ -52,42 +61,70 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="articulosFiltrados.length === 0 && !loading">
-                <td colspan="6" class="text-center">No hay artículos registrados.</td>
-              </tr>
               <tr v-for="articulo in articulosFiltrados" :key="articulo.id">
-                <td class="image-cell">
-                  <div class="image-placeholder">
-                    <v-icon 
-                      size="40" 
-                      :color="getRandomIcon(articulo).color"
-                    >
-                      {{ getRandomIcon(articulo).icon }}
-                    </v-icon>
-                  </div>
-                </td>
-                <td>{{ articulo.nombre }}</td>
-                <td>{{ articulo.descripcion }}</td>
-                <td>{{ Number(articulo.valor).toFixed(2) }} $</td>
-                <td>{{ articulo.stock }}</td>
-                <td>
-                  <v-card-actions class="justify-center">
-                    <v-btn icon @click="openEditModal(articulo)" title="Editar artículo">
-                      <v-icon>mdi-pencil-outline</v-icon>
-                    </v-btn>
-                  </v-card-actions>
-                </td>
-              </tr>
+  <td class="image-cell">
+    <div class="image-placeholder">
+      <v-icon 
+        size="40" 
+        :color="getRandomIcon(articulo).color"
+      >
+        {{ getRandomIcon(articulo).icon }}
+      </v-icon>
+    </div>
+  </td>
+  <td>
+    <v-chip
+      :color="getRandomIcon(articulo).color"
+      text-color="white"
+      size="small"
+    >
+      {{ articulo.categoria }}
+    </v-chip>
+  </td>
+  <td>{{ articulo.nombre }}</td>
+  <td>{{ articulo.descripcion }}</td>
+  <td>{{ Number(articulo.valor).toFixed(2) }} $</td>
+  <td>{{ articulo.stock }}</td>
+  <td>
+    <v-card-actions class="justify-center">
+  <v-btn 
+    icon 
+    @click="openEditModal(articulo)" 
+    title="Editar insumo"
+    class="action-btn"
+  >
+    <v-tooltip location="top">
+      <template v-slot:activator="{ props }">
+        <div class="icon-container" v-bind="props">
+          <v-icon class="base-icon">mdi-medical-bag</v-icon>
+          <v-icon class="overlay-icon">mdi-pencil</v-icon>
+        </div>
+      </template>
+      <span>Editar insumo</span>
+    </v-tooltip>
+  </v-btn>
+</v-card-actions>
+  </td>
+</tr>
             </tbody>
           </table>
         </div>
       </v-col>
     </v-row>
 
+    <div class="pagination-container">
+      <PaginatorComponent
+        :length="totalPages"
+        :currentPage="currentPage"
+        @pageChange="handlePageChange"
+      />
+    </div>
+
     <!-- Modales -->
     <CreateArticuloPage
       v-if="showCreateModal"
       :showModal="showCreateModal"
+      :categorias="categorias"
       @close="showCreateModal = false"
       @created="fetchArticulos"
     />
@@ -96,6 +133,7 @@
       v-if="showEditModal"
       :showModal="showEditModal"
       :articuloData="selectedArticulo"
+      :categorias="categorias"
       @close="showEditModal = false"
       @updated="fetchArticulos"
     />
@@ -107,12 +145,14 @@ import backend from "@/backend";
 import UpdateArticuloPage from "@/facturas/components/pages/UpdateArticuloPage.vue";
 import CreateArticuloPage from "@/facturas/components/pages/CreateArticuloPage.vue";
 import BackButton from '@/shared/components/BackButton.vue';
+import PaginatorComponent from "@/shared/components/PaginatorComponent.vue";
 
 export default {
   components: {
     BackButton,
     CreateArticuloPage,
-    UpdateArticuloPage
+    UpdateArticuloPage,
+    PaginatorComponent
   },
   data() {
     return {
@@ -122,24 +162,67 @@ export default {
       showEditModal: false,
       selectedArticulo: {},
       loading: false,
+      filtroCategoria: '',
+      currentPage: 1,
+      itemsPerPage: 10,
     };
   },
+ 
   computed: {
     articulosFiltrados() {
-      if (!this.articulos || this.articulos.length === 0) {
-        return [];
-      }
+    if (!this.articulos || this.articulos.length === 0) {
+      return [];
+    }
 
-      if (!this.filtroNombre || this.filtroNombre.trim() === '') {
-        return this.articulos;
-      }
+    const filtrados = this.articulos.filter(articulo => {
+      const cumpleNombre = !this.filtroNombre || 
+        articulo.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase());
+      
+      const cumpleCategoria = !this.filtroCategoria || 
+        articulo.categoria === this.filtroCategoria;
+      
+      return cumpleNombre && cumpleCategoria;
+    });
 
-      return this.articulos.filter((articulo) =>
-        articulo.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase())
-      );
-    },
+    const inicio = (this.currentPage - 1) * this.itemsPerPage;
+    const fin = inicio + this.itemsPerPage;
+    
+    return filtrados.slice(inicio, fin);
   },
+
+  totalPages() {
+    if (!this.articulos) return 0;
+    
+    const filtrados = this.articulos.filter(articulo => {
+      const cumpleNombre = !this.filtroNombre || 
+        articulo.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase());
+      const cumpleCategoria = !this.filtroCategoria || 
+        articulo.categoria === this.filtroCategoria;
+      return cumpleNombre && cumpleCategoria;
+    });
+
+    return Math.ceil(filtrados.length / this.itemsPerPage);
+  },
+
+    
+
+    categorias() {
+      return [
+        'ANTIBIOTICO', 'ANALGESICO', 'ANTIFLAMATORIO', 'ANTIPIREPTICO',
+        'VITAMINA', 'SUPLEMENTO', 'VACUNA', 'CURACION', 'VENDAJE',
+        'ANTISEPTICO', 'SUTURAS', 'JERINGAS', 'GUANTES', 'GASAS',
+        'CATETER', 'LIMPIEZA', 'DESINFECCION', 'ESTIRILIZACION',
+        'ALIMENTACION', 'HIDRATACION', 'SUEROS', 'VARIOS'
+      ].sort();
+    }
+  },
+
+
   methods: {
+    handlePageChange(newPage) {
+    this.currentPage = newPage;
+  },
+
     normalizarTexto(texto) {
       if (!texto) return '';
       return texto
@@ -148,41 +231,7 @@ export default {
         .replace(/[\u0300-\u036f]/g, "");
     },
 
-    getRandomIcon(articulo) {
-  // Si no hay descripción, retorna el icono por defecto
-  if (!articulo || !articulo.descripcion) {
-    return {
-      icon: 'mdi-bacteria',
-      color: 'grey-darken-1'
-    };
-  }
 
-  const descripcion = this.normalizarTexto(articulo.descripcion);
-  console.log('Descripción normalizada:', descripcion);
-
-  // Casos específicos
-  const casos = {
-    'antibiotico': { icon: 'mdi-bacteria', color: 'purple-darken-2' },
-    'inyectable': { icon: 'mdi-needle', color: 'blue-darken-2' },
-    'curacion': { icon: 'mdi-bandage', color: 'teal-darken-2' },
-    'vitamina': { icon: 'mdi-pill', color: 'amber-darken-2' },
-    'analgesico': { icon: 'mdi-heart-pulse', color: 'red-darken-2' },
-    '': { icon: 'mdi-hospital-box', color: 'grey-darken-1' }
-  };
-
-  // Buscar coincidencia
-  for (const [palabra, iconInfo] of Object.entries(casos)) {
-    if (descripcion.includes(palabra)) {
-      return iconInfo;
-    }
-  }
-  
-  // Si no hay coincidencias, retorna el icono por defecto
-  return {
-    icon: 'mdi-hospital-box',
-    color: 'grey-darken-1'
-  };
-},
 
     async fetchArticulos() {
       this.loading = true;
@@ -198,13 +247,47 @@ export default {
       }
     },
 
-    filtrarArticulos() {
-      if (!this.filtroNombre) {
-        this.fetchArticulos();
-        return;
-      }
-    },
+getRandomIcon(articulo) {
+  const iconos = {
+    'ANTIBIOTICO': { icon: 'mdi-bacteria', color: 'purple-darken-2' },
+    'ANALGESICO': { icon: 'mdi-heart-pulse', color: 'red-darken-2' },
+    'ANTIFLAMATORIO': { icon: 'mdi-hospital-box-outline', color: 'deep-orange-darken-2' }, 
+    'ANTIPIREPTICO': { icon: 'mdi-thermometer', color: 'orange-darken-2' },
+    'VITAMINA': { icon: 'mdi-pill', color: 'amber-darken-2' },
+    'SUPLEMENTO': { icon: 'mdi-flask', color: 'lime-darken-2' },
+    'VACUNA': { icon: 'mdi-needle', color: 'green-darken-3' },
+    'CURACION': { icon: 'mdi-bandage', color: 'teal-darken-2' },
+    'VENDAJE': { icon: 'mdi-medical-bag', color: 'cyan-darken-2' },
+    'ANTISEPTICO': { icon: 'mdi-bottle-tonic-plus', color: 'blue-darken-2' },
+    'SUTURAS': { icon: 'mdi-scissors-cutting', color: 'blue-grey-darken-3' },
+    'JERINGAS': { icon: 'mdi-needle', color: 'indigo-darken-2' }, 
+    'GUANTES': { icon: 'mdi-hand-wash', color: 'deep-purple-darken-2' }, 
+    'GASAS': { icon: 'mdi-bandage', color: 'pink-darken-2' }, 
+    'CATETER': { icon: 'mdi-iv-bag', color: 'light-blue-darken-2' },
+    'LIMPIEZA': { icon: 'mdi-broom', color: 'light-green-darken-2' },
+    'DESINFECCION': { icon: 'mdi-spray', color: 'green-darken-3' },
+    'ESTIRILIZACION': { icon: 'mdi-radioactive', color: 'orange-darken-3' },
+    'ALIMENTACION': { icon: 'mdi-food-apple', color: 'red-darken-3' },
+    'HIDRATACION': { icon: 'mdi-water', color: 'blue-lighten-1' },
+    'SUEROS': { icon: 'mdi-iv-bag', color: 'cyan-darken-3' },
+    'VARIOS': { icon: 'mdi-package-variant', color: 'grey-darken-2' }
+  };
 
+  return iconos[articulo.categoria] || { icon: 'mdi-hospital-box', color: 'grey-darken-1' };
+},
+
+watch: {
+  filtroNombre: {
+    handler() {
+      this.currentPage = 1;
+    }
+  },
+  filtroCategoria: {
+    handler() {
+      this.currentPage = 1;
+    }
+  }
+},
     openCreateModal() {
       this.showCreateModal = true;
     },
@@ -217,6 +300,7 @@ export default {
   created() {
     this.fetchArticulos();
   }
+  
 };
 </script>
 
@@ -301,5 +385,30 @@ export default {
   width: 150px;
   display: block;
   margin: 0 auto;
+}
+.icon-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.base-icon {
+  font-size: 24px;
+}
+
+.overlay-icon {
+  position: absolute;
+  font-size: 14px;
+  bottom: -4px;
+  right: -4px;
+  background: white;
+  border-radius: 50%;
+  padding: 2px;
+  border: 1px solid #e0e0e0;
+}
+
+.action-btn:hover .overlay-icon {
+  background: #f5f5f5;
 }
 </style>

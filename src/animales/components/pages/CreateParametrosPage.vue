@@ -23,23 +23,34 @@
           <v-text-field
             v-model="parametros.FC"
             label="Frecuencia Cardíaca (FC)"
-            :rules="[rules.required, rules.numeric, rules.fcRange]"
-            required
-            @input="validateField('FC')"
+            type="number"
+            step="0.01"
+             min="0"
+            :rules="requiredRule"
+            @blur="validateNumber('FC')"
+            @keypress="onlyNumbers"
           ></v-text-field>
           <v-text-field
             v-model="parametros.FR"
             label="Frecuencia Respiratoria (FR)"
-            :rules="[rules.required, rules.numeric, rules.frRange]"
+            type="number"
+            step="0.01"
+             min="0"
+             :rules="requiredRule"
+            @blur="validateNumber('FR')"
+            @keypress="onlyNumbers"
             required
-            @input="validateField('FR')"
           ></v-text-field>
           <v-text-field
             v-model="parametros.temperatura"
             label="Temperatura (°C)"
-            :rules="[rules.required, rules.numeric, rules.tempRange]"
+            type="number"
+            step="0.01"
+             min="0"
+            :rules="requiredRule"
+            @blur="validateNumber('temperatura')"
+            @keypress="onlyNumbers"
             required
-            @input="validateField('temperatura')"
           ></v-text-field>
           <v-select
             v-model="parametros.mucosas"
@@ -52,20 +63,25 @@
             v-model="parametros.TllC"
             label="TllC"
             suffix="seg"
-            :rules="[rules.required, rules.numeric, rules.tllcRange]"
+            type="number"
+            step="0.01"
+             min="0"
+            :rules="requiredRule"
+            @blur="validateNumber('TllC')"
+            @keypress="onlyNumbers"
             required
-            @input="validateField('TllC')"
           ></v-text-field>
           <v-text-field
             v-model="parametros.pliegueCutaneo"
             label="Pliegue Cutáneo"
-            :rules="[rules.required]"
-            required
-            @input="validateField('pliegueCutaneo')"
+            :rules="DatosRulesNorequiered"
+  @blur="normalizeText('pliegueCutaneo')"
           ></v-text-field>
           <v-textarea
             v-model="parametros.observaciones"
             label="Observaciones"
+            :rules="DatosRulesNorequiered"
+  @blur="normalizeText('observaciones')"
           ></v-textarea>
         </v-form>
       </v-card-text>
@@ -111,6 +127,23 @@ export default {
       pliegueCutaneo: "",
       observaciones: "",
     });
+    const validations = reactive({
+      temperatura: true,
+      FC: true,
+      FR: true
+    })
+    const validateNumber = (field) => {
+      errors[field] = []
+      const value = parametros[field]
+
+      if (!value) {
+        errors[field].push(`El ${field} es requerido`)
+      } else if (value <= 0) {
+        errors[field].push(`El ${field} debe ser mayor que 0`)
+      }
+
+      validations[field] = errors[field].length === 0
+    };
 
     const rules = {
       required: (v) => !!v || "Este campo es requerido",
@@ -123,24 +156,25 @@ export default {
         const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
         return timeRegex.test(v) || "Formato de hora inválido";
       },
-      fcRange: (v) => {
-        const fc = parseFloat(v);
-        return (fc >= 40 && fc <= 200) || "FC debe estar entre 40 y 200";
-      },
-      frRange: (v) => {
-        const fr = parseFloat(v);
-        return (fr >= 10 && fr <= 60) || "FR debe estar entre 10 y 60";
-      },
-      tempRange: (v) => {
-        const temp = parseFloat(v);
-        return (temp >= 35 && temp <= 42) || "Temperatura debe estar entre 35°C y 42°C";
-      },
-      tllcRange: (v) => {
-        const tllc = parseFloat(v);
-        return (tllc >= 1 && tllc <= 5) || "TllC debe estar entre 1 y 5 segundos";
+   
+    };
+    const DatosRulesNorequiered = [
+  v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+  v => !v || v.trim().length > 0 || 'El campo no puede contener solo espacios',
+  
+]
+    const normalizeText = (field) => {
+      if (parametros[field]) {
+        parametros[field] = parametros[field].toUpperCase().trim()
       }
     };
-
+    const errors = reactive({ FC: '', FR: '', temperatura: '', TllC: '' });
+    const onlyNumbers = (event) => {
+      const charCode = event.which ? event.which : event.keyCode
+      if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) {
+        event.preventDefault()
+      }
+    };
     const isFormValid = computed(() => {
       return Object.keys(fieldErrors.value).length === 0 && valid.value;
     });
@@ -194,7 +228,7 @@ export default {
       emit("closeModal");
     };
 
-    const createParametros = async () => {
+    /*const createParametros = async () => {
       ['fecha', 'hora', 'FC', 'FR', 'temperatura', 'mucosas', 'TllC', 'pliegueCutaneo'].forEach(validateField);
 
       if (isFormValid.value) {
@@ -237,7 +271,67 @@ export default {
           text: "Por favor completa todos los campos requeridos correctamente antes de guardar.",
         });
       }
-    };
+    };*/
+    const createParametros = async () => {
+  // Validar los campos numéricos
+  validateNumber('FC');
+  validateNumber('FR');
+  validateNumber('temperatura');
+  validateNumber('TllC');
+
+  // Verificar si el formulario es válido usando el ref de v-form
+  if (form.value && !form.value.validate()) {
+    Swal.fire({
+      icon: "warning",
+      title: "Formulario incompleto",
+      text: "Por favor completa todos los campos requeridos correctamente.",
+    });
+    return;
+  }
+
+  // Verificar las validaciones específicas de campos numéricos
+  if (!validations.FC || !validations.FR || !validations.temperatura) {
+    Swal.fire({
+      icon: "warning",
+      title: "Validación",
+      text: "Por favor revise los campos marcados con error.",
+    });
+    return;
+  }
+
+  try {
+    loading.value = true;
+    parametros.hora = formattedHora.value;
+
+    await backend.post(
+      "/registroParametros",
+      {
+        ...parametros,
+        fichaClinicaId: props.fichaClinicaId,
+      },
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Parámetros Registrados",
+      text: "La toma de parámetros ha sido registrada con éxito.",
+    });
+
+    emit("parametroRegistrado");
+    closeModal();
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Error al registrar parámetros",
+      text: error.response?.data?.message || "Ocurrió un error al guardar los parámetros.",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
 
     return {
       form,
@@ -250,7 +344,11 @@ export default {
       isFormValid,
       closeModal,
       createParametros,
-      validateField
+      validateField,
+      normalizeText,
+      DatosRulesNorequiered,
+      onlyNumbers,
+      validateNumber
     };
   }
 };

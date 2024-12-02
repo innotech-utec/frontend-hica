@@ -23,23 +23,34 @@
           <v-text-field
             v-model="localParametro.FC"
             label="Frecuencia Cardíaca (FC)"
-            :rules="[rules.required, rules.numeric, rules.fcRange]"
-            required
-            @input="validateField('FC')"
+            type="number"
+            step="0.01"
+             min="0"
+            :rules="requiredRule"
+            @blur="validateNumber('FC')"
+            @keypress="onlyNumbers"
           ></v-text-field>
           <v-text-field
             v-model="localParametro.FR"
             label="Frecuencia Respiratoria (FR)"
-            :rules="[rules.required, rules.numeric, rules.frRange]"
+            pe="number"
+            step="0.01"
+             min="0"
+             :rules="requiredRule"
+            @blur="validateNumber('FR')"
+            @keypress="onlyNumbers"
             required
-            @input="validateField('FR')"
           ></v-text-field>
           <v-text-field
             v-model="localParametro.temperatura"
             label="Temperatura (°C)"
-            :rules="[rules.required, rules.numeric, rules.tempRange]"
+            type="number"
+            step="0.01"
+             min="0"
+            :rules="requiredRule"
+            @blur="validateNumber('temperatura')"
+            @keypress="onlyNumbers"
             required
-            @input="validateField('temperatura')"
           ></v-text-field>
           <v-select
             v-model="localParametro.mucosas"
@@ -52,13 +63,25 @@
             v-model="localParametro.TllC"
             label="TllC"
             suffix="seg"
-            :rules="[rules.required, rules.numeric, rules.tllcRange]"
+            type="number"
+            step="0.01"
+             min="0"
+            :rules="requiredRule"
+            @blur="validateNumber('TllC')"
+            @keypress="onlyNumbers"
             required
-            @input="validateField('TllC')"
+          ></v-text-field>
+          <v-text-field
+            v-model="localParametro.pliegueCutaneo"
+            label="Pliegue Cutáneo"
+            :rules="DatosRulesNorequiered"
+             @blur="normalizeText('pliegueCutaneo')"
           ></v-text-field>
           <v-textarea
             v-model="localParametro.observaciones"
             label="Observaciones"
+             :rules="DatosRulesNorequiered"
+           @blur="normalizeText('observaciones')"
           ></v-textarea>
         </v-form>
       </v-card-text>
@@ -216,8 +239,42 @@ export default {
       emit('update:show', false);
       emit('cerrarModal');
     };
+    const DatosRulesNorequiered = [
+  v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+  v => !v || v.trim().length > 0 || 'El campo no puede contener solo espacios',
+  
+]
+    const normalizeText = (field) => {
+      if (localParametro[field]) {
+        localParametro[field] = localParametro[field].toUpperCase().trim()
+      }
+    };
+    const errors = reactive({ FC: '', FR: '', temperatura: '', TllC: '' });
+    const onlyNumbers = (event) => {
+      const charCode = event.which ? event.which : event.keyCode
+      if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) {
+        event.preventDefault()
+      }
+    };
+    const validations = reactive({
+      temperatura: true,
+      FC: true,
+      FR: true
+    })
+    const validateNumber = (field) => {
+      errors[field] = []
+      const value = localParametro[field]
 
-    const onSubmit = async () => {
+      if (!value) {
+        errors[field].push(`El ${field} es requerido`)
+      } else if (value <= 0) {
+        errors[field].push(`El ${field} debe ser mayor que 0`)
+      }
+
+      validations[field] = errors[field].length === 0
+    };
+
+    /* const onSubmit = async () => {
       ['fecha', 'hora', 'FC', 'FR', 'temperatura', 'mucosas', 'TllC'].forEach(validateField);
 
       if (isFormValid.value) {
@@ -248,8 +305,74 @@ export default {
           loading.value = false;
         }
       }
-    };
+    };*/
+    const onSubmit = async () => {
+  // Validar los campos numéricos
+  validateNumber('FC');
+  validateNumber('FR');
+  validateNumber('temperatura');
+  validateNumber('TllC');
 
+  // Verificar si el formulario es válido usando el ref de v-form
+  if (form.value && !form.value.validate()) {
+    Swal.fire({
+      icon: "warning",
+      title: "Formulario incompleto",
+      text: "Por favor completa todos los campos requeridos correctamente.",
+    });
+    return;
+  }
+
+  // Verificar las validaciones específicas de campos numéricos
+  if (!validations.FC || !validations.FR || !validations.temperatura) {
+    Swal.fire({
+      icon: "warning",
+      title: "Validación",
+      text: "Por favor revise los campos marcados con error.",
+    });
+    return;
+  }
+
+  try {
+    loading.value = true;
+    localParametro.hora = formattedHora.value;
+
+    
+    const parametrosToUpdate = {
+      ...localParametro,
+      FC: Number(localParametro.FC),
+      FR: Number(localParametro.FR),
+      temperatura: Number(localParametro.temperatura),
+      TllC: Number(localParametro.TllC)
+    };
+    
+    await backend.patch(
+      `/registroParametros/${localParametro.id}`, 
+      parametrosToUpdate, 
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      }
+    );
+
+    Swal.fire({
+      title: "Parámetro Actualizado",
+      text: "El parámetro ha sido actualizado con éxito.",
+      icon: "success"
+    });
+
+    emit('parametroActualizado', parametrosToUpdate);
+    closeModal();
+  } catch (error) {
+    console.error('Error al actualizar el parámetro:', error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.response?.data?.message || "No se pudo actualizar el parámetro."
+    });
+  } finally {
+    loading.value = false;
+  }
+};
     onMounted(() => {
   Object.assign(localParametro, {
     ...props.parametro,
@@ -270,7 +393,11 @@ export default {
       updateHora,
       rules,
       validateField,
-      isFormValid
+      isFormValid,
+      normalizeText,
+      DatosRulesNorequiered,
+      onlyNumbers,
+      validateNumber,
     };
   }
 };

@@ -215,6 +215,11 @@ export default {
         event.preventDefault();
       }
     },
+    onlyNumbersInteger(event) {
+    if (!/[0-9]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') {
+      event.preventDefault();
+    }
+  },
 
     validateEspecie() {
       this.especieErrors = [];

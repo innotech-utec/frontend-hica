@@ -45,7 +45,7 @@
             </v-row>
           </div>
 
-          <!-- Si hay examen, mostrar contenido actual -->
+          
           <div v-else>
             <v-row>
               <!-- Columna izquierda -->

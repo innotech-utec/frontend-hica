@@ -25,15 +25,17 @@
           <v-text-field
             v-model="localTratamiento.medicacion"
             label="Medicación"
-            :rules="[v => !!v || 'La medicación es requerida']"
+            :rules="DatosRules"
             required
+             @blur="normalizeText('medicacion')"
           ></v-text-field>
 
           <v-textarea
             v-model="localTratamiento.observaciones"
             label="Observaciones"
-            :rules="[v => !!v || 'Las observaciones son requeridas']"
+            :rules="DatosRulesNorequiered"
             required
+             @blur="normalizeText('observaciones')"
           ></v-textarea>
 
           <!-- Veterinarios v-select -->
@@ -121,7 +123,22 @@ export default {
         loadingVeterinarios.value = false;
       }
     };
-
+    const normalizeText = (field) => {
+      if (localTratamiento[field]) {
+        localTratamiento[field] = localTratamiento[field].toUpperCase().trim()
+      }
+    };
+    const DatosRules = [
+      v => !!v || 'Este campo es requerido',
+      v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+      v => v && v.trim().length > 0 || 'El campo no puede contener solo espacios',
+      v => (v && v.length >= 1 && v.length <= 100) || 'El campo debe tener entre 1 y 100 caracteres',
+    ]
+    const DatosRulesNorequiered = [
+  v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+  v => !v || v.trim().length > 0 || 'El campo no puede contener solo espacios',
+  
+]
     // Función para actualizar el tratamiento
     const onSubmit = async () => {
       const isValid = await form.value.validate();
@@ -181,6 +198,9 @@ export default {
       loadingVeterinarios,
       onSubmit,
       closeModal,
+      normalizeText,
+      DatosRules,
+      DatosRulesNorequiered,
     };
   },
 };

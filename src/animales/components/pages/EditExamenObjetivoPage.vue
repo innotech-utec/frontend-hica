@@ -13,6 +13,7 @@
                 :rules="requiredRule"
                 @blur="validateNumber('FC')"
                 required
+                 @keypress="onlyNumbers"
                 :error-messages="errors.FC"
               ></v-text-field>
               
@@ -22,6 +23,7 @@
                 :rules="requiredRule"
                 @blur="validateNumber('Resp')"
                 required
+                 @keypress="onlyNumbers"
                 :error-messages="errors.Resp"
               ></v-text-field>
               
@@ -31,6 +33,7 @@
                 :rules="requiredRule"
                 @blur="validateNumber('temperatura')"
                 required
+                 @keypress="onlyNumbers"
                 :error-messages="errors.temperatura"
               ></v-text-field>
 
@@ -85,41 +88,53 @@
           <v-textarea 
             v-model="localExamenObjetivo.pielSubcutaneo" 
             label="Piel y Subcutáneo"
+             :rules="DatosRulesNorequiered"
+  @blur="normalizeText('pielSubcutaneo')"
             
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.grandesFuncionales" 
             label="Grandes Funcionales"
+            :rules="DatosRulesNorequiered"
+            @blur="normalizeText('grandesFuncionales')"
            
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.actitudesAnomalas" 
             label="Actitudes Anómalas"
-            
+             :rules="DatosRulesNorequiered"
+  @blur="normalizeText('actitudesAnomalas')"
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.EOP" 
             label="EOP"
-            
+            :rules="DatosRulesNorequiered"
+  @blur="normalizeText('EOP')"
+
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.paraclinicos" 
             label="Paraclínicos"
+            :rules="DatosRulesNorequiered"
+  @blur="normalizeText('paraclinicos')"
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.diagnostico" 
             label="Diagnóstico"
-            :rules="requiredRule"
+          :rules="DatosRules"
+          @blur="normalizeText('diagnostico')"
           ></v-textarea>
           
           <v-textarea 
             v-model="localExamenObjetivo.observaciones" 
             label="Observaciones"
+            :rules="DatosRulesNorequiered"
+           @blur="normalizeText('observaciones')"
           ></v-textarea>
         </v-form>
       </v-card-text>
@@ -149,7 +164,26 @@ export default {
       localShowModal: this.showModal,
       localExamenObjetivo: { ...this.examenObjetivo },
       errors: { FC: '', Resp: '', temperatura: '' },
-      requiredRule: [(v) => !!v || "Este campo es requerido"]
+      validations: {  
+        FC: true,
+        Resp: true,
+        temperatura: true
+      },
+      requiredRule: [(v) => !!v || "Este campo es requerido"],
+      DatosRules: [
+        v => !!v || 'Este campo es requerido',
+        v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+        v => v && v.trim().length > 0 || 'El campo no puede contener solo espacios',
+        v => (v && v.length >= 2 && v.length <= 50) || 'El campo debe tener entre 2 y 50 caracteres',
+       
+      ],
+     
+      DatosRulesNorequiered: [
+  v => !v || (v && !v.includes('  ')) || 'El campo no puede contener espacios dobles',
+  v => !v || (v && v.trim().length > 0) || 'El campo no puede contener solo espacios',
+ 
+]
+  
     };
   },
   watch: {
@@ -171,20 +205,33 @@ export default {
   },
   methods: {
     validateNumber(field) {
+      this.errors[field] = [];
       const value = this.localExamenObjetivo[field];
-      if (isNaN(value) || value === '') {
-        this.errors[field] = "El valor debe ser numérico.";
-        return false;
+
+      if (!value) {
+        this.errors[field].push(`El ${field} es requerido`);
+      } else if (value <= 0) {
+        this.errors[field].push(`El ${field} debe ser mayor que 0`);
       }
-      
-     
-      this.errors[field] = "";
-      return true;
+
+      this.validations[field] = this.errors[field].length === 0;
     },
+    normalizeText(field) {
+      if (this.localExamenObjetivo[field]) {
+        this.localExamenObjetivo[field] = this.localExamenObjetivo[field].toUpperCase().trim();
+      }
+    },
+    onlyNumbers(event) {
+      const charCode = event.which ? event.which : event.keyCode;
+      if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) {
+        event.preventDefault();
+      }
+    },
+   
     
     async onSubmit() {
       // Validar todos los campos numéricos
-      const isFC = this.validateNumber('FC');
+     /* const isFC = this.validateNumber('FC');
       const isResp = this.validateNumber('Resp');
       const isTemp = this.validateNumber('temperatura');
 
@@ -196,7 +243,7 @@ export default {
           customClass: { popup: "swal-popup-zindex" }
         });
         return;
-      }
+      }*/
 
       if (!this.localExamenObjetivo.id) {
         Swal.fire("Error", "No se encontró el ID del examen objetivo.", "error");
@@ -232,6 +279,7 @@ export default {
       this.localShowModal = false;
       this.$emit("closeModal");
     },
+    
     
     resetErrors() {
       this.errors = { FC: '', Resp: '', temperatura: '' };

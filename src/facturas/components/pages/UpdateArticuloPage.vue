@@ -19,6 +19,13 @@
             @blur="normalizeText('nombre')"
             required
           ></v-text-field>
+          <v-select
+  v-model="articulo.categoria"
+  :items="categorias"
+  label="Categoría"
+  required
+  :rules="[v => !!v || 'La categoría es requerida']"
+></v-select>
 
           <!-- Descripción del Artículo -->
           <v-textarea 
@@ -86,6 +93,10 @@ props: {
   },
   articuloData: {
     type: Object,
+    required: true
+  },
+  categorias: {  // Nueva prop
+    type: Array,
     required: true
   }
 },
@@ -223,7 +234,7 @@ methods: {
   },
 
   async confirmCancel() {
-      // Cerramos temporalmente el modal para mostrar el Swal
+     
       this.localShowModal = false;
       
       try {
@@ -239,12 +250,12 @@ methods: {
         if (result.isConfirmed) {
           this.$emit('close');
         } else {
-          // Si el usuario cancela, volvemos a abrir el modal
+          
           this.localShowModal = true;
         }
       } catch (error) {
         console.error('Error en confirmCancel:', error);
-        // En caso de error, volvemos a abrir el modal
+       
         this.localShowModal = true;
       }
     },

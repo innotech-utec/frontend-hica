@@ -21,14 +21,16 @@
           <v-text-field
             v-model="tratamiento.medicacion"
             label="Medicación"
-            :rules="[v => !!v || 'La medicación es requerida']"
+            :rules="DatosRules"
             required
+             @blur="normalizeText('medicacion')"
           ></v-text-field>
           <v-textarea
             v-model="tratamiento.observaciones"
             label="Observaciones"
-            :rules="[v => !!v || 'Las observaciones son requeridas']"
+            :rules="DatosRulesNorequiered"
             required
+             @blur="normalizeText('observaciones')"
           ></v-textarea>
           
           <v-select
@@ -145,7 +147,22 @@ export default {
         });
       }
     };
-
+    const normalizeText = (field) => {
+      if (tratamiento[field]) {
+        tratamiento[field] = tratamiento[field].toUpperCase().trim()
+      }
+    };
+    const DatosRules = [
+      v => !!v || 'Este campo es requerido',
+      v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+      v => v && v.trim().length > 0 || 'El campo no puede contener solo espacios',
+      v => (v && v.length >= 1 && v.length <= 100) || 'El campo debe tener entre 1 y 100 caracteres',
+    ]
+    const DatosRulesNorequiered = [
+  v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+  v => !v || v.trim().length > 0 || 'El campo no puede contener solo espacios',
+  
+]
     const crearTratamiento = async () => {
       loading.value = true;
       try {
@@ -223,6 +240,9 @@ export default {
       loadingVeterinarios,
       onSubmit,
       closeModal,
+      normalizeText,
+      DatosRulesNorequiered,
+      DatosRules,
     };
   }
 };

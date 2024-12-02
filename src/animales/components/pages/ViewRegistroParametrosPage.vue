@@ -156,7 +156,7 @@ export default {
   },
   computed: {
     isDisabled() {
-      const estadosCerrados = ["Alta", "Fallecimiento", "Eutanasia"];
+      const estadosCerrados = ["ALTA", "FALLECIMIENTO", "EUTANASIA"];
       return this.disabled || estadosCerrados.includes(this.estadoFicha);
     },
   },

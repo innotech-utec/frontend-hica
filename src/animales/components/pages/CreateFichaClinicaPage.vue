@@ -31,8 +31,9 @@
       <v-text-field
         v-model="fichaClinica.motivoConsulta"
         label="Motivo de la Consulta"
-        :rules="requiredRule"
+        :rules="DatosRules"
         :error-messages="getErrorMessages('motivoConsulta')"
+        @blur="normalizeText('motivoConsulta')"
         required
       ></v-text-field>
 
@@ -59,38 +60,42 @@
       <v-text-field
         v-model="fichaClinica.remotaFisiologica"
         label="Remota Fisiológica"
-        :rules="requiredRule"
+        :rules="DatosRules"
         :error-messages="getErrorMessages('remotaFisiologica')"
-        required
+        @blur="normalizeText('remotaFisiologica')"
+         required
       ></v-text-field>
 
       <v-text-field
         v-model="fichaClinica.remotaPatologica"
         label="Remota Patológica"
-        :rules="requiredRule"
+        :rules="DatosRules"
         :error-messages="getErrorMessages('remotaPatologica')"
+        @blur="normalizeText('remotaPatologica')"
         required
       ></v-text-field>
 
       <v-text-field
         v-model="fichaClinica.proximaFisiologica"
         label="Próxima Fisiológica"
-        :rules="requiredRule"
+        :rules="DatosRules"
         :error-messages="getErrorMessages('proximaFisiologica')"
+        @blur="normalizeText('proximaFisiologica')"
         required
       ></v-text-field>
 
       <v-text-field
         v-model="fichaClinica.proximaPatologica"
         label="Próxima Patológica"
-        :rules="requiredRule"
+        :rules="DatosRules"
         :error-messages="getErrorMessages('proximaPatologica')"
+        @blur="normalizeText('proximaPatologica')"
         required
       ></v-text-field>
 
       <v-select
         v-model="fichaClinica.estadoFichaClinica"
-        :items="['Alta', 'Ingresado','Internado', 'Fallecimiento', 'Eutanasia']"
+        :items="['ALTA', 'INGRESADO','INTERNADO', 'FALLECIMIENTO', 'EUTANASIA']"
         label="Estado de la Ficha Clínica"
         :rules="requiredRule"
         :error-messages="getErrorMessages('estadoFichaClinica')"
@@ -127,7 +132,7 @@ export default {
         remotaPatologica: '',
         proximaFisiologica: '',
         proximaPatologica: '',
-        estadoFichaClinica: 'Ingresado',
+        estadoFichaClinica: 'INGRESADO',
         animalId: null,
       },
       opcionesSanitarias: [
@@ -143,6 +148,18 @@ export default {
         'A CORRAL'
       ],
       requiredRule: [v => !!v || 'Este campo es requerido'],
+      ValoresRules: [
+      v => !!v || 'El stock es requerido',
+      v => !v || /^\d+$/.test(v) || 'El stock solo puede contener números',
+      v => v >= 0 || 'El stock debe ser mayor o igual a 0',
+      
+    ],
+    DatosRules: [
+      v => !!v || 'Este campo es requerido',
+      v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+      v => v && v.trim().length > 0 || 'El campo no puede contener solo espacios',
+      v => (v && v.length >= 1 && v.length <= 60) || 'El campo debe tener entre 1 y 60 caracteres',
+    ],
       animal: {},
     };
   },
@@ -198,12 +215,32 @@ export default {
         });
       }
     },
+    normalizeText(field) {
+  if (this.fichaClinica[field]) {
+    this.fichaClinica[field] = this.fichaClinica[field].toUpperCase().trim();
+    }
+  },
+    onlyNumbers(e) {
+    const char = String.fromCharCode(e.keyCode);
+    if (!/^[0-9.]+$/.test(char)) {
+      e.preventDefault();
+    }
+  },
     async onSubmit() {
       // Forzar la validación del formulario
       this.$refs.form.validate();
       
-      // Si no es válido, detenemos el envío
+      const fieldsToNormalize = [
+      'motivoConsulta',
+      'remotaFisiologica',
+      'remotaPatologica', 
+      'proximaFisiologica',
+      'proximaPatologica'
+    ];
+    fieldsToNormalize.forEach(field => this.normalizeText(field));
+
       if (!this.valid) {
+      
         Swal.fire({
           icon: "error",
           title: "Error de validación",

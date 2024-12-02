@@ -243,7 +243,7 @@ export default {
   },
   computed: {
     isFichaClosed() {
-      const estadosCerrados = ['Alta', 'Fallecimiento', 'Eutanasia'];
+      const estadosCerrados = ['ALTA', 'FALLECIMIENTO', 'EUTANASIA'];
       return estadosCerrados.includes(this.fichaClinica.estadoFichaClinica);
     }
   },

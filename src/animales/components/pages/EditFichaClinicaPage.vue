@@ -6,7 +6,8 @@
         <v-text-field 
           v-model="fichaClinica.motivoConsulta" 
           label="Motivo de la Consulta" 
-          :rules="requiredRule"
+          @blur="normalizeText('motivoConsulta')"
+          :rules="DatosRules"
           required
         ></v-text-field>
         
@@ -31,28 +32,32 @@
         <v-text-field 
           v-model="fichaClinica.remotaFisiologica" 
           label="Remota Fisiológica" 
-          :rules="requiredRule"
+          :rules="DatosRules"
+          @blur="normalizeText('remotaFisiologica')"
           required
         ></v-text-field>
 
         <v-text-field 
           v-model="fichaClinica.remotaPatologica" 
           label="Remota Patológica" 
-          :rules="requiredRule"
+          :rules="DatosRules"
+          @blur="normalizeText('remotaPatologica')"
           required
         ></v-text-field>
 
         <v-text-field 
           v-model="fichaClinica.proximaFisiologica" 
           label="Próxima Fisiológica" 
-          :rules="requiredRule"
+          :rules="DatosRules"
+          @blur="normalizeText('proximaFisiologica')"
           required
         ></v-text-field>
 
         <v-text-field 
           v-model="fichaClinica.proximaPatologica" 
           label="Próxima Patológica" 
-          :rules="requiredRule"
+          :rules="DatosRules"
+          @blur="normalizeText('proximaPatologica')"
           required
         ></v-text-field>
 
@@ -93,6 +98,12 @@ export default {
         v => !!v || 'Este campo es requerido',
         v => v.trim().length > 0 || 'El campo no puede estar vacío'
       ],
+      DatosRules: [
+      v => !!v || 'Este campo es requerido',
+      v => !v || !v.includes('  ') || 'El campo no puede contener espacios dobles',
+      v => v && v.trim().length > 0 || 'El campo no puede contener solo espacios',
+      v => (v && v.length >= 1 && v.length <= 60) || 'El campo debe tener entre 1 y 60 caracteres',
+    ],
       opcionesSanitarias: [
         'VACUNADO/DESPARASITADO',
         'VACUNADO/NO DESPARASITADO',
@@ -118,6 +129,12 @@ export default {
     };
   },
   methods: {
+
+    normalizeText(field) {
+  if (this.fichaClinica[field]) {
+    this.fichaClinica[field] = this.fichaClinica[field].toUpperCase().trim();
+    }
+  },
     async fetchFichaClinica() {
       try {
         const response = await backend.get(`/fichasClinicas/${this.fichaClinicaId}`);
@@ -132,6 +149,14 @@ export default {
     },
     async onSubmit() {
       this.$refs.form.validate();
+      const fieldsToNormalize = [
+      'motivoConsulta',
+      'remotaFisiologica',
+      'remotaPatologica', 
+      'proximaFisiologica',
+      'proximaPatologica'
+    ];
+    fieldsToNormalize.forEach(field => this.normalizeText(field));
       
       if (!this.valid) {
         Swal.fire({

@@ -20,6 +20,13 @@
             :error-messages="nombreError"
             @blur="normalizeText('nombre')"
           ></v-text-field>
+          <v-select
+  v-model="categoria"
+  :items="categorias"
+  label="Categoría"
+  required
+  :rules="[v => !!v || 'La categoría es requerida']"
+></v-select>
           <v-textarea 
             v-model="descripcion" 
             label="Descripción"
@@ -78,6 +85,10 @@ props: {
   showModal: {
     type: Boolean,
     required: true
+  },
+  categorias: {
+    type: Array,
+    required: true
   }
 },
 
@@ -90,6 +101,7 @@ data() {
     descripcion: '',
     valor: null,
     stock: null,
+    categoria: 'VARIOS',
     nombreError: '',
       nombreRules: [
       v => !!v || 'El nombre es requerido',
@@ -174,6 +186,7 @@ methods: {
 
       await backend.post("/articulos", {
         nombre: this.nombre.toUpperCase(),
+        categoria: this.categoria,
         descripcion: this.descripcion.toUpperCase(),
         valor: this.valor,
         stock: this.stock
@@ -212,6 +225,7 @@ methods: {
     // Limpiar el formulario
     this.$refs.form.reset();
     this.nombre = '';
+    this.categoria = 'VARIOS';
     this.descripcion = '';
     this.valor = null;
     this.stock = null;

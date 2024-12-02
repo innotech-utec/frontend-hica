@@ -370,10 +370,10 @@ export default {
 
     const getEstadoColor = (estado) => {
       switch (estado.toLowerCase()) {
-        case 'alta': return 'green';
-        case 'fallecimiento':
-        case 'eutanasia': return 'red';
-        case 'internado': return 'blue';
+        case 'ALTA': return 'green';
+        case 'FALLECIMIENTO':
+        case 'EUTANASIA': return 'red';
+        case 'INTERNADO': return 'blue';
         default: return 'orange';
       }
     };
