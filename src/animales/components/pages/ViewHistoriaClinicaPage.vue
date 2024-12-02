@@ -44,7 +44,7 @@
             @input="filtrarFichasClinicas"
           ></v-text-field>
         </v-col>
-        <v-col cols="12" md="4">
+        <!-- <v-col cols="12" md="4">
           <v-menu ref="menu" v-model="menuFecha" :close-on-content-click="false" transition="scale-transition" offset-y min-width="auto">
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
@@ -58,7 +58,7 @@
             </template>
             <v-date-picker v-model="filtroFecha" @input="(val) => { filtroFecha = val; menuFecha = false; filtrarFichasClinicas(); }"></v-date-picker>
           </v-menu>
-        </v-col>
+        </v-col> -->
       </v-row>
 
       <!-- Fichas Clínicas -->

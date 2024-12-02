@@ -30,7 +30,7 @@
             </div>
             <div class="field-group">
               <label class="field-label">Edad:</label>
-              <div class="field-value">{{ animal.edad }}</div>
+              <div class="field-value">{{ formatearEdad(animal.edadValor, animal.edadUnidad) }}</div>
             </div>
           </v-col>
           <v-col cols="12" md="4">
@@ -240,6 +240,23 @@ export default {
     }
   },
   methods: {
+
+    formatearEdad(valor, unidad) {
+      // Validar que tanto valor como unidad existan
+      if (!valor || !unidad) {
+          return 'No especificado';
+      }
+      
+      try {
+          const edadEntera = Math.floor(Number(valor));
+          const unidadFormateada = unidad.toLowerCase();
+          return `${edadEntera} ${unidadFormateada}`;
+      } catch (error) {
+          console.error('Error al formatear edad:', error);
+          return 'No especificado';
+      }
+  },
+
     async verificarFactura() {
       try {
         const fichaClinicaId = this.$route.query.fichaClinicaId;
