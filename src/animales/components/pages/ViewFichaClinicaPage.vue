@@ -8,44 +8,51 @@
       </v-col>
     </v-row>
 
-    <!-- Información básica del animal -->
-    <v-card class="mb-4" flat>
-      <v-card-title class="info-title">Información del Animal</v-card-title>
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="4">
-            <div class="field-group">
-              <label class="field-label">Nombre:</label>
-              <div class="field-value">{{ animal.nombre }}</div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Especie:</label>
-              <div class="field-value">{{ animal.especie }}</div>
-            </div>
-          </v-col>
-          <v-col cols="12" md="4">
-            <div class="field-group">
-              <label class="field-label">Raza:</label>
-              <div class="field-value">{{ animal.raza }}</div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Edad:</label>
-              <div class="field-value">{{ formatearEdad(animal.edadValor, animal.edadUnidad) }}</div>
-            </div>
-          </v-col>
-          <v-col cols="12" md="4">
-            <div class="field-group">
-              <label class="field-label">Sexo:</label>
-              <div class="field-value">{{ animal.sexo }}</div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Peso:</label>
-              <div class="field-value">{{ animal.peso }} kg</div>
-            </div>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+ <!-- Información básica del animal -->
+<v-card class="mb-4" flat>
+  <v-card-title class="info-title">Información del Animal</v-card-title>
+  <v-card-text>
+    <v-row>
+      <v-col cols="12" md="4">
+        <div class="field-group">
+          <label class="field-label">Nombre:</label>
+          <div class="field-value">{{ animal?.nombre || 'No especificado' }}</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Especie:</label>
+          <div class="field-value">{{ animal?.especie || 'No especificado' }}</div>
+        </div>
+      </v-col>
+      <v-col cols="12" md="4">
+        <div class="field-group">
+          <label class="field-label">Raza:</label>
+          <div class="field-value">{{ animal?.raza || 'No especificado' }}</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Edad:</label>
+          <div class="field-value">
+            {{ (animal?.edadValor && animal?.edadUnidad) ? 
+                formatearEdad(animal.edadValor, animal.edadUnidad) : 
+                'No especificado' 
+            }}
+          </div>
+        </div>
+      </v-col>
+      <v-col cols="12" md="4">
+        <div class="field-group">
+          <label class="field-label">Sexo:</label>
+          <div class="field-value">{{ animal?.sexo || 'No especificado' }}</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Peso:</label>
+          <div class="field-value">
+            {{ animal?.peso ? `${animal.peso} kg` : 'No especificado' }}
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+  </v-card-text>
+</v-card>
 
     <!-- Veterinarios asignados -->
     <v-card class="mb-4" flat>
@@ -114,32 +121,33 @@
     </v-card>
   </v-dialog>
 
-    <!-- Información de la Ficha Clínica -->
-    <v-card class="mb-4" flat>
-      <v-card-title class="info-title">Detalles de la Ficha Clínica</v-card-title>
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="6">
-            <div class="field-group">
-              <label class="field-label">Motivo de Consulta</label>
-              <div class="field-value">{{ fichaClinica.motivoConsulta }}</div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Condición Sanitaria</label>
-              <div class="field-value">{{ fichaClinica.sanitaria }}</div>
-            </div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="field-group">
-              <label class="field-label">Condición Ambiental</label>
-              <div class="field-value">{{ fichaClinica.ambiental }}</div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Estado del Paciente</label>
-              <div class="field-value">{{ fichaClinica.estadoFichaClinica }}</div>
-            </div>
-          </v-col>
-        </v-row>
+ <!-- Información de la Ficha Clínica -->
+<v-card class="mb-4" flat>
+  <v-card-title class="info-title">Detalles de la Ficha Clínica</v-card-title>
+  <v-card-text>
+    <v-row>
+      <v-col cols="12" md="6">
+        <div class="field-group">
+          <label class="field-label">Motivo de Consulta</label>
+          <div class="field-value">{{ fichaClinica?.motivoConsulta || 'No especificado' }}</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Condición Sanitaria</label>
+          <div class="field-value">{{ fichaClinica?.sanitaria || 'No especificado' }}</div>
+        </div>
+      </v-col>
+      <v-col cols="12" md="6">
+        <div class="field-group">
+          <label class="field-label">Condición Ambiental</label>
+          <div class="field-value">{{ fichaClinica?.ambiental || 'No especificado' }}</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Estado del Paciente</label>
+          <div class="field-value">{{ fichaClinica?.estadoFichaClinica || 'No especificado' }}</div>
+        </div>
+      </v-col>
+    </v-row>
+    
 
         <!-- Botones -->
         <v-row class="mt-4">
