@@ -25,7 +25,7 @@
       </v-col>
     </v-row>
 
-    <!-- Botón para crear artículo (abre modal) -->
+    <!-- Botón para crear artículo -->
     <v-row>
       <v-col cols="12" class="text-left">
         <v-card-actions>
@@ -43,7 +43,7 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Imagen</th>
+                <th></th>
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Valor</th>
@@ -57,20 +57,21 @@
               </tr>
               <tr v-for="articulo in articulosFiltrados" :key="articulo.id">
                 <td class="image-cell">
-                  <v-img
-                    :src="`/api/placeholder/100/100`"
-                    :alt="articulo.nombre"
-                    width="60"
-                    height="60"
-                    class="mx-auto rounded"
-                  ></v-img>
+                  <div class="image-placeholder">
+                    <v-icon 
+                      size="40" 
+                      :color="getRandomIcon(articulo).color"
+                    >
+                      {{ getRandomIcon(articulo).icon }}
+                    </v-icon>
+                  </div>
                 </td>
                 <td>{{ articulo.nombre }}</td>
                 <td>{{ articulo.descripcion }}</td>
                 <td>{{ Number(articulo.valor).toFixed(2) }} $</td>
                 <td>{{ articulo.stock }}</td>
                 <td>
-                  <v-card-actions>
+                  <v-card-actions class="justify-center">
                     <v-btn icon @click="openEditModal(articulo)" title="Editar artículo">
                       <v-icon>mdi-pencil-outline</v-icon>
                     </v-btn>
@@ -139,6 +140,50 @@ export default {
     },
   },
   methods: {
+    normalizarTexto(texto) {
+      if (!texto) return '';
+      return texto
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    },
+
+    getRandomIcon(articulo) {
+  // Si no hay descripción, retorna el icono por defecto
+  if (!articulo || !articulo.descripcion) {
+    return {
+      icon: 'mdi-bacteria',
+      color: 'grey-darken-1'
+    };
+  }
+
+  const descripcion = this.normalizarTexto(articulo.descripcion);
+  console.log('Descripción normalizada:', descripcion);
+
+  // Casos específicos
+  const casos = {
+    'antibiotico': { icon: 'mdi-bacteria', color: 'purple-darken-2' },
+    'inyectable': { icon: 'mdi-needle', color: 'blue-darken-2' },
+    'curacion': { icon: 'mdi-bandage', color: 'teal-darken-2' },
+    'vitamina': { icon: 'mdi-pill', color: 'amber-darken-2' },
+    'analgesico': { icon: 'mdi-heart-pulse', color: 'red-darken-2' },
+    '': { icon: 'mdi-hospital-box', color: 'grey-darken-1' }
+  };
+
+  // Buscar coincidencia
+  for (const [palabra, iconInfo] of Object.entries(casos)) {
+    if (descripcion.includes(palabra)) {
+      return iconInfo;
+    }
+  }
+  
+  // Si no hay coincidencias, retorna el icono por defecto
+  return {
+    icon: 'mdi-hospital-box',
+    color: 'grey-darken-1'
+  };
+},
+
     async fetchArticulos() {
       this.loading = true;
       try {
@@ -152,15 +197,18 @@ export default {
         this.loading = false;
       }
     },
+
     filtrarArticulos() {
       if (!this.filtroNombre) {
         this.fetchArticulos();
         return;
       }
     },
+
     openCreateModal() {
       this.showCreateModal = true;
     },
+
     openEditModal(articulo) {
       this.selectedArticulo = articulo;
       this.showEditModal = true;
@@ -206,6 +254,24 @@ export default {
 .image-cell {
   width: 80px;
   padding: 8px;
+  vertical-align: middle;
+}
+
+.image-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.image-placeholder:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .filter-row {
