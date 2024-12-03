@@ -369,14 +369,15 @@ export default {
     };
 
     const getEstadoColor = (estado) => {
-      switch (estado.toLowerCase()) {
-        case 'ALTA': return 'green';
-        case 'FALLECIMIENTO':
-        case 'EUTANASIA': return 'red';
-        case 'INTERNADO': return 'blue';
-        default: return 'orange';
-      }
-    };
+  switch (estado) {  
+    case 'ALTA': return '#4CAF50';        
+    case 'FALLECIMIENTO': return '#FF0000'; 
+    case 'EUTANASIA': return '#800080';     
+    case 'INTERNADO': return '#2196F3';     
+    case 'INGRESADO': return '#FFD700';    
+    default: return '#FF8C00';              
+  }
+};
 
     const viewFicha = (ficha) => {
       router.push({

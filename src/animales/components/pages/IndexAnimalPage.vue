@@ -199,28 +199,54 @@ export default {
     },
 
     async checkOpenFichas(animalId) {
-      try {
-        const response = await backend.get(`/fichasClinicas/abiertas/${animalId}`);
-        const fichasAbiertas = response.data;
+  try {
+    // Primero verificar si hay fichas clínicas y si hay alguna con estado fallecimiento/eutanasia
+    const fichasResponse = await backend.get(`/fichasClinicas/animal/${animalId}`);
+    const fichasClinicas = fichasResponse.data;
 
-        if (fichasAbiertas.length > 0) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Ficha Clínica Abierta',
-            text: 'Este animal ya tiene una ficha clínica abierta. No se puede crear una nueva.',
-          });
-        } else {
-          this.registerFichaClinica(animalId);
-        }
-      } catch (error) {
+    if (fichasClinicas && fichasClinicas.length > 0) {
+      // Buscar ficha con estado fallecimiento o eutanasia
+      const fichaFallecido = fichasClinicas.find(
+        ficha => ficha.estadoFichaClinica === 'FALLECIMIENTO' || ficha.estadoFichaClinica === 'EUTANASIA'
+      );
+
+      if (fichaFallecido) {
+        const fecha = new Date(fichaFallecido.updatedAt);
+        const fechaFormateada = fecha.toLocaleDateString()
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'No se pudo obtener las fichas clínicas.',
+          icon: 'warning',
+          title: 'Animal Fallecido',
+          text: 'Este animal está registrado como fallecido. No se pueden crear nuevas fichas clínicas.',
+          footer: `Fecha de fallecimiento: ${fechaFormateada}`
         });
+        return; // Importante: salir de la función aquí
       }
-    },
+    }
 
+    // Solo si no está fallecido, verificar fichas abiertas
+    const response = await backend.get(`/fichasClinicas/abiertas/${animalId}`);
+    const fichasAbiertas = response.data;
+    
+    if (fichasAbiertas && fichasAbiertas.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Ficha Clínica Abierta',
+        text: 'Este animal ya tiene una ficha clínica abierta. No se puede crear una nueva.',
+      });
+      return; // Importante: salir de la función aquí si hay fichas abiertas
+    }
+
+    // Solo si no está fallecido y no tiene fichas abiertas, crear nueva ficha
+    this.registerFichaClinica(animalId);
+
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.response?.data?.message || 'No se pudo obtener las fichas clínicas.',
+    });
+  }
+},
     registerFichaClinica(animalId) {
       this.$router.push({ name: 'fichaClinica.create', query: { animalId: animalId } });
     },
