@@ -476,55 +476,78 @@ watch([chartType, selectedReportType], () => {
         .sort((a, b) => new Date(b.fechaTratamiento) - new Date(a.fechaTratamiento));
 
     } else {
-      // Mantener la lógica existente para reportes de animales
-      const animalData = data.map(item => ({
-        fecha: formatDate(item.fechaModificacion || new Date()),
-        especie: item.especie || '',
-        raza: item.raza || '',
-        edad: item.edad || '',
-        motivoConsulta: item.motivoConsulta || '',
-        diagnostico: item.diagnostico || ''
-      }));
+      const groupedByDate = data.reduce((acc, item) => {
+    const date = new Date(item.fechaModificacion);
+    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    if (!acc[monthYear]) {
+      acc[monthYear] = 0;
+    }
+    acc[monthYear]++;
+    return acc;
+  }, {});
 
-      // Agrupar por fecha para el gráfico
-      const groupedByDate = animalData.reduce((acc, item) => {
-        if (!acc[item.fecha]) {
-          acc[item.fecha] = 0;
+  const dates = Object.keys(groupedByDate).sort();
+  const counts = dates.map(date => groupedByDate[date]);
+
+  // Actualizar las opciones del gráfico
+  chartOptions.value = {
+    ...chartOptions.value,
+    chart: {
+      type: chartType.value,
+      height: 350,
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800
+      }
+    },
+    colors: ['#014582'],
+    xaxis: {
+      type: 'category',
+      categories: dates.length > 0 ? dates.map(date => {
+        const [year, month] = date.split('-');
+        return new Date(year, month - 1).toLocaleDateString('es', { 
+          year: 'numeric',
+          month: 'long'
+        });
+      }) : ['Sin datos'],
+      labels: {
+        rotate: -45,
+        trim: true,
+        style: {
+          fontSize: '12px'
         }
-        acc[item.fecha]++;
-        return acc;
-      }, {});
-
-      const dates = Object.keys(groupedByDate);
-      const counts = Object.values(groupedByDate);
-
-      chartOptions.value = {
-        ...chartOptions.value,
-        chart: {
-          type: chartType.value,
-          height: 350
-        },
-        xaxis: {
-          type: 'category',
-          categories: dates.length > 0 ? dates : ['Sin datos'],
-          labels: {
-            rotate: -45,
-            trim: true
-          }
-        },
-        title: {
-          text: selectedReportType.value === "/animales-fallecidos" 
-            ? "Animales Fallecidos" 
-            : "Animales en Eutanasia"
-        }
-      };
-
-      chartSeries.value = [{
-        name: selectedReportType.value === "/animales-fallecidos" 
-          ? 'Animales Fallecidos' 
-          : 'Animales en Eutanasia',
-        data: counts.length > 0 ? counts : [0]
-      }];
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'Cantidad de Animales'
+      }
+    },
+    title: {
+      text: selectedReportType.value === "/animales-fallecidos"
+        ? "Animales Fallecidos por Mes"
+        : "Animales en Eutanasia por Mes",
+      align: 'center',
+      style: {
+        fontSize: '16px',
+        fontWeight: 600
+      }
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        columnWidth: '45%'
+      }
+    }
+  };
+  chartSeries.value = [{
+    name: selectedReportType.value === "/animales-fallecidos" 
+      ? 'Animales Fallecidos' 
+      : 'Animales en Eutanasia',
+    data: counts.length > 0 ? counts : [0]
+  }];
     }
   } catch (error) {
     console.error('Error preparing chart data:', error);
