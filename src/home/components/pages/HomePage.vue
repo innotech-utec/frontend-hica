@@ -41,7 +41,7 @@
           <v-icon v-else size="40" color="#014582">mdi-account-circle</v-icon>
         </v-avatar>
         <!-- Nombre del usuario -->
-        <span class="text-primary font-weight-bold user-name">{{ userInfo.nombre }} {{ userInfo.apellido }}</span>
+        <span class="text-primary font-weight-bold user-name">{{ userInfo?.nombre }} {{ userInfo?.apellido }}</span>
         <v-icon right>mdi-chevron-down</v-icon>
       </v-btn>
     </template>

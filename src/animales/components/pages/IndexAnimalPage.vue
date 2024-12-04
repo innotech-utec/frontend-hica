@@ -4,7 +4,10 @@
     <BackButton />
   
   
-    <v-row>
+    <v-row class="justify-center">
+      <v-col cols="12" class="text-center">
+        <h2 class="page-title">Listado de Animales</h2>
+      </v-col>
     </v-row>
 
     <!-- Filtros de búsqueda -->
