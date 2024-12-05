@@ -211,7 +211,7 @@ export default {
         'ANTIBIOTICO', 'ANALGESICO', 'ANTIFLAMATORIO', 'ANTIPIREPTICO',
         'VITAMINA', 'SUPLEMENTO', 'VACUNA', 'CURACION', 'VENDAJE',
         'ANTISEPTICO', 'SUTURAS', 'JERINGAS', 'GUANTES', 'GASAS',
-        'CATETER', 'LIMPIEZA', 'DESINFECCION', 'ESTIRILIZACION',
+        'CATETER', 'LIMPIEZA', 'DESINFECCION', 'ESTERILIZACION',
         'ALIMENTACION', 'HIDRATACION', 'SUEROS', 'VARIOS'
       ].sort();
     }
@@ -266,7 +266,7 @@ getRandomIcon(articulo) {
     'CATETER': { icon: 'mdi-iv-bag', color: 'light-blue-darken-2' },
     'LIMPIEZA': { icon: 'mdi-broom', color: 'light-green-darken-2' },
     'DESINFECCION': { icon: 'mdi-spray', color: 'green-darken-3' },
-    'ESTIRILIZACION': { icon: 'mdi-radioactive', color: 'orange-darken-3' },
+    'ESTERILIZACION': { icon: 'mdi-radioactive', color: 'orange-darken-3' },
     'ALIMENTACION': { icon: 'mdi-food-apple', color: 'red-darken-3' },
     'HIDRATACION': { icon: 'mdi-water', color: 'blue-lighten-1' },
     'SUEROS': { icon: 'mdi-iv-bag', color: 'cyan-darken-3' },

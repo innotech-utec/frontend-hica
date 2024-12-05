@@ -129,7 +129,9 @@ export default {
       filtroNombre: '',
       currentPage: 1,
       totalPages: 1,
+      itemsPerPage: 10,
       loading: false,
+     
       showEditModal: false
     };
   },
@@ -153,30 +155,33 @@ export default {
       this.loading = true;
       try {
         const response = await backend.get("/animales", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          params: {
+            page: this.currentPage
+      },
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
           },
         });
-        if (Array.isArray(response.data)) {
-          this.animales = response.data;
-          this.totalPages = Math.ceil(response.data.length / 10);
-        } else {
-          Swal.fire({
-            icon: "warning",
-            title: "Advertencia",
-            text: "Los datos de animales no se encuentran en la estructura esperada.",
-          });
-        }
-      } catch (error) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response?.data?.message || "No se pudo obtener la lista de animales.",
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
+        if (response.data && response.data.data) {
+      this.animales = response.data.data;
+      this.totalPages = response.data.meta.last;
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "Advertencia",
+        text: "Los datos de animales no se encuentran en la estructura esperada.",
+      });
+    }
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.response?.data?.message || "No se pudo obtener la lista de animales.",
+    });
+  } finally {
+    this.loading = false;
+  }
+},
     formatearEdad(valor, unidad) {
       // Validar que tanto valor como unidad existan
       if (!valor || !unidad) {
@@ -337,6 +342,11 @@ export default {
   width: 150px;
   display: block;
   margin: 0 auto;
+}
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 </style>
