@@ -95,7 +95,7 @@ props: {
     type: Object,
     required: true
   },
-  categorias: {  // Nueva prop
+  categorias: {  
     type: Array,
     required: true
   }

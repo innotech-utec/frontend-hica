@@ -486,13 +486,21 @@ export default {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    // Primero filtramos los tratamientos
+    // Ajustamos el manejo de fechas para corregir el desfase
     const filteredTreatments = response.data.filter(t => 
       t.estadoAutorizacion !== 'RECHAZADO' && 
       t.estadoAutorizacion !== 'COMPLETADO'
-    );
+    ).map(treatment => {
+      // Corregimos el desfase de la zona horaria
+      const fecha = new Date(treatment.fecha);
+      fecha.setDate(fecha.getDate() + 1); // Sumamos un día para compensar
+      return {
+        ...treatment,
+        fecha: fecha.toISOString().split('T')[0] // Formato YYYY-MM-DD
+      };
+    });
 
-    // Obtenemos las fichas clínicas para cada tratamiento
+    // Resto del código igual...
     const treatmentsWithFichas = await Promise.all(
       filteredTreatments.map(async (treatment) => {
         const fichaClinica = await this.fetchFichaClinica(treatment.fichaClinicaId);
@@ -503,25 +511,15 @@ export default {
       })
     );
 
-    // Ordenamos por fecha y hora en orden inverso (más recientes primero)
     this.treatments = treatmentsWithFichas.sort((a, b) => {
-      // Primero comparamos las fechas (orden inverso)
       const dateComparison = new Date(b.fecha) - new Date(a.fecha);
       if (dateComparison !== 0) return dateComparison;
-      
-      // Si las fechas son iguales, comparamos las horas (orden inverso)
       return b.hora.localeCompare(a.hora);
     });
 
     this.summaryCards[0].count = this.treatments.length;
 
-    const responseInternados = await backend.get('/internados', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    this.internados = responseInternados.data.internados;
-    this.summaryCards[1].count = this.internados;
-
+    // ... resto del código
   } catch (error) {
     console.error('Error al obtener tratamientos:', error);
     Swal.fire({
