@@ -500,7 +500,13 @@ export default {
       };
     });
 
-    // Resto del código igual...
+    const responseInternados = await backend.get('/internados', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        this.internados = responseInternados.data.internados;
+        this.summaryCards[1].count = this.internados
+
     const treatmentsWithFichas = await Promise.all(
       filteredTreatments.map(async (treatment) => {
         const fichaClinica = await this.fetchFichaClinica(treatment.fichaClinicaId);
@@ -519,7 +525,7 @@ export default {
 
     this.summaryCards[0].count = this.treatments.length;
 
-    // ... resto del código
+    
   } catch (error) {
     console.error('Error al obtener tratamientos:', error);
     Swal.fire({
